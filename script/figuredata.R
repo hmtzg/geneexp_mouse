@@ -21,25 +21,30 @@ exp = reshape2::melt(exp) %>%
 
 saveRDS(exp,'./data/processed/figures/tidy/expression.rds')
 
-pca_data = list(readRDS('data/processed/figures/raw/pc.aging.scaled.rds')[,1:4],
-                readRDS('data/processed/figures/raw/pc.all.rds')[,1:4],
-                readRDS('data/processed/figures/raw/pc.scaled.rds')[,1:4],
-                readRDS('data/processed/figures/raw/pc.aging.rds')[,1:4],
-                readRDS('data/processed/figures/raw/pc.dev.rds')[,1:4],
-                readRDS('data/processed/figures/raw/pc.dev.scaled.rds')[,1:4])
+pca_data_all = list(readRDS('data/processed/figures/raw/pc.aging.scaled.rds'),
+                readRDS('data/processed/figures/raw/pc.all.rds'),
+                readRDS('data/processed/figures/raw/pc.scaled.rds'),
+                readRDS('data/processed/figures/raw/pc.aging.rds'),
+                readRDS('data/processed/figures/raw/pc.dev.rds'),
+                readRDS('data/processed/figures/raw/pc.dev.scaled.rds'))
+names(pca_data_all) = c('aging_notissue','all_raw','all_notissue','aging_raw','development_raw','development_notissue')
 
+pca_data = lapply(pca_data_all,function(x)x$x[,1:4])
 rownames(pca_data[[1]]) = samp_id[age>=93]
 rownames(pca_data[[2]]) = samp_id
 rownames(pca_data[[3]]) = samp_id
 rownames(pca_data[[4]]) = samp_id[age>=93]
 rownames(pca_data[[5]]) = samp_id[age<93]
 rownames(pca_data[[6]]) = samp_id[age<93]
-
-names(pca_data) = c('aging_notissue','all_raw','all_notissue','aging_raw','development_raw','development_notissue')
-
 pca_data = reshape2::melt(pca_data) %>%
   set_names(c('sample_id','PC','value','type')) %>%
   separate(type,into=c('period','type'))
+
+pca_data = sapply(pca_data_all,function(x)summary(x)$imp[2,1:4]) %>%
+  reshape2::melt() %>%
+  set_names(c('PC','type','varExp')) %>%
+  separate(type,into=c('period','type')) %>%
+  right_join(pca_data) 
 
 saveRDS(pca_data,'./data/processed/figures/tidy/pca_data.rds')
 
