@@ -75,12 +75,12 @@ saveRDS(sdmat,'./data/processed/figures/tidy/CoV.rds')
 covch_dev = readRDS('./data/processed/figures/raw/dev.sdage.cor.rds')
 covch_aging = readRDS('./data/processed/figures/raw/aging.sdage.cor.rds')
 
-covch_dev = data.frame(covch_dev, period = 'development') %>%
+covch_dev = data.frame(covch_dev, period = 'development', gene_id = rownames(covch_dev)) %>%
   rename(CoV_change = rho, 
          p = V2) %>%
   mutate(FDR = p.adjust(p, method='BH'))
 
-covch_aging = data.frame(covch_aging, period = 'aging') %>%
+covch_aging = data.frame(covch_aging, period = 'aging', gene_id = rownames(covch_aging)) %>%
   rename(CoV_change = rho, 
          p = V2) %>%
   mutate(FDR = p.adjust(p, method='BH'))
