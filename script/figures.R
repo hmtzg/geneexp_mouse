@@ -34,15 +34,15 @@ ages_log2
 ggsave('./results/ages_log2.pdf',ages_log2, units = 'cm', width = 8, height = 6, useDingbats = F)
 ggsave('./results/ages_log2.png',ages_log2, units = 'cm', width = 8, height = 6)
 
-ages= sample_info %>%
+ages = sample_info %>%
   ggplot(aes(y = age, x= tissue, color = tissue)) +
   geom_hline(yintercept = 90, linetype = 'dashed', color = 'gray35') +
   geom_jitter(width = 0.1, size = 1.5) + 
   coord_flip() + 
   scale_color_manual(values = tissuecol) +
   # scale_y_continuous(trans = 'log2', breaks = c(2,10,30,90,300, 900)) +
-  annotate('text', y = 100, label = 'Aging', x = 4.5, hjust = 0, size = 8/pntnorm) +
-  annotate('text', y = 80, label = 'Development', x = 4.5, hjust = 1, size = 8/pntnorm) +
+  annotate('text', y = 100, label = 'Aging', x = 4.5, hjust = 0, size = 4/pntnorm) +
+  annotate('text', y = 80, label = 'Development', x = 4.5, hjust = 1, size = 4/pntnorm) +
   ylab('Age') +
   xlab(NULL) +
   guides(color = F)  +
@@ -62,6 +62,7 @@ aging_raw_var= (pca_dat %>%
                 filter(period == 'aging', type == 'raw') %>%
                 select(varExp, PC) %>%
                 unique())$varExp
+
 dev_raw_var= (pca_dat %>%
                   filter(period == 'development', type == 'raw') %>%
                   select(varExp, PC) %>%
@@ -76,6 +77,7 @@ aging_notissue_var= (pca_dat %>%
                   filter(period == 'aging', type == 'notissue') %>%
                   select(varExp, PC) %>%
                   unique())$varExp
+
 dev_notissue_var= (pca_dat %>%
                 filter(period == 'development', type == 'notissue') %>%
                 select(varExp, PC) %>%
@@ -91,7 +93,7 @@ all_raw_pca12 = pca_dat %>%
   scale_color_manual(values = tissuecol) +
   scale_size_continuous(range = c(0.5,3), trans= 'log2') +
   coord_fixed(ratio = all_raw_var[2]/all_raw_var[1], clip = 'off') +
-  xlab(paste('PC1 (', round(all_raw_var[1]*100),'%)',sep=''))+
+  xlab(paste('PC1 (', round(all_raw_var[1]*100),'%)',sep='')) +
   ylab(paste('PC2 (', round(all_raw_var[2]*100),'%)',sep='')) +
   guides(color = guide_legend('Tissue'), 
          size = guide_legend('Age')) +
@@ -112,7 +114,7 @@ all_raw_pc1age = pca_dat %>%
   ggplot(aes(x = age, y = PC1, color = tissue)) +
   geom_vline(xintercept = 90, linetype = 'dashed', color = 'gray35') +
   geom_smooth(alpha = 0.1) +
-  geom_point(size = 0.5)+
+  geom_point(size = 0.5) +
   scale_color_manual(values = tissuecol) +
   scale_x_continuous(trans = 'log2') +
   guides(color = F) +
@@ -126,7 +128,7 @@ all_raw_pc2age = pca_dat %>%
   ggplot(aes(x = age, y = PC2, color = tissue)) +
   geom_vline(xintercept = 90, linetype = 'dashed', color = 'gray35') +
   geom_smooth(alpha = 0.1) +
-  geom_point(size = 0.5)+
+  geom_point(size = 0.5) +
   scale_color_manual(values = tissuecol) +
   scale_x_continuous(trans = 'log2') +
   guides(color = F) +
@@ -147,7 +149,7 @@ all_raw_pca34 = pca_dat %>%
   scale_color_manual(values = tissuecol) +
   scale_size_continuous(range = c(0.5,3), trans= 'log2') +
   coord_fixed(ratio = all_raw_var[4]/all_raw_var[3], clip = 'off') +
-  xlab(paste('PC3 (', round(all_raw_var[3]*100),'%)',sep=''))+
+  xlab(paste('PC3 (', round(all_raw_var[3]*100),'%)',sep='')) +
   ylab(paste('PC4 (', round(all_raw_var[4]*100),'%)',sep='')) +
   guides(color = guide_legend('Tissue'), 
          size = guide_legend('Age')) +
@@ -156,8 +158,8 @@ all_raw_pca34 = pca_dat %>%
         legend.box = 'vertical',
         legend.background = element_rect(fill = 'gray85',color = 'gray25'))
 
-ggsave('./results/pca_all_raw34.pdf',all_raw_pca34, units = 'cm', width = 8, height = 6, useDingbats =F)
-ggsave('./results/pca_all_raw34.png',all_raw_pca34, units = 'cm', width = 8, height = 6)
+ggsave('./results/pca_all_raw34.pdf',all_raw_pca34, units = 'cm', width = 8, height = 5, useDingbats =F)
+ggsave('./results/pca_all_raw34.png',all_raw_pca34, units = 'cm', width = 8, height = 5)
 
 all_raw_pc3age = pca_dat %>%
   select(-varExp) %>%
@@ -167,7 +169,7 @@ all_raw_pc3age = pca_dat %>%
   ggplot(aes(x = age, y = PC3, color = tissue)) +
   geom_vline(xintercept = 90, linetype = 'dashed', color = 'gray35') +
   geom_smooth(alpha = 0.1) +
-  geom_point(size = 0.5)+
+  geom_point(size = 0.5) +
   scale_color_manual(values = tissuecol) +
   scale_x_continuous(trans = 'log2') +
   guides(color = F) +
@@ -181,7 +183,7 @@ all_raw_pc4age = pca_dat %>%
   ggplot(aes(x = age, y = PC4, color = tissue)) +
   geom_vline(xintercept = 90, linetype = 'dashed', color = 'gray35') +
   geom_smooth(alpha = 0.1) +
-  geom_point(size = 0.5)+
+  geom_point(size = 0.5) +
   scale_color_manual(values = tissuecol) +
   scale_x_continuous(trans = 'log2') +
   guides(color = F) +
@@ -209,13 +211,13 @@ all_raw_pca12_nt = pca_dat %>%
   scale_color_manual(values = tissuecol) +
   scale_size_continuous(range = c(0.5,3), trans= 'log2') +
   coord_fixed(ratio = all_notissue_var[2]/all_notissue_var[1], clip = 'off') +
-  xlab(paste('PC1 (', round(all_notissue_var[1]*100),'%)',sep=''))+
+  xlab(paste('PC1 (', round(all_notissue_var[1]*100),'%)',sep='')) +
   ylab(paste('PC2 (', round(all_notissue_var[2]*100),'%)',sep='')) +
   guides(color = guide_legend('Tissue'), 
          size = guide_legend('Age')) +
   theme(legend.position = c(0.7,0.9),
-        legend.direction = 'horizontal',
-        legend.box = 'vertical',
+        legend.direction = c('vertical'),
+        legend.box = 'horizontal',
         legend.background = element_rect(fill = 'gray85',color = 'gray25')) 
 
 ggsave('./results/pca_all_nt12.pdf',all_raw_pca12_nt, units = 'cm', width = 8, height = 8, useDingbats =F)
@@ -229,7 +231,7 @@ all_raw_pc1age_nt = pca_dat %>%
   ggplot(aes(x = age, y = PC1, color = tissue)) +
   geom_vline(xintercept = 90, linetype = 'dashed', color = 'gray35') +
   geom_smooth(alpha = 0.1) +
-  geom_point(size = 0.5)+
+  geom_point(size = 0.5) +
   scale_color_manual(values = tissuecol) +
   scale_x_continuous(trans = 'log2') +
   guides(color = F) +
@@ -243,7 +245,7 @@ all_raw_pc2age_nt = pca_dat %>%
   ggplot(aes(x = age, y = PC2, color = tissue)) +
   geom_vline(xintercept = 90, linetype = 'dashed', color = 'gray35') +
   geom_smooth(alpha = 0.1) +
-  geom_point(size = 0.5)+
+  geom_point(size = 0.5) +
   scale_color_manual(values = tissuecol) +
   scale_x_continuous(trans = 'log2') +
   guides(color = F) +
@@ -251,22 +253,25 @@ all_raw_pc2age_nt = pca_dat %>%
 
 all_raw_pc12_nt = ggarrange(all_raw_pca12_nt, ggarrange(all_raw_pc1age_nt, all_raw_pc2age_nt, ncol = 1, nrow= 2), ncol = 2, nrow= 1, widths = c(1,0.5), common.legend = F,labels = c('a',NA), align = 'v')
 
-ggsave('./results/pca_all_nt12_wage.pdf',all_raw_pc12_nt, units = 'cm', width = 16, height = 9, useDingbats = F)
+ggsave('./results/pca_all_nt12_wage.pdf',all_raw_pc12_nt, units = 'cm', width = 16, height = 9,
+       useDingbats = F)
 ggsave('./results/pca_all_nt12_wage.png',all_raw_pc12_nt, units = 'cm', width = 16, height = 9)
 
-reversalgene_most = expr_ch %>%
+top_rev_gene_dat = expr_ch %>%
   select(-p,-FDR) %>%
   spread(key = period, value =`Expression Change`) %>%
   mutate(rev = aging *development) %>%
-  top_n(n=1,wt=-rev) %>%
+  top_n(n=1, wt=-rev) %>%
   left_join(expr) %>%
-  inner_join(sample_info) %>%
-  ggplot(aes(x =age, y= expression, color = tissue)) +
+  inner_join(sample_info)
+  
+reversalgene_most = ggplot(top_rev_gene_dat,aes(x =age, y= expression, color = tissue)) +
   geom_vline(xintercept = 90, linetype = 'dashed', color = 'gray35') +
   geom_smooth() +
   geom_point() +
   scale_x_continuous(trans = 'log2', breaks = c(2,10,30,90,300, 900)) +
   scale_color_manual(values = tissuecol) +
+  ggtitle(unique(top_rev_gene_dat$gene_id)) +
   xlab('Age (log2)') +
   ylab('Gene Expression') +
   guides(color = F)
@@ -291,7 +296,8 @@ allgenes_exp_ch_p = expr_ch %>%
   theme(legend.position = 'top',
         legend.background = element_rect(fill = 'gray85',color = 'gray25')) 
 
-ggsave('./results/allgenes_exp_ch.pdf',allgenes_exp_ch_p, units = 'cm', width = 10, height = 6, useDingbats = F)
+ggsave('./results/allgenes_exp_ch.pdf',allgenes_exp_ch_p, units = 'cm', width = 10, height = 6,
+       useDingbats = F)
 ggsave('./results/allgenes_exp_ch.png',allgenes_exp_ch_p, units = 'cm', width = 10, height = 6)
 
 siggenes_exp_ch_p = expr_ch %>%
@@ -307,7 +313,8 @@ siggenes_exp_ch_p = expr_ch %>%
   geom_bar(stat= 'identity', position = 'dodge') +
   scale_fill_manual(values = regcol, drop=FALSE) +
   scale_y_continuous(trans = 'log10') +
-  geom_text(aes(label = n), color='gray15', position = position_dodge(width = 1), angle=90, hjust = 1, vjust = 0.5, size = 6/pntnorm)+
+  geom_text(aes(label = n), color='gray15', position = position_dodge(width = 1), angle=90, hjust = 1.1,
+            vjust = 0.5, size = 6/pntnorm) +
   guides(fill = guide_legend('Direction of Expression Change', 
                              override.aes = list(size = 2))) +
   theme(legend.position = 'bottom',
@@ -315,7 +322,8 @@ siggenes_exp_ch_p = expr_ch %>%
   xlab(NULL)  + ylab(NULL) +
   ggtitle('Number of Genes with a Significant Change (FDR≤0.1)')
 
-ggsave('./results/siggenes_exp_ch.pdf',siggenes_exp_ch_p, units = 'cm', width = 10, height = 6, useDingbats = F)
+ggsave('./results/siggenes_exp_ch.pdf',siggenes_exp_ch_p, units = 'cm', width = 10, height = 6,
+       useDingbats = F)
 ggsave('./results/siggenes_exp_ch.png',siggenes_exp_ch_p, units = 'cm', width = 10, height = 6)
 
 top_divcon_gene_dat = cov_ch %>%
@@ -328,7 +336,7 @@ top_divcon_gene_dat = cov_ch %>%
 top_divcon_gene = ggplot(top_divcon_gene_dat, aes(x =age, y= expression, color = tissue)) +
   geom_smooth(se=F,size = 0.7) +
   geom_point(size=0.5) +
-  geom_vline(xintercept = 90, linetype = 'dashed', color = 'gray35')+
+  geom_vline(xintercept = 90, linetype = 'dashed', color = 'gray35') +
   scale_x_continuous(trans = 'log2') +
   scale_color_manual(values = tissuecol) +
   ggtitle(unique(top_divcon_gene_dat$gene_id)) +
@@ -349,16 +357,20 @@ top_divcon_gene_cov = top_divcon_gene_dat %>%
   ggplot(aes(x = age, y= cov)) +
   geom_smooth(size = 0.7) +
   geom_point(size=0.5) +
-  geom_vline(xintercept = 90, linetype = 'dashed', color = 'gray35')+
+  geom_vline(xintercept = 90, linetype = 'dashed', color = 'gray35') +
   scale_x_continuous(trans = 'log2') +
   ggtitle(unique(top_divcon_gene_dat$gene_id)) +
   xlab('Age (log2)') + ylab('CoV')
 
-ggsave('./results/top_divcon_gene_cov.pdf',top_divcon_gene_cov, units = 'cm', width = 8, height = 8, useDingbats = F)
+ggsave('./results/top_divcon_gene_cov.pdf',top_divcon_gene_cov, units = 'cm', width = 8, height = 8,
+       useDingbats = F)
 ggsave('./results/top_divcon_gene_cov.png',top_divcon_gene_cov, units = 'cm', width = 8, height = 8)
 
-top_divcon_gene_p = ggarrange(top_divcon_gene+ggtitle(NULL),top_divcon_gene_cov+ggtitle(NULL),labels = 'auto',ncol=2,nrow=1, align = 'hv')
-ggsave('./results/top_divcon_gene_expcov.pdf',top_divcon_gene_p, units = 'cm', width = 10, height = 5, useDingbats = F)
+top_divcon_gene_p = ggarrange(top_divcon_gene + ggtitle(NULL), top_divcon_gene_cov + ggtitle(NULL),
+                              labels = 'auto', ncol=2, nrow=1, align = 'hv')
+
+ggsave('./results/top_divcon_gene_expcov.pdf',top_divcon_gene_p, units = 'cm', width = 10, height = 5,
+       useDingbats = F)
 ggsave('./results/top_divcon_gene_expcov.png',top_divcon_gene_p, units = 'cm', width = 10, height = 5)
 
 cov_dat_sum = cov_dat %>%
@@ -369,8 +381,8 @@ cov_dat_sum = cov_dat %>%
   mutate(period = c('aging','development')[1+(age<=90)])
 
 cov_cordat = group_by(ungroup(cov_dat_sum),period) %>%
-  summarise(cor = cor.test(meanCoV,age,method = 's')$est,
-            cor.p = cor.test(meanCoV,age,method = 's')$p.val)
+  summarise(cor = cor.test(meanCoV, age, method = 's')$est,
+            cor.p = cor.test(meanCoV, age, method = 's')$p.val)
 
 cov_mean = ggplot(cov_dat_sum, aes(x = age, y= meanCoV)) +
   geom_point() +
@@ -378,10 +390,10 @@ cov_mean = ggplot(cov_dat_sum, aes(x = age, y= meanCoV)) +
   scale_x_continuous(trans = 'log2') +
   geom_vline(xintercept = 90, linetype='dashed',color = 'gray35') +
   xlab('Age (log2)') + ylab('Mean CoV') +
-  annotate('text',x=95,y=0.5075,label='Aging',hjust=0,size = 8/pntnorm)+
+  annotate('text',x=95,y=0.5075,label='Aging',hjust=0,size = 8/pntnorm) +
   annotate('text',x = 95, y=0.505, label = parse(text = paste('rho["CoV,age"] ==' ,(round(filter(cov_cordat,period=='aging')$cor,3)))),hjust=0,size = 8/pntnorm) +
-  annotate('text',x = 95, y=0.5025, label = parse(text = paste0('p ==' ,(round(filter(cov_cordat,period=='aging')$cor.p,2)))),hjust=0,size = 8/pntnorm)+
-  annotate('text',x=8,y=0.4825,label='Development',hjust=0,size = 8/pntnorm)+
+  annotate('text',x = 95, y=0.5025, label = parse(text = paste0('p ==' ,(round(filter(cov_cordat,period=='aging')$cor.p,2)))),hjust=0,size = 8/pntnorm) +
+  annotate('text',x=8,y=0.4825,label='Development',hjust=0,size = 8/pntnorm) +
   annotate('text',x = 8, y=0.48, label = parse(text = paste('rho["CoV,age"] ==' ,(round(filter(cov_cordat,period=='development')$cor,3)))),hjust=0,size = 8/pntnorm) +
   annotate('text',x = 8, y=0.4775, label = parse(text = paste0('p ==' ,(round(filter(cov_cordat,period=='development')$cor.p,2)))),hjust=0,size = 8/pntnorm)
 
