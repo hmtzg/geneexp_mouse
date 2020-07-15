@@ -201,7 +201,7 @@ all_raw_pca = ggarrange(all_raw_pc12,all_raw_pc34_2, align = 'hv', ncol = 1, nro
 ggsave('./results/all_raw_pca1234.pdf',all_raw_pca, units = 'cm',width = 13, height = 10,useDingbats = F)
 ggsave('./results/all_raw_pca1234.png',all_raw_pca, units = 'cm',width = 13, height = 10)
 
-all_raw_pca12_nt = pca_dat %>%
+all_nt_pca12 = pca_dat %>%
   select(-varExp) %>%
   filter(period == 'all', type == 'notissue') %>%
   spread(key = 'PC',value = 'value') %>%
@@ -220,10 +220,10 @@ all_raw_pca12_nt = pca_dat %>%
         legend.box = 'horizontal',
         legend.background = element_rect(fill = 'gray85',color = 'gray25')) 
 
-ggsave('./results/pca_all_nt12.pdf',all_raw_pca12_nt, units = 'cm', width = 8, height = 8, useDingbats =F)
-ggsave('./results/pca_all_nt12.png',all_raw_pca12_nt, units = 'cm', width = 8, height = 8)
+ggsave('./results/pca_all_nt12.pdf',all_nt_pca12, units = 'cm', width = 8, height = 8, useDingbats =F)
+ggsave('./results/pca_all_nt12.png',all_nt_pca12, units = 'cm', width = 8, height = 8)
 
-all_raw_pc1age_nt = pca_dat %>%
+all_nt_pc1age = pca_dat %>%
   select(-varExp) %>%
   filter(period == 'all', type == 'notissue') %>%
   spread(key = 'PC',value = 'value') %>%
@@ -237,7 +237,7 @@ all_raw_pc1age_nt = pca_dat %>%
   guides(color = F) +
   xlab('Age (log2)')
 
-all_raw_pc2age_nt = pca_dat %>%
+all_nt_pc2age = pca_dat %>%
   select(-varExp) %>%
   filter(period == 'all', type == 'notissue') %>%
   spread(key = 'PC',value = 'value') %>%
@@ -251,11 +251,291 @@ all_raw_pc2age_nt = pca_dat %>%
   guides(color = F) +
   xlab('Age (log2)')
 
-all_raw_pc12_nt = ggarrange(all_raw_pca12_nt, ggarrange(all_raw_pc1age_nt, all_raw_pc2age_nt, ncol = 1, nrow= 2), ncol = 2, nrow= 1, widths = c(1,0.5), common.legend = F,labels = c('a',NA), align = 'v')
+all_nt_pc12 = ggarrange(all_nt_pca12, ggarrange(all_nt_pc1age, all_nt_pc2age, ncol = 1, nrow= 2), ncol = 2, nrow= 1, widths = c(1,0.5), common.legend = F,labels = c('a',NA), align = 'v')
 
-ggsave('./results/pca_all_nt12_wage.pdf',all_raw_pc12_nt, units = 'cm', width = 16, height = 9,
+ggsave('./results/pca_all_nt12_wage.pdf',all_nt_pc12, units = 'cm', width = 16, height = 9,
        useDingbats = F)
-ggsave('./results/pca_all_nt12_wage.png',all_raw_pc12_nt, units = 'cm', width = 16, height = 9)
+ggsave('./results/pca_all_nt12_wage.png',all_nt_pc12, units = 'cm', width = 16, height = 9)
+
+dev_raw_pca12 = pca_dat %>%
+  select(-varExp) %>%
+  filter(period == 'development', type == 'raw') %>%
+  spread(key = 'PC',value = 'value') %>%
+  left_join(sample_info) %>%
+  ggplot(aes(x = PC1, y= PC2, color = tissue, size = age))  +
+  geom_point(alpha = 0.7) +
+  scale_color_manual(values = tissuecol) +
+  scale_size_continuous(range = c(0.5,3), trans= 'log2',breaks = c(2,8,30,60)) +
+  coord_fixed(ratio = dev_raw_var[2]/dev_raw_var[1], clip = 'off') +
+  xlab(paste('PC1 (', round(dev_raw_var[1]*100),'%)',sep='')) +
+  ylab(paste('PC2 (', round(dev_raw_var[2]*100),'%)',sep='')) +
+  guides(color = guide_legend('Tissue'), 
+         size = guide_legend('Age')) +
+  theme(legend.position = c(0.06,0.65),
+        legend.justification=c(0,0),
+        legend.direction = 'vertical',
+        legend.box = 'horizontal',
+        legend.background = element_rect(fill = 'gray85',color = 'gray25')) 
+
+ggsave('./results/pca_dev_raw12.pdf',dev_raw_pca12, units = 'cm', width = 8, height = 5, useDingbats =F)
+ggsave('./results/pca_dev_raw12.png',dev_raw_pca12, units = 'cm', width = 8, height = 5)
+
+dev_raw_pc1age = pca_dat %>%
+  select(-varExp) %>%
+  filter(period == 'development', type == 'raw') %>%
+  spread(key = 'PC',value = 'value') %>%
+  left_join(sample_info) %>%
+  ggplot(aes(x = age, y = PC1, color = tissue)) +
+  geom_smooth(alpha = 0.1) +
+  geom_point(size = 0.5) +
+  scale_color_manual(values = tissuecol) +
+  scale_x_continuous(trans = 'log2') +
+  guides(color = F) +
+  xlab('Age (log2)')
+
+dev_raw_pc2age = pca_dat %>%
+  select(-varExp) %>%
+  filter(period == 'development', type == 'raw') %>%
+  spread(key = 'PC',value = 'value') %>%
+  left_join(sample_info) %>%
+  ggplot(aes(x = age, y = PC2, color = tissue)) +
+  geom_smooth(alpha = 0.1) +
+  geom_point(size = 0.5) +
+  scale_color_manual(values = tissuecol) +
+  scale_x_continuous(trans = 'log2') +
+  guides(color = F) +
+  xlab('Age (log2)')
+
+dev_raw_pc12 = ggarrange(dev_raw_pca12, ggarrange(dev_raw_pc1age, dev_raw_pc2age, ncol = 1, nrow= 2), ncol = 2, nrow= 1, widths = c(1,0.5), common.legend = F,labels = c('a',NA), align = 'v')
+
+ggsave('./results/pca_dev_raw12_wage.pdf',dev_raw_pc12, units = 'cm', width = 16, height = 6, useDingbats = F)
+ggsave('./results/pca_dev_raw12_wage.png',dev_raw_pc12, units = 'cm', width = 16, height = 6)
+
+dev_raw_pca34 = pca_dat %>%
+  select(-varExp) %>%
+  filter(period == 'development', type == 'raw') %>%
+  spread(key = 'PC',value = 'value') %>%
+  left_join(sample_info) %>%
+  ggplot(aes(x = PC3, y= PC4, color = tissue, size = age))  +
+  geom_point(alpha = 0.7) +
+  scale_color_manual(values = tissuecol) +
+  scale_size_continuous(range = c(0.5,3), trans= 'log2',breaks = c(2,8,30,60)) +
+  coord_fixed(ratio = dev_raw_var[4]/dev_raw_var[3], clip = 'off') +
+  xlab(paste('PC1 (', round(dev_raw_var[3]*100),'%)',sep='')) +
+  ylab(paste('PC2 (', round(dev_raw_var[4]*100),'%)',sep='')) +
+  guides(color = guide_legend('Tissue'), 
+         size = guide_legend('Age')) +
+  theme(legend.position = c(0.15,0.05),
+        legend.justification=c(0,0),
+        legend.direction = 'horizontal',
+        legend.box = 'vertical',
+        legend.background = element_rect(fill = 'gray85',color = 'gray25')) 
+
+ggsave('./results/pca_dev_raw34.pdf',dev_raw_pca34, units = 'cm', width = 8, height = 5, useDingbats =F)
+ggsave('./results/pca_dev_raw34.png',dev_raw_pca34, units = 'cm', width = 8, height = 5)
+
+dev_raw_pc3age = pca_dat %>%
+  select(-varExp) %>%
+  filter(period == 'development', type == 'raw') %>%
+  spread(key = 'PC',value = 'value') %>%
+  left_join(sample_info) %>%
+  ggplot(aes(x = age, y = PC3, color = tissue)) +
+  geom_smooth(alpha = 0.1) +
+  geom_point(size = 0.5) +
+  scale_color_manual(values = tissuecol) +
+  scale_x_continuous(trans = 'log2') +
+  guides(color = F) +
+  xlab('Age (log2)')
+
+dev_raw_pc4age = pca_dat %>%
+  select(-varExp) %>%
+  filter(period == 'development', type == 'raw') %>%
+  spread(key = 'PC',value = 'value') %>%
+  left_join(sample_info) %>%
+  ggplot(aes(x = age, y = PC4, color = tissue)) +
+  geom_smooth(alpha = 0.1) +
+  geom_point(size = 0.5) +
+  scale_color_manual(values = tissuecol) +
+  scale_x_continuous(trans = 'log2') +
+  guides(color = F) +
+  xlab('Age (log2)')
+
+dev_raw_pc34 = ggarrange(dev_raw_pca34, ggarrange(dev_raw_pc3age, dev_raw_pc4age, ncol = 1, nrow= 2), ncol = 2, nrow= 1, widths = c(1,0.5), common.legend = F,labels = c('a',NA), align = 'v')
+
+ggsave('./results/pca_dev_raw34_wage.pdf',dev_raw_pc34, units = 'cm', width = 16, height = 6, useDingbats = F)
+ggsave('./results/pca_dev_raw34_wage.png',dev_raw_pc34, units = 'cm', width = 16, height = 6)
+
+######
+
+dev_nt_pca12 = pca_dat %>%
+  select(-varExp) %>%
+  filter(period == 'development', type == 'notissue') %>%
+  spread(key = 'PC',value = 'value') %>%
+  left_join(sample_info) %>%
+  ggplot(aes(x = PC1, y= PC2, color = tissue, size = age))  +
+  geom_point(alpha = 0.7) +
+  scale_color_manual(values = tissuecol) +
+  scale_size_continuous(range = c(0.5,3), trans= 'log2',breaks = c(2,8,30,60)) +
+  coord_fixed(ratio = dev_notissue_var[2]/dev_notissue_var[1], clip = 'off') +
+  xlab(paste('PC1 (', round(dev_notissue_var[1]*100),'%)',sep='')) +
+  ylab(paste('PC2 (', round(dev_notissue_var[2]*100),'%)',sep='')) +
+  guides(color = guide_legend('Tissue'), 
+         size = guide_legend('Age')) +
+  theme(legend.position = c(0.26,0.65),
+        legend.justification=c(0,0),
+        legend.direction = 'vertical',
+        legend.box = 'horizontal',
+        legend.background = element_rect(fill = 'gray85',color = 'gray25')) 
+
+ggsave('./results/pca_dev_nt12.pdf', dev_nt_pca12, units = 'cm', width = 8, height = 5, useDingbats =F)
+ggsave('./results/pca_dev_nt12.png', dev_nt_pca12, units = 'cm', width = 8, height = 5)
+
+dev_nt_pc1age = pca_dat %>%
+  select(-varExp) %>%
+  filter(period == 'development', type == 'notissue') %>%
+  spread(key = 'PC',value = 'value') %>%
+  left_join(sample_info) %>%
+  ggplot(aes(x = age, y = PC1, color = tissue)) +
+  geom_smooth(alpha = 0.1) +
+  geom_point(size = 0.5) +
+  scale_color_manual(values = tissuecol) +
+  scale_x_continuous(trans = 'log2') +
+  guides(color = F) +
+  xlab('Age (log2)')
+
+dev_nt_pc2age = pca_dat %>%
+  select(-varExp) %>%
+  filter(period == 'development', type == 'notissue') %>%
+  spread(key = 'PC',value = 'value') %>%
+  left_join(sample_info) %>%
+  ggplot(aes(x = age, y = PC2, color = tissue)) +
+  geom_smooth(alpha = 0.1) +
+  geom_point(size = 0.5) +
+  scale_color_manual(values = tissuecol) +
+  scale_x_continuous(trans = 'log2') +
+  guides(color = F) +
+  xlab('Age (log2)')
+
+dev_nt_pc12 = ggarrange(dev_nt_pca12, ggarrange(dev_nt_pc1age, dev_nt_pc2age, ncol = 1, nrow= 2), ncol = 2, nrow= 1, widths = c(1,0.5), common.legend = F,labels = c('a',NA), align = 'v')
+
+ggsave('./results/pca_dev_nt12_wage.pdf',dev_nt_pc12, units = 'cm', width = 16, height = 6, useDingbats = F)
+ggsave('./results/pca_dev_nt12_wage.png',dev_nt_pc12, units = 'cm', width = 16, height = 6)
+
+dev_nt_pca34 = pca_dat %>%
+  select(-varExp) %>%
+  filter(period == 'development', type == 'notissue') %>%
+  spread(key = 'PC',value = 'value') %>%
+  left_join(sample_info) %>%
+  ggplot(aes(x = PC3, y= PC4, color = tissue, size = age))  +
+  geom_point(alpha = 0.7) +
+  scale_color_manual(values = tissuecol) +
+  scale_size_continuous(range = c(0.5,3), trans= 'log2',breaks = c(2,8,30,60)) +
+  coord_fixed(ratio = dev_notissue_var[4]/dev_notissue_var[3], clip = 'off') +
+  xlab(paste('PC1 (', round(dev_notissue_var[3]*100),'%)',sep='')) +
+  ylab(paste('PC2 (', round(dev_notissue_var[4]*100),'%)',sep='')) +
+  guides(color = guide_legend('Tissue'), 
+         size = guide_legend('Age')) 
+  # theme(legend.position = c(0.15,0.05),
+  #       legend.justification=c(0,0),
+  #       legend.direction = 'horizontal',
+  #       legend.box = 'vertical',
+  #       legend.background = element_rect(fill = 'gray85',color = 'gray25')) 
+
+ggsave('./results/pca_dev_nt34.pdf',dev_nt_pca34, units = 'cm', width = 8, height = 5, useDingbats =F)
+ggsave('./results/pca_dev_nt34.png',dev_nt_pca34, units = 'cm', width = 8, height = 5)
+
+dev_nt_pc3age = pca_dat %>%
+  select(-varExp) %>%
+  filter(period == 'development', type == 'notissue') %>%
+  spread(key = 'PC',value = 'value') %>%
+  left_join(sample_info) %>%
+  ggplot(aes(x = age, y = PC3, color = tissue)) +
+  geom_smooth(alpha = 0.1) +
+  geom_point(size = 0.5) +
+  scale_color_manual(values = tissuecol) +
+  scale_x_continuous(trans = 'log2') +
+  guides(color = F) +
+  xlab('Age (log2)')
+
+dev_nt_pc4age = pca_dat %>%
+  select(-varExp) %>%
+  filter(period == 'development', type == 'notissue') %>%
+  spread(key = 'PC',value = 'value') %>%
+  left_join(sample_info) %>%
+  ggplot(aes(x = age, y = PC4, color = tissue)) +
+  geom_smooth(alpha = 0.1) +
+  geom_point(size = 0.5) +
+  scale_color_manual(values = tissuecol) +
+  scale_x_continuous(trans = 'log2') +
+  guides(color = F) +
+  xlab('Age (log2)')
+
+dev_nt_pc34 = ggarrange(dev_nt_pca34, ggarrange(dev_nt_pc3age, dev_nt_pc4age, ncol = 1, nrow= 2), ncol = 2, nrow= 1, widths = c(1,0.5), common.legend = F,labels = c('a',NA))
+
+ggsave('./results/pca_dev_nt34_wage.pdf',dev_nt_pc34, units = 'cm', width = 16, height = 6, useDingbats = F)
+ggsave('./results/pca_dev_nt34_wage.png',dev_nt_pc34, units = 'cm', width = 16, height = 6)
+
+aging_raw_pca12 = pca_dat %>%
+  select(-varExp) %>%
+  filter(period == 'aging', type == 'raw') %>%
+  spread(key = 'PC',value = 'value') %>%
+  left_join(sample_info) %>%
+  ggplot(aes(x = PC1, y= PC2, color = tissue, size = age))  +
+  geom_point(alpha = 0.7) +
+  scale_color_manual(values = tissuecol) +
+  scale_size_continuous(range = c(0.5,3), trans= 'log2') +
+  coord_fixed(ratio = aging_raw_var[2]/aging_raw_var[1], clip = 'off') +
+  xlab(paste('PC1 (', round(aging_raw_var[1]*100),'%)',sep='')) +
+  ylab(paste('PC2 (', round(aging_raw_var[2]*100),'%)',sep='')) +
+  guides(color = guide_legend('Tissue'), 
+         size = guide_legend('Age')) +
+  theme(legend.position = c(0.06,0.65),
+        legend.justification=c(0,0),
+        legend.direction = 'vertical',
+        legend.box = 'horizontal',
+        legend.background = element_rect(fill = 'gray85',color = 'gray25')) 
+
+ggsave('./results/pca_aging_raw12.pdf',aging_raw_pca12, units = 'cm', width = 8, height = 5, useDingbats =F)
+ggsave('./results/pca_aging_raw12.png',aging_raw_pca12, units = 'cm', width = 8, height = 5)
+
+aging_raw_pc1age = pca_dat %>%
+  select(-varExp) %>%
+  filter(period == 'aging', type == 'raw') %>%
+  spread(key = 'PC',value = 'value') %>%
+  left_join(sample_info) %>%
+  ggplot(aes(x = age, y = PC1, color = tissue)) +
+  geom_smooth(alpha = 0.1) +
+  geom_point(size = 0.5) +
+  scale_color_manual(values = tissuecol) +
+  scale_x_continuous(trans = 'log2') +
+  guides(color = F) +
+  xlab('Age (log2)')
+
+aging_raw_pc2age = pca_dat %>%
+  select(-varExp) %>%
+  filter(period == 'aging', type == 'raw') %>%
+  spread(key = 'PC',value = 'value') %>%
+  left_join(sample_info) %>%
+  ggplot(aes(x = age, y = PC2, color = tissue)) +
+  geom_smooth(alpha = 0.1) +
+  geom_point(size = 0.5) +
+  scale_color_manual(values = tissuecol) +
+  scale_x_continuous(trans = 'log2') +
+  guides(color = F) +
+  xlab('Age (log2)')
+
+aging_raw_pc12 = ggarrange(aging_raw_pca12, ggarrange(aging_raw_pc1age, aging_raw_pc2age, ncol = 1, nrow= 2), ncol = 2, nrow= 1, widths = c(1,0.5), common.legend = F,labels = c('a',NA), align = 'v')
+
+ggsave('./results/pca_aging_raw12_wage.pdf',aging_raw_pc12, units = 'cm', width = 16, height = 6,
+       useDingbats = F)
+ggsave('./results/pca_aging_raw12_wage.png',aging_raw_pc12, units = 'cm', width = 16, height = 6)
+
+
+
+
+
+
+####
 
 top_rev_gene_dat = expr_ch %>%
   select(-p,-FDR) %>%
