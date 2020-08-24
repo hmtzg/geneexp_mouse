@@ -794,11 +794,82 @@ siggenes_overlap = expr_ch %>%
   theme(legend.position = 'bottom',
         legend.background = element_rect(fill = 'gray85', color = 'gray25')) +
   xlab(NULL) + ylab(NULL) +
-  ggtitle('Overlap of Significantly Changing Genes Among Tissues')
+  ggtitle('Overlap of Significantly Changing Genes Among Tissues (FDR<=0.1)')
 
 ggsave('./results/siggenes_exp_ch_overlap.pdf', siggenes_overlap, units = 'cm', width = 10, height = 6,
        useDingbats = F)  
 ggsave('./results/siggenes_exp_ch_overlap.png', siggenes_overlap, units = 'cm', width = 10, height = 6)
+
+siggenes_overlap_fdr0.2 = expr_ch %>%
+  filter(FDR <= 0.2) %>%
+  mutate(direction = `Expression Change` > 0) %>%
+  mutate(direction = ifelse(direction == TRUE, 'up', 'down')) %>%
+  mutate(period = factor(period, levels = c('development', 'aging'))) %>%
+  group_by(gene_id, period, direction) %>%
+  summarise(n = length(tissue)) %>%
+  group_by(n, period, direction) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  slice(-c(1:4)) %>%
+  ggplot(aes(x = n, y = count, fill = direction)) +
+  facet_wrap(~period) +
+  geom_bar(stat='identity', position = 'dodge') +
+  scale_fill_manual(values = regcol, drop = F) +
+  scale_y_continuous(trans = 'log10') +
+  geom_text(aes(label = count), color = 'gray15', position = position_dodge(width = 1), angle = 90,
+            hjust = 1.1, size = 6/pntnorm) +
+  guides(fill = guide_legend('Direction of Expression Change'),
+         override.aes = list(size =2)) +
+  theme(legend.position = 'bottom',
+        legend.background = element_rect(fill = 'gray85', color = 'gray25')) +
+  xlab(NULL) + ylab(NULL) +
+  ggtitle('Overlap of Significantly Changing Genes Among Tissues (FDR<=0.2)')
+
+ggsave('./results/siggenes_exp_ch_overlap_fdr0.2.pdf', siggenes_overlap_fdr0.2, units = 'cm',
+       width = 10, height = 6, useDingbats = F)  
+ggsave('./results/siggenes_exp_ch_overlap_fdr0.2.png', siggenes_overlap_fdr0.2, units = 'cm',
+       width = 10, height = 6)
+
+##
+siggenes_overlap_nocutoff = expr_ch %>%
+  filter(!is.na(`Expression Change`)) %>%
+  filter(`Expression Change` != 0) %>%
+  mutate(direction = `Expression Change` > 0) %>%
+  mutate(direction = ifelse(direction == TRUE, 'up', 'down')) %>%
+  mutate(period = factor(period, levels = c('development', 'aging'))) %>%
+  group_by(gene_id, period, direction) %>%
+  summarise(n = length(tissue)) %>%
+  group_by(n, period, direction) %>%
+  summarise(count = n()) %>%
+  ungroup() %>%
+  slice(-c(1:4)) %>%
+  ggplot(aes(x = n, y = count, fill = direction)) +
+  facet_wrap(~period) +
+  geom_bar(stat='identity', position = 'dodge') +
+  scale_fill_manual(values = regcol, drop = F) +
+  geom_text(aes(label = count), color = 'gray15', position = position_dodge(width = 1), angle = 90,
+            hjust = 1.1, size = 6/pntnorm) +
+  guides(fill = guide_legend('Direction of Expression Change'),
+         override.aes = list(size =2)) +
+  theme(legend.position = 'bottom',
+        legend.background = element_rect(fill = 'gray85', color = 'gray25')) +
+  xlab(NULL) + ylab(NULL) +
+  ggtitle('Overlap of Expression Change Among Tissues (no cutoff)')
+
+ggsave('./results/siggenes_exp_ch_overlap_nocutoff.pdf', siggenes_overlap_nocutoff, units = 'cm',
+       width = 10, height = 6, useDingbats = F)  
+ggsave('./results/siggenes_exp_ch_overlap_nocutoff.png', siggenes_overlap_nocutoff, units = 'cm',
+       width = 10, height = 6)
+
+## maybe combine them to one plot:
+
+# siggenes_overlap_two_cutoff = ggarrange(siggenes_overlap, siggenes_overlap_fdr0.2, ncol =2, nrow = 1,
+#                                         common.legend = T, labels = c('a','b'), align = 'hv',
+#                                         legend = 'bottom')
+# ggsave('./results/siggenes_exp_ch_overlap_two_cutoff.pdf', siggenes_overlap_two_cutoff, units = 'cm',
+#        width = 16, height = 6, useDingbats = F)
+# ggsave('./results/siggenes_exp_ch_overlap_two_cutoff.png', siggenes_overlap_two_cutoff, units = 'cm',
+#        width = 16, height = 6)
 
 
 top_divcon_gene_dat = cov_ch %>%
