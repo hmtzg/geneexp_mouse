@@ -101,3 +101,12 @@ rev_gse = readRDS('./data/processed/figures/raw/rev.gse.rds')@result[,1:6] %>%
   mutate(p.adj = p.adjust(pvalue,method='BH'))
 saveRDS(rev_gse,'./data/processed/figures/tidy/divcon_GSEA.rds')
 
+revgenes = readRDS('./data/processed/figures/raw/revgenes.each.tissue.rds') %>%
+  reshape2::melt(revgenes) %>%
+  set_names('gene_id','direction','tissue')
+saveRDS(revgenes,'./data/processed/figures/tidy/revgenes.tissues.rds')
+
+
+
+
+

@@ -6,9 +6,10 @@ library(magick)
 theme_set(theme_pubr(base_size = 6, legend = 'top') +
             theme(legend.key.size = unit(2,'pt')))
 pntnorm <- (1/0.352777778)
-tissuecol = setNames(c("#233789", "#f49e92", "#801008","#dbb32e"),c('Cortex','Lung','Liver','Muscle'))
+tissuecol = setNames(c('#233789', '#f49e92', '#801008','#dbb32e'),c('Cortex','Lung','Liver','Muscle'))
 varcol = setNames(c('dodgerblue','firebrick3'),c('div','con'))
 regcol = setNames(c('rosybrown3','paleturquoise3'),c('up','down'))
+revcol = setNames(c('brown4', '#1C7AD9', 'indianred', '#6FADEC'), c('UpDown','DownUp','UpUp','DownDown'))
 
 sample_info = readRDS('./data/processed/figures/tidy/sample_info.rds')
 expr = readRDS('./data/processed/figures/tidy/expression.rds')
@@ -18,6 +19,7 @@ cov_dat = readRDS('./data/processed/figures/tidy/CoV.rds')
 cov_ch = readRDS('./data/processed/figures/tidy/CoV_change.rds')
 cov_gsea = readRDS('./data/processed/figures/tidy/CoV_GSEA.rds')
 divcon_gsea = readRDS('./data/processed/figures/tidy/divcon_GSEA.rds')
+revgenes = readRDS('./data/processed/figures/tidy/revgenes.tissues.rds')
 
 ages_log2 = sample_info %>%
   ggplot(aes(y = age, x= tissue, color = tissue)) +
@@ -946,6 +948,26 @@ cov_mean = ggplot(cov_dat_sum, aes(x = age, y= meanCoV)) +
 ggsave('./results/cov_mean.pdf',cov_mean, units = 'cm', width = 8, height = 8, useDingbats = F)
 ggsave('./results/cov_mean.png',cov_mean, units = 'cm', width = 8, height = 8)
 
+### revgene proportions:
+revprops = revgenes %>%
+  group_by(direction,tissue) %>%
+  summarise(n = length(gene_id)) %>%
+  group_by(tissue) %>%
+  #mutate(freq = n / sum(n)) %>%
+  #select(-n) %>%
+  mutate(direction = factor(direction,levels = c('UpDown','DownUp','UpUp','DownDown'))) %>%
+  ggplot(aes(x=tissue, y=n, fill = direction)) +
+  geom_bar(stat='identity', position = position_fill(reverse=T)) + 
+  scale_fill_manual(values = revcol) + 
+  geom_hline(yintercept = 0.5, linetype = 'dashed', color = 'gray35') +
+  xlab(NULL) + ylab('Proportion of All Genes') +
+  guides(fill = guide_legend('Direction',
+                             override.aes = list(size=2))) +
+  theme(legend.position = 'top',
+        legend.background = element_rect(fill= 'gray85', color = 'gray25'))
+
+ggsave('./results/reversal_props.pdf', revprops, units='cm', width = 8,height = 8, useDingbats = F)
+ggsave('./results/reversal_props.png', revprops, units='cm', width = 8,height = 8)
 
 ######### FIGURES
 
