@@ -21,6 +21,7 @@ cov_gsea = readRDS('./data/processed/figures/tidy/CoV_GSEA.rds')
 divcon_gsea = readRDS('./data/processed/figures/tidy/divcon_GSEA.rds')
 revgenes = readRDS('./data/processed/figures/tidy/revgenes.tissues.rds')
 
+## plot age distribution in tissues:
 ages_log2 = sample_info %>%
   ggplot(aes(y = age, x= tissue, color = tissue)) +
   geom_hline(yintercept = 90, linetype = 'dashed', color = 'gray35') +
@@ -56,7 +57,7 @@ ages
 ggsave('./results/ages.pdf',ages, units = 'cm', width = 8, height = 6, useDingbats = F)
 ggsave('./results/ages.png',ages, units = 'cm', width = 8, height = 6)
 
-
+# calculate variations explained in all kinds of pca results:
 all_raw_var= (pca_dat %>%
   filter(period == 'all', type == 'raw') %>%
   select(varExp, PC) %>%
@@ -87,6 +88,7 @@ dev_notissue_var= (pca_dat %>%
                 select(varExp, PC) %>%
                 unique())$varExp
 
+## plot pca results:
 all_raw_pca12 = pca_dat %>%
   select(-varExp) %>%
   filter(period == 'all', type == 'raw') %>%
@@ -704,6 +706,8 @@ ggsave('./results/pca_aging_nt34_wage.pdf',aging_nt_pc34, units = 'cm', width = 
        useDingbats = F)
 ggsave('./results/pca_aging_nt34_wage.png',aging_nt_pc34, units = 'cm', width = 16, height = 6)
 
+
+## top reversal gene:
 top_rev_gene_dat = expr_ch %>%
   select(-p,-FDR) %>%
   spread(key = period, value =`Expression Change`) %>%
@@ -726,6 +730,7 @@ reversalgene_most = ggplot(top_rev_gene_dat,aes(x =age, y= expression, color = t
 ggsave('./results/reversalgene.pdf',reversalgene_most, units = 'cm', width = 8, height = 6, useDingbats = F)
 ggsave('./results/reversalgene.png',reversalgene_most, units = 'cm', width = 8, height = 6)
 
+# expression change proportions of all genes in development and ageing:
 allgenes_exp_ch_p = expr_ch %>%
   group_by(tissue,period) %>%
   summarise( up = sum(`Expression Change`>0,na.rm=T),
@@ -747,6 +752,7 @@ ggsave('./results/allgenes_exp_ch.pdf',allgenes_exp_ch_p, units = 'cm', width = 
        useDingbats = F)
 ggsave('./results/allgenes_exp_ch.png',allgenes_exp_ch_p, units = 'cm', width = 10, height = 6)
 
+# expression changes of significant genes in development and ageing:
 siggenes_exp_ch_p = expr_ch %>%
   filter(FDR<=0.1) %>%
   group_by(tissue,period) %>%
@@ -773,6 +779,7 @@ ggsave('./results/siggenes_exp_ch.pdf',siggenes_exp_ch_p, units = 'cm', width = 
        useDingbats = F)
 ggsave('./results/siggenes_exp_ch.png',siggenes_exp_ch_p, units = 'cm', width = 10, height = 6)
 
+## significantly changing genes (fdr<=0.1) overlap across tissues:
 siggenes_overlap = expr_ch %>%
   filter(FDR<=0.1) %>%
   mutate(direction = `Expression Change` > 0) %>%
@@ -802,6 +809,7 @@ ggsave('./results/siggenes_exp_ch_overlap.pdf', siggenes_overlap, units = 'cm', 
        useDingbats = F)  
 ggsave('./results/siggenes_exp_ch_overlap.png', siggenes_overlap, units = 'cm', width = 10, height = 6)
 
+## significantly changing genes (fdr<=0.2) overlap across tissues:
 siggenes_overlap_fdr0.2 = expr_ch %>%
   filter(FDR <= 0.2) %>%
   mutate(direction = `Expression Change` > 0) %>%
@@ -832,7 +840,7 @@ ggsave('./results/siggenes_exp_ch_overlap_fdr0.2.pdf', siggenes_overlap_fdr0.2, 
 ggsave('./results/siggenes_exp_ch_overlap_fdr0.2.png', siggenes_overlap_fdr0.2, units = 'cm',
        width = 10, height = 6)
 
-##
+## all genes (no cutoff) overlap across tissues:
 siggenes_overlap_nocutoff = expr_ch %>%
   filter(!is.na(`Expression Change`)) %>%
   filter(`Expression Change` != 0) %>%
@@ -858,9 +866,9 @@ siggenes_overlap_nocutoff = expr_ch %>%
   xlab(NULL) + ylab(NULL) +
   ggtitle('Overlap of Expression Change Among Tissues (no cutoff)')
 
-ggsave('./results/siggenes_exp_ch_overlap_nocutoff.pdf', siggenes_overlap_nocutoff, units = 'cm',
+ggsave('./results/exp_ch_overlap_nocutoff.pdf', siggenes_overlap_nocutoff, units = 'cm',
        width = 10, height = 6, useDingbats = F)  
-ggsave('./results/siggenes_exp_ch_overlap_nocutoff.png', siggenes_overlap_nocutoff, units = 'cm',
+ggsave('./results/exp_ch_overlap_nocutoff.png', siggenes_overlap_nocutoff, units = 'cm',
        width = 10, height = 6)
 
 ## maybe combine them to one plot:
@@ -873,7 +881,7 @@ ggsave('./results/siggenes_exp_ch_overlap_nocutoff.png', siggenes_overlap_nocuto
 # ggsave('./results/siggenes_exp_ch_overlap_two_cutoff.png', siggenes_overlap_two_cutoff, units = 'cm',
 #        width = 16, height = 6)
 
-
+# expression profile of top gene showing divergence-convergence pattern:
 top_divcon_gene_dat = cov_ch %>%
   select(-p,-FDR) %>%
   spread(key = period, value =`CoV_change`) %>%
@@ -892,11 +900,12 @@ top_divcon_gene = ggplot(top_divcon_gene_dat, aes(x =age, y= expression, color =
                              override.aes = list(size = 2))) +
   theme(legend.position = 'top',
         legend.background = element_rect(fill = 'gray85',color = 'gray25')) +
-  xlab('Age (log2)') + ylab('Gene Expression')
+  xlab('Age (days)') + ylab('Gene Expression')
 
 ggsave('./results/top_divcon_gene.pdf',top_divcon_gene, units = 'cm', width = 8, height = 8, useDingbats = F)
 ggsave('./results/top_divcon_gene.png',top_divcon_gene, units = 'cm', width = 8, height = 8)
 
+# CoV change of top gene showing divergence-convergence pattern:
 top_divcon_gene_cov = top_divcon_gene_dat %>%
   group_by(gene_id, ind_id, age) %>%
   summarise(sd = sd(expression),
@@ -908,36 +917,98 @@ top_divcon_gene_cov = top_divcon_gene_dat %>%
   geom_vline(xintercept = 90, linetype = 'dashed', color = 'gray35') +
   scale_x_continuous(trans = 'log2') +
   ggtitle(unique(top_divcon_gene_dat$gene_id)) +
-  xlab('Age (log2)') + ylab('CoV')
+  xlab('Age (days)') + ylab('Inter-Tissue Coefficient of Variation (CoV)')
 
 ggsave('./results/top_divcon_gene_cov.pdf',top_divcon_gene_cov, units = 'cm', width = 8, height = 8,
        useDingbats = F)
 ggsave('./results/top_divcon_gene_cov.png',top_divcon_gene_cov, units = 'cm', width = 8, height = 8)
 
-top_divcon_gene_p = ggarrange(top_divcon_gene + ggtitle(NULL), top_divcon_gene_cov + ggtitle(NULL),
+top_divcon_gene_p = ggarrange(top_divcon_gene , top_divcon_gene_cov + ggtitle(NULL),
                               labels = 'auto', ncol=2, nrow=1, align = 'hv')
 
 ggsave('./results/top_divcon_gene_expcov.pdf',top_divcon_gene_p, units = 'cm', width = 10, height = 5,
        useDingbats = F)
 ggsave('./results/top_divcon_gene_expcov.png',top_divcon_gene_p, units = 'cm', width = 10, height = 5)
 
+## choose more interesting gene (top third) showing div-conv pattern:
+top3rd_divcon_gene_dat = cov_ch %>%
+  select(-p,-FDR) %>%
+  spread(key = period, value =`CoV_change`) %>%
+  mutate(rev = aging *development) %>%
+  top_n(n=3, wt=-(rev)) %>%
+  top_n(n=1, wt=rev) %>%
+  left_join(expr) %>%
+  inner_join(sample_info) 
+
+top3rd_divcon_gene = ggplot(top3rd_divcon_gene_dat, aes(x =age, y= expression, color = tissue)) +
+  geom_smooth(se=F,size = 0.7) +
+  geom_point(size=0.5) +
+  geom_vline(xintercept = 90, linetype = 'dashed', color = 'gray35') +
+  scale_x_continuous(trans = 'log2') +
+  scale_color_manual(values = tissuecol) +
+  ggtitle(unique(top3rd_divcon_gene_dat$gene_id)) +
+  guides(color = guide_legend('Tissue', 
+                              override.aes = list(size = 2))) +
+  theme(legend.position = 'top', 
+        legend.background = element_rect(fill = 'gray85',color = 'gray25')) +
+  xlab('Age (days)') + ylab('Gene Expression')
+
+ggsave('./results/top3rd_divcon_gene.pdf',top3rd_divcon_gene, units = 'cm', width = 8, height = 8,
+       useDingbats = F)
+ggsave('./results/top3rd_divcon_gene.png',top3rd_divcon_gene, units = 'cm', width = 8, height = 8)
+
+# CoV change of top 3rd gene showing divergence-convergence pattern:
+top3rd_divcon_gene_cov = top3rd_divcon_gene_dat %>%
+  group_by(gene_id, ind_id, age) %>%
+  summarise(sd = sd(expression),
+            mean = mean(expression),
+            cov = sd/mean) %>%
+  ggplot(aes(x = age, y= cov)) +
+  geom_smooth(size = 0.7) +
+  geom_point(size=0.5) +
+  geom_vline(xintercept = 90, linetype = 'dashed', color = 'gray35') +
+  scale_x_continuous(trans = 'log2') +
+  ggtitle(unique(top3rd_divcon_gene_dat$gene_id)) +
+  xlab('Age (days)') + ylab('Inter-Tissue Coefficient of Variation(CoV)')
+
+ggsave('./results/top3rd_divcon_gene_cov.pdf',top3rd_divcon_gene_cov, units = 'cm', width = 8, height = 8,
+       useDingbats = F)
+ggsave('./results/top3rd_divcon_gene_cov.png',top3rd_divcon_gene_cov, units = 'cm', width = 8, height = 8)
+
+top3rd_divcon_gene_p = ggarrange(top3rd_divcon_gene + ggtitle(NULL) +
+                                   theme(legend.title = element_text(size = 5),
+                                         legend.text = element_text(size = 5)),
+                                 top3rd_divcon_gene_cov , labels = 'auto', font.label=list(size = 10),
+                               ncol=2, nrow=1, align = 'v')
+
+ggsave('./results/top3rd_divcon_gene_expcov.pdf',top3rd_divcon_gene_p, units = 'cm', width = 10, height = 5,
+       useDingbats = F)
+ggsave('./results/top3rd_divcon_gene_expcov.png',top3rd_divcon_gene_p, units = 'cm', width = 10, height = 5)
+
+
+## CoV average for each individual and mean(CoV)-age correlation:
 cov_dat_sum = cov_dat %>%
   mutate(ind_id = factor(ind_id)) %>%
   left_join(unique(select(sample_info,-tissue,-sample_id))) %>%
   group_by(ind_id, age) %>%
-  summarise(meanCoV = mean(CoV)) %>% 
+  summarise(meanCoV = mean(CoV),
+            medianCoV = median(CoV)) %>% 
   mutate(period = c('aging','development')[1+(age<=90)])
 
 cov_cordat = group_by(ungroup(cov_dat_sum),period) %>%
   summarise(cor = cor.test(meanCoV, age, method = 's')$est,
             cor.p = cor.test(meanCoV, age, method = 's')$p.val)
 
+cov_cordat_median = group_by(ungroup(cov_dat_sum),period) %>%
+  summarise(cor = cor.test(medianCoV, age, method = 's')$est,
+            cor.p = cor.test(medianCoV, age, method = 's')$p.val)
+
 cov_mean = ggplot(cov_dat_sum, aes(x = age, y= meanCoV)) +
   geom_point() +
   geom_smooth(se=T,color = 'midnightblue') +
   scale_x_continuous(trans = 'log2') +
   geom_vline(xintercept = 90, linetype='dashed',color = 'gray35') +
-  xlab('Age (log2)') + ylab('Mean CoV') +
+  xlab('Age (days)') + ylab('Mean CoV') +
   annotate('text',x=95,y=0.5075,label='Aging',hjust=0,size = 8/pntnorm) +
   annotate('text',x = 95, y=0.505, label = parse(text = paste('rho["CoV,age"] ==' ,(round(filter(cov_cordat,period=='aging')$cor,3)))),hjust=0,size = 8/pntnorm) +
   annotate('text',x = 95, y=0.5025, label = parse(text = paste0('p ==' ,(round(filter(cov_cordat,period=='aging')$cor.p,2)))),hjust=0,size = 8/pntnorm) +
@@ -947,6 +1018,24 @@ cov_mean = ggplot(cov_dat_sum, aes(x = age, y= meanCoV)) +
 
 ggsave('./results/cov_mean.pdf',cov_mean, units = 'cm', width = 8, height = 8, useDingbats = F)
 ggsave('./results/cov_mean.png',cov_mean, units = 'cm', width = 8, height = 8)
+
+cov_median = ggplot(cov_dat_sum, aes(x = age, y= medianCoV)) +
+  geom_point() +
+  geom_smooth(se=T,color = 'midnightblue') +
+  scale_x_continuous(trans = 'log2') +
+  geom_vline(xintercept = 90, linetype='dashed',color = 'gray35') +
+  xlab('Age (days)') + ylab('Median CoV') +
+  annotate('text',x=95,y=0.34,label='Aging',hjust=0,size = 8/pntnorm) +
+  annotate('text',x = 95, y=0.3375, label = parse(text = paste('rho["CoV,age"] ==' ,(round(filter(cov_cordat_median, period=='aging')$cor,3)))),hjust=0,size = 8/pntnorm) +
+  annotate('text',x = 95, y=0.335, label = parse(text = paste0('p ==' ,(round(filter(cov_cordat_median, period=='aging')$cor.p,2)))),hjust=0,size = 8/pntnorm) +
+  annotate('text',x=8,y=0.315,label='Development',hjust=0,size = 8/pntnorm) +
+  annotate('text',x = 8, y=0.3125, label = parse(text = paste('rho["CoV,age"] ==' ,(round(filter(cov_cordat_median, period=='development')$cor,3)))),hjust=0,size = 8/pntnorm) +
+  annotate('text',x = 8, y=0.31, label = parse(text = paste0('p ==' ,(round(filter(cov_cordat_median, period=='development')$cor.p,2)))),hjust=0,size = 8/pntnorm)
+
+ggsave('./results/cov_median.pdf',cov_median, units = 'cm', width = 8, height = 8, useDingbats = F)
+ggsave('./results/cov_median.png',cov_median, units = 'cm', width = 8, height = 8)
+
+
 
 ### revgene proportions:
 revprops = revgenes %>%
