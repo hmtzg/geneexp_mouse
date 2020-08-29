@@ -16,6 +16,7 @@ expr = readRDS('./data/processed/figures/tidy/expression.rds')
 expr_ch = readRDS('./data/processed/figures/tidy/expression_change.rds')
 pca_dat = readRDS('./data/processed/figures/tidy/pca_data.rds')
 cov_dat = readRDS('./data/processed/figures/tidy/CoV.rds')
+cov_dat_wo_cortex = readRDS('./data/processed/figures/tidy/CoV_wo_cortex.rds')
 cov_ch = readRDS('./data/processed/figures/tidy/CoV_change.rds')
 cov_gsea = readRDS('./data/processed/figures/tidy/CoV_GSEA.rds')
 divcon_gsea = readRDS('./data/processed/figures/tidy/divcon_GSEA.rds')
@@ -906,6 +907,22 @@ ggsave('./results/top_divcon_gene.pdf',top_divcon_gene, units = 'cm', width = 8,
 ggsave('./results/top_divcon_gene.png',top_divcon_gene, units = 'cm', width = 8, height = 8)
 
 # CoV change of top gene showing divergence-convergence pattern:
+top_divcon_cov_dat = cov_ch %>%
+  select(-p,-FDR) %>%
+  spread(key = period, value = `CoV_change`) %>%
+  mutate(rev = aging*development) %>%
+  top_n(n=1, wt=-(rev)) %>%
+  left_join(cov_dat) %>%
+  mutate(ind_id = factor(ind_id)) %>%
+  select(-development,-aging,-rev) %>%
+  left_join( unique(select(sample_info,-tissue,-sample_id)) ) %>%
+  mutate(period = c('aging','development')[1+(age<=90)])
+
+top_divcon_cov_cordat = top_divcon_cov_dat %>% 
+  group_by(period) %>%
+  summarise(cor = cor.test(CoV, age, method = 's')$est,
+            cor.p = cor.test(CoV, age, method = 's')$p.val)
+
 top_divcon_gene_cov = top_divcon_gene_dat %>%
   group_by(gene_id, ind_id, age) %>%
   summarise(sd = sd(expression),
@@ -917,7 +934,13 @@ top_divcon_gene_cov = top_divcon_gene_dat %>%
   geom_vline(xintercept = 90, linetype = 'dashed', color = 'gray35') +
   scale_x_continuous(trans = 'log2') +
   ggtitle(unique(top_divcon_gene_dat$gene_id)) +
-  xlab('Age (days)') + ylab('Inter-Tissue Coefficient of Variation (CoV)')
+  xlab('Age (days)') + ylab('Inter-Tissue Coefficient of Variation (CoV)') +
+  annotate('text',x=95,y=0.70,label='Aging',hjust=0,size = 8/pntnorm) +
+  annotate('text',x = 95, y=0.675, label = parse(text = paste('rho["CoV,age"] ==' ,(round(filter(top_divcon_cov_cordat, period=='aging')$cor,3)))),hjust=0,size = 8/pntnorm) +
+  annotate('text',x = 95, y=0.65, label = parse(text = paste0('p ==' ,(round(filter(top_divcon_cov_cordat, period=='aging')$cor.p,4)))),hjust=0,size = 8/pntnorm) +
+  annotate('text',x=8,y=0.46,label='Development',hjust=0,size = 8/pntnorm) +
+  annotate('text',x = 8, y=0.435, label = parse(text = paste('rho["CoV,age"] ==' ,(round(filter(top_divcon_cov_cordat, period=='development')$cor,3)))),hjust=0,size = 8/pntnorm) +
+  annotate('text',x = 8, y=0.41, label = parse(text = paste0('p ==' ,(round(filter(top_divcon_cov_cordat, period=='development')$cor.p,5)))),hjust=0,size = 8/pntnorm)
 
 ggsave('./results/top_divcon_gene_cov.pdf',top_divcon_gene_cov, units = 'cm', width = 8, height = 8,
        useDingbats = F)
@@ -1036,6 +1059,67 @@ ggsave('./results/cov_median.pdf',cov_median, units = 'cm', width = 8, height = 
 ggsave('./results/cov_median.png',cov_median, units = 'cm', width = 8, height = 8)
 
 
+## CoV average for each individual and mean(CoV)-age correlation (without cortex):
+cov_dat_sum_wo_cortex = cov_dat_wo_cortex %>%
+  mutate(ind_id = factor(ind_id)) %>%
+  left_join(unique(select(sample_info,-tissue,-sample_id))) %>%
+  group_by(ind_id, age) %>%
+  summarise(meanCoV = mean(CoV),
+            medianCoV = median(CoV)) %>% 
+  mutate(period = c('aging','development')[1+(age<=90)])
+
+cov_cordat_wo_cortex = group_by(ungroup(cov_dat_sum_wo_cortex),period) %>%
+  summarise(cor = cor.test(meanCoV, age, method = 's')$est,
+            cor.p = cor.test(meanCoV, age, method = 's')$p.val)
+
+cov_cordat_median_wo_cortex = group_by(ungroup(cov_dat_sum_wo_cortex),period) %>%
+  summarise(cor = cor.test(medianCoV, age, method = 's')$est,
+            cor.p = cor.test(medianCoV, age, method = 's')$p.val)
+
+cov_mean_wo_cortex = ggplot(cov_dat_sum_wo_cortex, aes(x = age, y= meanCoV)) +
+  geom_point() +
+  geom_smooth(se=T,color = 'midnightblue') +
+  scale_x_continuous(trans = 'log2') +
+  geom_vline(xintercept = 90, linetype='dashed',color = 'gray35') +
+  xlab('Age (days)') + ylab('Mean CoV') +
+  annotate('text',x=95,y=0.42,label='Aging',hjust=0,size = 8/pntnorm) +
+  annotate('text',x = 95, y=0.416, label = parse(text = paste('rho["CoV,age"] ==' ,(round(filter(cov_cordat_wo_cortex, period=='aging')$cor,3)))),hjust=0,size = 8/pntnorm) +
+  annotate('text',x = 95, y=0.412, label = parse(text = paste0('p ==' ,(round(filter(cov_cordat_wo_cortex, period=='aging')$cor.p,3)))),hjust=0,size = 8/pntnorm) +
+  annotate('text',x=9,y=0.385,label='Development',hjust=0,size = 8/pntnorm) +
+  annotate('text',x = 9, y=0.381, label = parse(text = paste('rho["CoV,age"] ==' ,(round(filter(cov_cordat_wo_cortex, period=='development')$cor,3)))),hjust=0,size = 8/pntnorm) +
+  annotate('text',x = 9, y=0.377, label = parse(text = paste0('p ==' ,(round(filter(cov_cordat_wo_cortex, period=='development')$cor.p,2)))),hjust=0,size = 8/pntnorm)
+
+ggsave('./results/cov_mean_wo_cortex.pdf',cov_mean_wo_cortex, units = 'cm', width = 8, height = 8,
+       useDingbats = F)
+ggsave('./results/cov_mean_wo_cortex.png',cov_mean_wo_cortex, units = 'cm', width = 8, height = 8)
+
+cov_median_wo_cortex = ggplot(cov_dat_sum_wo_cortex, aes(x = age, y= medianCoV)) +
+  geom_point() +
+  geom_smooth(se=T,color = 'midnightblue') +
+  scale_x_continuous(trans = 'log2') +
+  geom_vline(xintercept = 90, linetype='dashed',color = 'gray35') +
+  xlab('Age (days)') + ylab('Median CoV') +
+  annotate('text',x=95,y=0.275,label='Aging',hjust=0,size = 8/pntnorm) +
+  annotate('text',x = 95, y=0.27, label = parse(text = paste('rho["CoV,age"] ==' ,(round(filter(cov_cordat_median_wo_cortex, period=='aging')$cor,3)))),hjust=0,size = 8/pntnorm) +
+  annotate('text',x = 95, y=0.265, label = parse(text = paste0('p ==' ,(round(filter(cov_cordat_median_wo_cortex, period=='aging')$cor.p,2)))),hjust=0,size = 8/pntnorm) +
+  annotate('text',x=10,y=0.225,label='Development',hjust=0,size = 8/pntnorm) +
+  annotate('text',x=10, y=0.22, label = parse(text = paste('rho["CoV,age"] ==' ,(round(filter(cov_cordat_median_wo_cortex, period=='development')$cor,3)))),hjust=0,size = 8/pntnorm) +
+  annotate('text',x=10, y=0.215, label = parse(text = paste0('p ==' ,(round(filter(cov_cordat_median_wo_cortex, period=='development')$cor.p,3)))),hjust=0,size = 8/pntnorm)
+
+ggsave('./results/cov_median_wo_cortex.pdf',cov_median_wo_cortex, units = 'cm', width = 8, height = 8,
+       useDingbats = F)
+ggsave('./results/cov_median_wo_cortex.png',cov_median_wo_cortex, units = 'cm', width = 8, height = 8)
+
+# combine mean and median CoV (without cortex):
+cov_mean_median_wo_cortex = ggarrange(cov_mean_wo_cortex , cov_median_wo_cortex,
+                                      ncol = 2, nrow = 1, align = 'hv')
+
+ggsave('./results/cov_mean_median_wo_cortex.pdf',cov_mean_median_wo_cortex, units = 'cm',
+       width = 16, height = 8, useDingbats = F)
+ggsave('./results/cov_mean_median_wo_cortex.png',cov_mean_median_wo_cortex, units = 'cm',
+       width = 16, height = 8)
+
+###
 
 ### revgene proportions:
 revprops = revgenes %>%

@@ -72,6 +72,11 @@ sdmat = reshape2::melt(sdmat) %>%
   set_names('gene_id','ind_id','CoV')
 saveRDS(sdmat,'./data/processed/figures/tidy/CoV.rds')
 
+sdmat = readRDS('./data/processed/figures/raw/genesd_wo_cortex.rds')
+sdmat = reshape2::melt(sdmat) %>%
+  set_names('gene_id','ind_id', 'CoV')
+saveRDS(sdmat, './data/processed/figures/tidy/CoV_wo_cortex.rds')
+
 covch_dev = readRDS('./data/processed/figures/raw/dev.sdage.cor.rds')
 covch_aging = readRDS('./data/processed/figures/raw/aging.sdage.cor.rds')
 
