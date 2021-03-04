@@ -1,5 +1,14 @@
 
 
+########################
+######################## Effect size using cohen's D formula:
+########################
+
+cohens_d=function(x,y){ #calculates effect size of vectors a and b, using cohen's d by http://en.wikipedia.org/wiki/Effect_size#Cohen.27s_d
+  lx=length(x)
+  ly=length(y)
+  ( mean(x)-mean(y) ) / ( ( ( (lx-1)*var(x) + (ly-1)*var(y) ) / ( lx+ly-2 ) )^0.5 )
+}
 
 ########################
 ######################## Gene Overrepresentation Analysis (GORA) with topgo:
