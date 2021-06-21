@@ -149,6 +149,7 @@ covch = t(sapply(rownames(genecov),function(x){
 }))
 covch = cbind(covch, p.adjust(covch[,2], method = "BH"))
 colnames(covch)[c(2,3)] = c("pval"," BH")
+saveRDS(covch,'./data/other_datasets/jonker/processed/covch.rds')
 ##### 1774 significant cov changes
 ##### 1215 convergent
 ##### 559 divergent
@@ -168,6 +169,8 @@ cov_dat_sum = genecovtidy %>%
   group_by(ind_id, Age) %>%
   summarise(meanCoV = mean(CoV),
             medianCoV = median(CoV)) %>% ungroup()
+
+saveRDS(cov_dat_sum,file = './data/other_datasets/jonker/processed/mean_cov.rds')
 
 cov_cordat = cov_dat_sum %>%
   summarise(cor = cor.test(meanCoV, Age, method = 's')$est,
@@ -203,7 +206,7 @@ covch2 %>%
   left_join(sample_info) %>% 
   ggplot(aes(x=Age, y=expression, col=Tissue)) +
   geom_point() +
-  geom_smooth()
+  geom_smooth(method='lm')
 
 #################### pairwise Tissue corelations
 tissue.ord =  str_to_title(tissue.ord)
@@ -236,6 +239,7 @@ pexpcors = reshape2::melt(pcors) %>%
     select(-variable) %>%
   left_join(data.frame(Age=ageu,ind_id=names(ageu)))
 
+saveRDS(pexpcors, './data/other_datasets/jonker/processed/pwise_exp_cors.rds')
 
 p2 = ggplot(pexpcors) +
   aes(x = Age, y = rho) +
@@ -254,9 +258,95 @@ pwisecorplot = ggarrange(p1, p2, ncol=2, widths = c(2,3), labels= c(NA,'c.'),fon
 ggsave('./results/SI_figures/Figure_S15.pdf', units='cm', width = 16, height = 11, useDingbats=F)
 ggsave('./results/SI_figures/Figure_S15.png', units='cm', width = 16, height = 11)
 #
+save(list=ls(), file = './data/other_datasets/jonker/processed/analysis.rdata')
 ### or 
 # a = ggarrange(pcaplots, pwisecorplot, nrow=2)
 # ggsave('./results/SI_figures/Figure_S16.pdf',a, units='cm', width = 16, height = 16, useDingbats=F)
 
 ############### age related expression change
 
+######## calculate CoV with excluding each tissue:
+idmap = ids
+names(idmap) = colnames(exp)
+expr = exp
+colnames(expr) = ids
+ts = unique(tissue.ord)
+covex = lapply(ts, function(i){
+  print(paste('Calculating CoV without:',i))
+  cov3tsX = sapply(unique(colnames(expr)), function(x){
+    expX = expr[, !tissue.ord%in%i]
+    sapply(rownames(expX), function(y){
+      sd(expX[y, colnames(expX)==x]) / mean( expX[y, colnames(expX) == x] )
+    })
+  })
+  cov3tsX
+})
+
+names(covex) = paste0('wo_', ts)
+
+names(ageu) = unique(ids)
+covextidy  = reshape2::melt(covex) %>%
+  set_names(c('gene_id', 'ind_id', 'CoV', 'Excluded')) %>%
+  mutate(ind_id = as.character(ind_id)) %>%
+  left_join(data.frame(age=ageu, ind_id=names(ageu)))
+
+saveRDS(covextidy, file='./data/other_datasets/jonker/processed/CoV_wo_eachtissue.rds')
+
+covexch = covextidy %>%
+  group_by(Excluded, gene_id) %>%
+  summarise(rho  = cor.test(CoV, age, m='s')$est,
+            pval = cor.test(CoV, age, m='s')$p.val)
+
+covexch = ungroup(covexch) %>%
+  mutate(BH = p.adjust(pval, method = 'BH'))
+
+saveRDS(covexch, './data/other_datasets/jonker/processed/CoV_change_wo_eachtissue.rds')
+
+cov_sum3ts = covextidy %>%
+  mutate(Excluded = gsub('wo_','', Excluded)) %>%
+  mutate(Excluded = paste0('Exclude: ', Excluded) ) %>%
+  mutate(ind_id = factor(ind_id)) %>%
+  #left_join(unique(select(sample_info,-tissue,-sample_id, -log2age))) %>%
+  group_by(ind_id, age, Excluded) %>%
+  summarise(meanCoV = mean(CoV),
+            medianCoV = median(CoV))
+
+cov_sum3ts
+
+cov_sumch3ts = cov_sum3ts %>%
+  group_by(Excluded) %>%
+  summarise(mean_rho = cor.test(meanCoV, age, method = 's')$est,
+            mean_p = cor.test(meanCoV, age, method = 's')$p.val,
+            median_rho = cor.test(medianCoV, age, method = 's')$est,
+            median_p = cor.test(medianCoV, age, method = 's')$p.val)
+
+
+cov_exc_mean = cov_sum3ts %>%
+  ggplot( aes(x = age, y = meanCoV)) +
+  facet_wrap(~Excluded, ncol = 5) +
+  geom_point(size=1.5, color="steelblue", alpha=0.9) +
+  geom_smooth(method = 'lm', se=T,color = 'midnightblue', fill='lightblue') +
+  scale_x_continuous(trans = 'log2') +
+  xlab('Age in days (in log2 scale)') + 
+  ylab('Mean CoV') +
+  stat_cor(aes(x = age), method = 'spearman', cor.coef.name = 'rho', size = 6/pntnorm) 
+
+cov_exc_median = cov_sum3ts %>%
+  ggplot( aes(x = age, y = medianCoV)) +
+  facet_wrap(~Excluded, ncol = 5) +
+  geom_point(size=1.5, color="steelblue", alpha=0.9) +
+  geom_smooth(method = 'lm', se=T,color = 'midnightblue', fill='lightblue') +
+  scale_x_continuous(trans = 'log2') +
+  xlab('Age in days (in log2 scale)') + 
+  ylab('Median CoV') +
+  stat_cor(aes(x = age), method = 'spearman', cor.coef.name = 'rho', size = 6/pntnorm) 
+
+jex = ggarrange(cov_exc_mean, cov_exc_median, nrow=2, labels=c('a.','b.'), align='hv',
+                  vjust=c(1.1, -0.2))
+jex
+ggsave('./results/Jonker/covch_exc.pdf', jex, units = 'cm', width = 16, height = 12,
+       useDingbats = F)
+ggsave('./results/Jonker/covch_exc.png', jex, units = 'cm', width = 16, height = 12)
+
+
+save(list=ls(), file='results/Jonker/data.rdata')

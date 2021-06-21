@@ -69,7 +69,8 @@ saveRDS(sample_id, './data/other_datasets/jonker/raw/sample_id.rds')
 saveRDS(tissueall, './data/other_datasets/jonker/raw/tissue_id.rds')
 saveRDS(ind_id, './data/other_datasets/jonker/raw/ind_id.rds')
 
-sample_info = data.frame(age=ageall, tissue= tissueall, ind_id = ind_id, sample_id= sample_id, log2age= log2(ageall))
+sample_info = data.frame(age=ageall, tissue= tissueall, ind_id = ind_id, sample_id= sample_id,
+                         log2age= log2(ageall))
 expr = melt(expn) %>%
   set_names('gene_id','sample_id','expression')
 

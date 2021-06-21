@@ -158,20 +158,20 @@ obs_nondc = reshape2::melt(coeffs_nondc) %>%
   summarise(`Proportion Change` = cor(age, proportion, m='s'),
             `propch_p` = cor.test(age, proportion, m='s')$p.val)
 
-obs_nondc %>% filter(tissue=='Liver' & `cell type` =='hepatocyte')
-obs_nondc %>% filter(tissue=='Lung' & `cell type` =='bronchial smooth muscle cell')
-obs_nondc %>% filter(tissue=='Cortex' & `cell type` =='neuron')
-obs_nondc %>% filter(tissue=='Muscle' & `cell type` =='skeletal muscle satellite cell')
-
-obs_dc %>% filter(tissue=='Liver' & `cell type` =='hepatocyte')
-obs_dc %>% filter(tissue=='Lung' & `cell type` =='bronchial smooth muscle cell')
-obs_dc %>% filter(tissue=='Cortex' & `cell type` =='neuron')
-obs_dc %>% filter(tissue=='Muscle' & `cell type` =='skeletal muscle satellite cell')
-
-obs_allgenes %>% filter(tissue=='Liver' & `cell type` =='hepatocyte')
-obs_allgenes %>% filter(tissue=='Lung' & `cell type` =='bronchial smooth muscle cell')
-obs_allgenes %>% filter(tissue=='Cortex' & `cell type` =='neuron')
-obs_allgenes %>% filter(tissue=='Muscle' & `cell type` =='skeletal muscle satellite cell')
+# obs_nondc %>% filter(tissue=='Liver' & `cell type` =='hepatocyte')
+# obs_nondc %>% filter(tissue=='Lung' & `cell type` =='bronchial smooth muscle cell')
+# obs_nondc %>% filter(tissue=='Cortex' & `cell type` =='neuron')
+# obs_nondc %>% filter(tissue=='Muscle' & `cell type` =='skeletal muscle satellite cell')
+# 
+# obs_dc %>% filter(tissue=='Liver' & `cell type` =='hepatocyte')
+# obs_dc %>% filter(tissue=='Lung' & `cell type` =='bronchial smooth muscle cell')
+# obs_dc %>% filter(tissue=='Cortex' & `cell type` =='neuron')
+# obs_dc %>% filter(tissue=='Muscle' & `cell type` =='skeletal muscle satellite cell')
+# 
+# obs_allgenes %>% filter(tissue=='Liver' & `cell type` =='hepatocyte')
+# obs_allgenes %>% filter(tissue=='Lung' & `cell type` =='bronchial smooth muscle cell')
+# obs_allgenes %>% filter(tissue=='Cortex' & `cell type` =='neuron')
+# obs_allgenes %>% filter(tissue=='Muscle' & `cell type` =='skeletal muscle satellite cell')
 
 prop_changes = list(allgenes = obs_allgenes, dc_genes = obs_dc, nondc_genes = obs_nondc)
 saveRDS(prop_changes, './data/other_datasets/scRNA-seq/processed/deconvolution_prop_change.rds')
@@ -303,8 +303,6 @@ perm_result_aging %>% filter(pval<0.05)
 # 4 Lung   regulatory T cell              0.025 -3    
 # 5 Muscle skeletal muscle satellite cell 0.044  0.885
 
-sum(perm_result_aging$pval<0.05) # 16 -5
-
 perm_results = list(Development = perm_result_dev,
                     Ageing = perm_result_aging)
 
@@ -319,6 +317,7 @@ perm_result_tab = perm_result2 %>%
   left_join(select(obs_nondc, -propch_p), by=c('tissue','cell type','period')) %>%
   rename('non-DiCo: Proportion Change' = `Proportion Change`)
 
+saveRDS(perm_result_tab, './data/other_datasets/scRNA-seq/processed/dico_vs_nondico_prop_test.rds')
 write.xlsx(perm_result_tab, './results/SI_tables/TableS15.xlsx')
 
 #########################

@@ -1,0 +1,29 @@
+
+# enrichment of reversal genes in each tissue and DiCo genes:
+reversal genes (for each tissue) vs dc genes (among development divergent genes)
+# updown and downup together
+
+# tissue    OR        p
+# <chr>  <dbl>    <dbl>
+#   1 Cortex  1.07 7.14e- 2
+# 2 Liver   1.71 7.18e-43
+# 3 Lung    1.28 2.47e-10
+# 4 Muscle  1.56 1.80e-30
+
+# for UD:
+  tissue    OR           p
+  <chr>  <dbl>       <dbl>
+1 Cortex 0.939 0.174      
+2 Liver  1.06  0.221      
+3 Lung   1.20  0.0000501  
+4 Muscle 1.25  0.000000409
+
+# for DU:
+  tissue    OR        p
+  <chr>  <dbl>    <dbl>
+1 Cortex  1.19 2.92e- 4
+2 Liver   1.73 2.64e-40
+3 Lung    1.15 1.78e- 3
+4 Muscle  1.37 3.95e-14
+
+
