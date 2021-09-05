@@ -1,32 +1,39 @@
+getwd()
+library(oligo)
 library(GEOquery)
-#library(oligo)
+library(tidyverse)
+
 s.matrix = getGEO("GSE34378",getGPL = F)
 features = pData(s.matrix[[1]])
+colnames(features)
 as.character(features[,"title"])
 gsmall = as.character(features[,"geo_accession"])
 tissueall = features[,"tissue:ch1"]
-# strainall = features[,"strain:ch1"]getwd()
-# source("http://bioconductor.org/biocLite.R")
-# biocLite("GEOquery") # installed: 26.03.2019
+strainall = features[,"strain:ch1"]
 ageall = as.numeric(gsub(" wks","",features[,"age:ch1"]))
-#genderall = "no gender info"
+genderall = "no gender info"
 sample_id = names(features[,'characteristics_ch1.2'])
 sample_id= paste0('s',1:90)
 
 unique(features[,'tissue:ch1'])
-ind_id = sapply(strsplit(as.character(features[,1]), split = '\ '), function(x) paste((x[c(2,5)]),collapse = '-') )
+ind_id = sapply(strsplit(as.character(features[,1]), split = '\ '), function(x) 
+  paste((x[c(2,5)]),collapse = '-') )
 
-kidney = readRDS('./data/other_datasets/jonker/raw/kidney.rds')
-liver = readRDS('./data/other_datasets/jonker/raw/liver.rds')
-spleen = readRDS('./data/other_datasets/jonker/raw/spleen.rds')
-lung = readRDS('./data/other_datasets/jonker/raw/lung.rds')
-brain = readRDS('./data/other_datasets/jonker/raw/brain.rds')
-identical(rownames(brain),rownames(spleen))
+###
+path = "/home/hmt/pseudodropbox/raw_exp_data/Jonker2013_GSE34378/"
+files = list.celfiles(path,listGzipped = T,full.names=F)
+files = files[grep("GSM",files)]
+flist = list.celfiles(path,listGzipped = T,full.names=T)
 
-exp = cbind(kidney, liver,spleen, lung,brain)
+# required package pd.mouse430.2 for read.cellfiles function :
+oligo = read.celfiles(filenames=flist)
+rma_expset = rma(oligo)
+exp = exprs(rma_expset)
+
 identical(substr(colnames(exp),1,9), gsmall)
 colnames(exp) = substr(colnames(exp),1,9)
 exp = 2^exp
+#BiocManager::install("mouse4302.db")
 library("mouse4302.db")
 x = mouse4302ENSEMBL
 mapped_genes = mappedkeys(x)
@@ -71,11 +78,11 @@ saveRDS(ind_id, './data/other_datasets/jonker/raw/ind_id.rds')
 
 sample_info = data.frame(age=ageall, tissue= tissueall, ind_id = ind_id, sample_id= sample_id,
                          log2age= log2(ageall))
-expr = melt(expn) %>%
-  set_names('gene_id','sample_id','expression')
 
-saveRDS(expr,'./data/other_datasets/jonker/processed/expression.rds')
-saveRDS(sample_info,'./data/other_datasets/jonker/processed/sample_info.rds')
+expr = reshape2::melt(expn) %>%
+  set_names(c('gene_id', 'sample_id', 'expression'))
 
+saveRDS(expr,'./data/other_datasets/jonker/raw/expression2.rds')
+saveRDS(sample_info,'./data/other_datasets/jonker/raw/sample_info2.rds')
 
-
+save(list=ls(), file='./data/other_datasets/jonker/prep_analysis.rdata')

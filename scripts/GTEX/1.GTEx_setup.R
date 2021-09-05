@@ -6,4 +6,4 @@ system('wget -nv https://storage.googleapis.com/gtex_analysis_v8/annotations/GTE
 system('wget -nv https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt -P ./data/other_datasets/GTEx/')
 system('wget -nv https://storage.googleapis.com/gtex_analysis_v8/annotations/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt -P ./data/other_datasets/GTEx/')
 system('wget -nv https://storage.googleapis.com/gtex_analysis_v8/rna_seq_data/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct.gz -P ./data/other_datasets/GTEx/expression')
-system('cd data/raw/GTEx/expression; gunzip *')
+system('cd data/other_datasets/GTEx/expression; gunzip *')

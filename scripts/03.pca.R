@@ -8,11 +8,10 @@ sample_info = readRDS('./data/processed/tidy/sample_info.rds')
 samp_id = names(ts.ord)
 ## PCA all regions with expression data:
 pc = prcomp(t(exp),scale = T)
-cor(pc$x[,1], age, m="s") # 0.16
-cor(pc$x[,2], age, m="s") # 0.26
-cor(pc$x[,3], age, m="s") # 0.06
-cor.test(pc$x[,4], age, m="s") # 0.62
-
+# cor(pc$x[,1], age, m="s") # 0.16
+# cor(pc$x[,2], age, m="s") # 0.26
+# cor(pc$x[,3], age, m="s") # 0.06
+# cor.test(pc$x[,4], age, m="s") # 0.62
 
 agedev = age[age<93]
 expdev = exp[, age<93]
@@ -46,7 +45,8 @@ pca_data_all = list(pc.sc.ag,
                     pcag,
                     pcdev,
                     pc.sc.dev)
-names(pca_data_all) = c('aging_notissue','all_raw','all_notissue','aging_raw','development_raw','development_notissue')
+names(pca_data_all) = c('aging_notissue','all_raw','all_notissue','aging_raw','development_raw',
+                        'development_notissue')
 
 pca_data = lapply(pca_data_all,function(x)x$x[,1:4])
 rownames(pca_data[[1]]) = samp_id[age>=93]
@@ -85,21 +85,42 @@ pc_age_cors  = pca_data %>%
 
 write.xlsx(pc_age_cors, './results/SI_tables/TableS1.xlsx')
 
-pca_data %>% 
-  left_join(select(sample_info,-ind_id,-log2age)) %>%
-  filter(type=='notissue' & PC=='PC2') %>%
-  ggplot(aes(x=age, y= value, color=tissue)) +
-  geom_point() +
-  geom_smooth(se=F)+
-  scale_x_continuous(trans='log2') 
-  facet_grid(tissue~period, scales = 'free_x')
-
-
-#################################
-#################################
-#################################
-#################################
-
+pc_age_cors %>%
+  filter(type=='notissue' & `Scale period` == 'all' & `age period` == 'Dev') %>%
+  filter(PC=='PC1')
+# `Scale period` type     PC    tissue `age period`   rho         p
+# <chr>          <chr>    <fct> <fct>  <chr>        <dbl>     <dbl>
+#   1 all            notissue PC1   Cortex Dev          0.955 0.000806 
+# 2 all            notissue PC1   Liver  Dev          0.991 0.0000146
+# 3 all            notissue PC1   Lung   Dev          0.883 0.00845  
+# 4 all            notissue PC1   Muscle Dev          0.955 0.000806 
+pc_age_cors %>%
+  filter(type=='notissue' & `Scale period` == 'all' & `age period` == 'Dev') %>%
+  filter(PC=='PC2')
+# `Scale period` type     PC    tissue `age period`    rho         p
+# <chr>          <chr>    <fct> <fct>  <chr>         <dbl>     <dbl>
+#   1 all            notissue PC2   Cortex Dev          -0.991 0.0000146
+# 2 all            notissue PC2   Liver  Dev           0.883 0.00845  
+# 3 all            notissue PC2   Lung   Dev          -0.901 0.00562  
+# 4 all            notissue PC2   Muscle Dev           0.306 0.504  
+pc_age_cors %>%
+  filter(type=='raw' & `Scale period` == 'development') %>%
+  filter(PC=='PC2')
+# `Scale period` type  PC    tissue `age period`   rho       p
+# <chr>          <chr> <fct> <fct>  <chr>        <dbl>   <dbl>
+#   1 development    raw   PC2   Cortex Dev          0.793 0.0334 
+# 2 development    raw   PC2   Liver  Dev          0.937 0.00185
+# 3 development    raw   PC2   Lung   Dev          0.721 0.0676 
+# 4 development    raw   PC2   Muscle Dev          0.775 0.0408 
+pc_age_cors %>%
+  filter(type=='raw' & `Scale period` == 'development') %>%
+  filter(PC=='PC4')
+# `Scale period` type  PC    tissue `age period`    rho         p
+# <chr>          <chr> <fct> <fct>  <chr>         <dbl>     <dbl>
+#   1 development    raw   PC4   Cortex Dev          -0.955 0.000806 
+# 2 development    raw   PC4   Liver  Dev          -0.991 0.0000146
+# 3 development    raw   PC4   Lung   Dev          -0.883 0.00845  
+# 4 development    raw   PC4   Muscle Dev          -0.955 0.000806 
 
 #################################
 ################################# does PC1,2,3 separate samples according to tissues? check with Anova
@@ -107,7 +128,7 @@ pca_data %>%
 #################################
 
 aov_dat = pca_data %>%
-  filter(type == 'raw', period == 'all', PC%in%c('PC1','PC2','PC3')) %>% 
+  filter(type == 'raw', period == 'all', PC%in%c('PC1','PC2','PC3','PC4')) %>% 
   select(-period, -type, -varExp) %>%
   left_join(select(sample_info, -ind_id,  -log2age), by = c('sample_id'))
 
@@ -128,40 +149,32 @@ for(i in unique(aov_dat$PC)){
 }
 
 ###### function to calculate mean pairwise distance among rows:
-pwise_distm_f = function(df){ 
-  rownames(df) = NULL
-  stopifnot(ncol(df) == 3)
-  colnames(df) = c('x','y','id')
-  pwise_distm = df %>%
-    column_to_rownames('id') %>%
-    dist() %>%
-    as.matrix() %>%
-    as.data.frame() %>%
-    rownames_to_column(var = 'id.x') %>%
-    gather(key = 'id.y', value=dist, -id.x) %>% 
-    filter(id.x < id.y) %>%
-    summarise(mean(dist))
-  pwise_distm = unname(pwise_distm)
-  return(pwise_distm)
+pwise_distMean = function(mat, id_col=1){
+  # mat: matrix or data frame with columns as coordinates to calculate distance, and one id column
+  # distance is calculated pairwise among rows of same ids
+  # id_col: index of the id column
+  
+  sapply(unique(mat[,id_col] ), function(x){
+    ind = mat[mat[,id_col]==x,]
+    mean(as.vector(dist(ind[, -id_col])))
+  })
 }
 
-## mean pairwise distance of tissues in PC3-PC4 space:
+## mean pairwise distance of tissues in PC1,2,3,4 space:
 dist_dat = pca_data %>%
-  filter(PC %in% c('PC3', 'PC4'), period == 'all', type =='raw') %>%
+  filter(PC %in% c('PC1','PC2','PC3', 'PC4'), period == 'all', type =='raw') %>%
   select(-period, -type, -varExp) %>% 
   left_join(select(sample_info, -age,-log2age), by='sample_id') %>% 
   mutate(ind_id = as.character(ind_id)) %>%
   spread(key=PC, value=value) %>%
-  mutate(id = paste(ind_id, tissue, sep='-')) %>%
   select(-sample_id,-tissue)
 
-## calculate pairwise distance among tissues per individual:
-mdist = unlist(sapply(unique(dist_dat$ind_id), function(x){
-  pwise_distm_f(dist_dat[dist_dat$ind_id == x,-1])
-}))
+mdist = pwise_distMean(dist_dat)
 
 mdist = data.frame(ind_id= names(mdist), mdist = mdist, row.names = NULL) %>%
   left_join(unique(select(sample_info, ind_id, age)), by = 'ind_id')
+
+saveRDS(mdist, './data/processed/tidy/mean_euclidean_dist.rds')
 
 # spearman test between age and mean pairwise distance in dev. and ageing:
 mdist %>%
@@ -170,28 +183,73 @@ mdist %>%
   summarise(rho = cor(mdist,age, m='s'),
             p = cor.test(mdist,age, m='s')$p.val)
 
-# across lifetime (dev. and ageing together): rho = 0.59, p = 0.016
+# dev: (PC3,4) 0.90, 0.00562 (old) -> (PC1,2,3,4) 0.99, 0.0000146
+# ageing: (PC3,4) -0.303, 0.429 (old) -> (PC1,2,3,4) -0.87, 0.00256
 
 ######
 #### dev only pairwise dist:
 dist_dat_dev = pca_data %>%
-  filter(PC %in% c('PC3', 'PC4'), period == 'development', type =='raw') %>%
+  filter(PC %in% c('PC1','PC2','PC3', 'PC4'), period == 'development', type =='raw') %>%
   select(-period, -type, -varExp) %>% 
   left_join(select(sample_info, -age,-log2age), by='sample_id') %>% 
   mutate(ind_id = as.character(ind_id)) %>%
   spread(key=PC, value=value) %>%
-  mutate(id = paste(ind_id, tissue, sep='-')) %>%
   select(-sample_id,-tissue)
 
-## calculate pairwise distance among tissues per individual:
-mdist_dev = unlist(sapply(unique(dist_dat_dev$ind_id), function(x){
-  pwise_distm_f(dist_dat_dev[dist_dat_dev$ind_id == x,-1])
-}))
+mdist_dev = pwise_distMean(dist_dat_dev)
 
 mdist_dev = data.frame(ind_id= names(mdist_dev), mdist = mdist_dev, row.names = NULL) %>%
   left_join(unique(select(sample_info, ind_id, age)), by = 'ind_id')
 
+saveRDS(mdist_dev, './data/processed/tidy/mean_euclidean_dist_dev.rds')
+
 mdist_dev %>%
   summarise(rho = cor(mdist,age, m='s'),
             p = cor.test(mdist,age, m='s')$p.val)
+#(old (PC3-4 only: rho=0.63, p=0.13)) --> rho = 0.95, p = 0.0008
+
+#### ageing only pairwise dist:
+dist_dat_aging = pca_data %>%
+  filter(PC %in% c('PC1','PC2','PC3', 'PC4'), period == 'aging', type =='raw') %>%
+  select(-period, -type, -varExp) %>% 
+  left_join(select(sample_info, -age,-log2age), by='sample_id') %>% 
+  mutate(ind_id = as.character(ind_id)) %>%
+  spread(key=PC, value=value) %>%
+  select(-sample_id,-tissue)
+
+mdist_aging = pwise_distMean(dist_dat_aging)
+
+mdist_aging = data.frame(ind_id= names(mdist_aging), mdist = mdist_aging, row.names = NULL) %>%
+  left_join(unique(select(sample_info, ind_id, age)), by = 'ind_id')
+
+#saveRDS(mdist_aging, './data/processed/tidy/mean_euclidean_dist_aging.rds')
+
+mdist_aging %>%
+  summarise(rho = cor(mdist,age, m='s'),
+            p = cor.test(mdist,age, m='s')$p.val)
+# rho= -0.64, p=0.05959
+
+pc_age_cors %>%
+  filter(type=='raw' & `Scale period` == 'aging' & `age period` == 'Aging') %>%
+  filter(PC=='PC1')
+# `Scale period` type  PC    tissue `age period`     rho        p
+# <chr>          <chr> <fct> <fct>  <chr>          <dbl>    <dbl>
+#   1 aging          raw   PC1   Cortex Aging         0.683  0.0621  
+# 2 aging          raw   PC1   Liver  Aging         0.924  0.000363
+# 3 aging          raw   PC1   Lung   Aging         0.832  0.00541 
+# 4 aging          raw   PC1   Muscle Aging        -0.0420 0.915  
+
+pc_age_cors %>%
+  filter(type=='raw' & `Scale period` == 'aging' & `age period` == 'Aging') %>%
+  filter(PC=='PC4')
+# `Scale period` type  PC    tissue `age period`    rho      p
+# <chr>          <chr> <fct> <fct>  <chr>         <dbl>  <dbl>
+#   1 aging          raw   PC4   Cortex Aging        -0.299 0.471 
+# 2 aging          raw   PC4   Liver  Aging        -0.723 0.0278
+# 3 aging          raw   PC4   Lung   Aging        -0.773 0.0145
+# 4 aging          raw   PC4   Muscle Aging         0.109 0.780 
+
+
+
+
 

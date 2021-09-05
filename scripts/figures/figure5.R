@@ -99,12 +99,15 @@ mincors = celltype_cors %>%
 
 
 ############## panel b
-panel_b2 = maxcors %>% left_join(mincors, by = c('1st tissue','1st cell type')) %>%
+maxminch = maxcors %>% left_join(mincors, by = c('1st tissue','1st cell type')) %>%
   mutate(`1st tissue`= str_to_title(`1st tissue`)) %>%
   reshape2::melt() %>% 
   set_names(c('1st tissue','1st cell type', 'minx','Correlation') ) %>%
   mutate(minx = factor(ifelse(minx=='rho ch.x','Maximum','Minumum'), levels = c('Minumum','Maximum'))) %>%
-  mutate(var = 'Tissue Similarity Change') %>%
+  mutate(var = 'Tissue Similarity Change')
+saveRDS(maxminch, './data/other_datasets/scRNA-seq/processed/max_min_cors_ch.rds')
+
+panel_b2 = maxminch %>%
   ggplot(aes(x= minx, y=Correlation)) +
   #facet_wrap(Correlation~minx) +
   facet_grid(var~minx, scales="free_x") +
@@ -127,7 +130,7 @@ panel_b2
 ggsave('./results/figure5/Figure_5b2.pdf', panel_b2, units='cm', height=7, width = 7, useDingbats=F)
 ggsave('./results/figure5/Figure_5b2.png', panel_b2, units='cm', height=7, width = 7)
 
-########### panel c
+########### panel b1
 celltype_cors = celltype_cors %>%
   mutate(`1st tissue` = str_to_title(`1st tissue`))
   
@@ -157,12 +160,16 @@ minrho24 = minrho %>%
   filter(age==24) %>%
   select(-`age gr`,-age)
 
-panel_b1 = list(Maximum = list(m3=maxrho, m24=maxrho24), Minimum = list(m3=minrho, m24=minrho24)) %>%
+maxmin_density = list(Maximum = list(m3=maxrho, m24=maxrho24), Minimum = list(m3=minrho, m24=minrho24)) %>%
   reshape2::melt() %>%
   rename(Similarity=L1, Correlation=value, age=L2) %>%
   select(-variable) %>%
   mutate(Similarity = factor(Similarity, levels=c('Minimum','Maximum'))) %>%
-  mutate(var='Similarity \nDistribution') %>% 
+  mutate(var='Similarity \nDistribution')
+
+saveRDS(maxmin_density, './data/other_datasets/scRNA-seq/processed/max_min_cors_density.rds')
+
+panel_b1 = maxmin_density %>% 
   ggplot(aes(x = Correlation, fill = interaction(Similarity,age), linetype=age, size=age  )) +
   facet_grid(var~Similarity, scales = 'free_x') +
   geom_density( alpha=0.6) +

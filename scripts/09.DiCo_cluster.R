@@ -214,6 +214,7 @@ DiCo_cl_genes = covch %>%
   ) %>%
   relocate(gene_id, period, CoV_change, pval, FDR, CoV_Cl, Exp_Cl)
 
+saveRDS(DiCo_cl_genes, './data/processed/tidy/DiCo_cl_genes.rds')
 write.xlsx(DiCo_cl_genes, './results/SI_tables/TableS6.xlsx')
 
 ##############################

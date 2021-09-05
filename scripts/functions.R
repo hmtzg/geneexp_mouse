@@ -4,7 +4,9 @@
 ######################## Effect size using cohen's D formula:
 ########################
 
-cohens_d=function(x,y){ #calculates effect size of vectors a and b, using cohen's d by http://en.wikipedia.org/wiki/Effect_size#Cohen.27s_d
+cohens_d=function(x,y){ 
+  #calculates effect size of vectors a and b, using cohen's d by 
+  #http://en.wikipedia.org/wiki/Effect_size#Cohen.27s_d
   lx=length(x)
   ly=length(y)
   ( mean(x)-mean(y) ) / ( ( ( (lx-1)*var(x) + (ly-1)*var(y) ) / ( lx+ly-2 ) )^0.5 )
@@ -13,7 +15,7 @@ cohens_d=function(x,y){ #calculates effect size of vectors a and b, using cohen'
 ########################
 ######################## Gene Overrepresentation Analysis (GORA) with topgo:
 ########################
-go_bp_enrich.test.Mm = function(genelist, selection, description="",ID="Ensembl", nSizemin = 10, padj="BY",
+go_bp_enrich.test.Mm = function(genelist, selection, description="",ID="Ensembl", nSizemin = 10, padj="BH",
                                 nSizemax = 500){ 
   # selection 1 or 0
   require(topGO)
@@ -56,39 +58,63 @@ revgenes = function(dev,age,revgenes=T,monotonic=F){
 
 
 ########################
-######################## robust kmeans
+######################## leave one out CoDi ratio pseudovalues:
 ########################
 
-robust.kmeans.1.f = function( 
-  Mat,  #normalized expression matrix
-  k2try,  #which K to try, just one integer
-  REPEAT=1000   #number of repetitions
-) {
-  #this wraps up k2try.2.f and postk2try.2.f in one function, but allows only one K to be tested
-  km_l1 = lapply(k2try, function(k) { print(k)
-    tab = lapply(1:REPEAT, function(i) {
-      km1 = kmeans(Mat, k)$cluster
-      x = sapply(1:length(table(km1)), function(i) sort(names(km1)[km1==i])) #order genes in cluster based on gene names
-      xo = order(sapply(x, function(x) x[[1]])) #order cluster based on first gene names
-      return(x[xo])
-    } )
-  } )
-  names(km_l1) = k2try
-  tabx = sapply(km_l1, function(x) sort(sapply(x, function(xx) paste(unlist(xx), collapse="_"))))
-  Tab = apply(tabx, 2, function(x) as.numeric(rev(sort(table(x)))[1:3])); print(Tab)
-  km_best = names(rev(sort(table(tabx[,as.character(k2try)])))[1])
-  km1 = {
-    i = 0; while (i != 1) {
-      cat(i); km1 = kmeans(Mat, k2try)$cluster;
-      x = sapply(1:length(table(km1)), function(i) sort(names(km1)[km1==i])) #order genes in cluster based on gene names
-      xo = order(sapply(x, function(x) x[[1]])) #order cluster based on first gene names
-      kmx = paste(unlist(x[xo]), collapse="_")
-      if (km_best == kmx) { KmX = km1; i = 1 } }
-    Kmc = Kmc2 = km1;
-    for (J in 1:k2try) { Kmc2[Kmc %in% names(rev(sort(table(Kmc))))[J]] = J }
-    Kmc2 }
-  return(km1)
+LOO_CoDiR = function(mat, age, method='spearman', qval = 0.1, qmethod='BH', estimate.all=T){
+  # mat: cov matrix with columns are individual names
+  # age: ages of the individuals with the same order of mat
+  # method: cov-age test method
+  # qval: multiple testing correction threshold for age-cov test
+  # qmethod: which multiple testing correction method to use
+  # estimate.all: also calculate for all data together?
+  
+  if(estimate.all){
+    ss = c('S', colnames(mat))
+  } else{
+    ss =  colnames(mat)
+  }
+  # exclude each column
+  count=0
+  codi = sapply(ss, function(ex){
+    exmat = mat[, !colnames(mat)%in%ex]
+    exage = age[!names(age)%in%ex]
+    count <<- count + 1
+    print(paste('%', round(count/length(ss),2)*100 ))
+    sub_cov = t(sapply(rownames(exmat), function(x){
+      a = cor.test(exmat[x,], exage, m=method)
+      c(a$est, a$p.val)
+    }))
+    sub_cov = cbind(sub_cov, p.adjust(sub_cov[,2], m=qmethod))
+    colnames(sub_cov) = c('rho', 'p', qmethod)
+    sub_cov_sig = sub_cov[sub_cov[,3] < qval, ]
+    codiR = sum(sub_cov_sig[,1] < 0) / sum(sub_cov_sig[,1] > 0)
+    # Yb = sum(sub_cov_sig[,1] < 0)
+    # Xb = sum(sub_cov_sig[,1] > 0)
+    # codiR = c(Yb,Xb)
+    return(codiR)
+  })
+  #names(codi)[-1] = paste0('-', names(codi)[-1])
+  return(codi)
 }
 
+########################
+######################## leave one out Confidence interval for pseudovalues:
+########################
 
-
+LOO_JK_CI = function(ps, alpha=0.05){
+  #Si = na.omit(ps[-1])
+  Si = log(na.omit(ps[-1]))
+  #S = ps[1]
+  S = log(ps[1])
+  N = length(Si)
+  
+  psi = N*S - (N-1)*Si
+  ps_bar = mean(psi)
+  var = sum( (psi-ps_bar)^2) / (N-1) # usual variance estimate
+  
+  t_val =  qt(p = 1-alpha, df = N-1)
+  CI_95 = c(ps_bar - t_val*sqrt(var/N),
+            ps_bar + t_val*sqrt(var/N))
+  return( exp(1)^CI_95 )
+}

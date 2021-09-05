@@ -28,8 +28,8 @@ for(i in 1:4){
   bg = setNames(rep(0, length( c(revg[[i]]$UpDown, revg[[i]]$UpUp))),
                 nm = c(revg[[i]]$UpDown, revg[[i]]$UpUp) )
   bg[names(bg)%in%revg[[i]]$UpDown] = 1
-  go = go_bp_enrich.test.Mm(bg, selection = 1)
-  go2 = go_bp_enrich.test.Mm(bg, selection = 0)
+  go = go_bp_enrich.test.Mm(bg, selection = 1, padj = 'BH')
+  go2 = go_bp_enrich.test.Mm(bg, selection = 0, padj = 'BH')
   updown.go [[ names(dev)[i] ]] = go
   upup.go[[ names(dev)[i] ]] = go2
 }
@@ -43,8 +43,8 @@ for(i in 1:4){
   bg = setNames(rep(0, length(c(revg[[i]]$DownUp, revg[[i]]$DownDown))),
                 nm = c(revg[[i]]$DownUp, revg[[i]]$DownDown))
   bg[names(bg)%in%revg[[i]]$DownUp] = 1
-  go = go_bp_enrich.test.Mm(bg, selection = 1)
-  go2 = go_bp_enrich.test.Mm(bg, selection = 0)
+  go = go_bp_enrich.test.Mm(bg, selection = 1, padj = 'BH')
+  go2 = go_bp_enrich.test.Mm(bg, selection = 0, padj = 'BH')
   downup.go[[ names(dev)[i] ]] = go
   downdown.go[[ names(dev)[i] ]] = go2
 }
@@ -52,14 +52,9 @@ saveRDS(downup.go, './data/processed/raw/downup_gora_each_tissue.rds')
 saveRDS(downdown.go, './data/processed/raw/downdown_gora_each_tissue.rds')
 
 reversal_go_each_tissue = list(UpDown = updown.go, DownUp = downup.go)
-table_s4 = unlist(reversal_go_each_tissue, recursive = F)
+table_sX = unlist(reversal_go_each_tissue, recursive = F)
 
-write.xlsx(table_s4, file='./results/SI_tables/TableS5.xlsx', row.names=F)
-
-########################################
-########################################
-########################################
-########################################
+write.xlsx(table_sX, file='./results/SI_tables/TableS5.xlsx', row.names=F)
 
 ########################################
 ######################################## Test significance of reversal genes in each tissue separately
@@ -90,9 +85,9 @@ for(ts in 1:4){
     UDdist.ts[i] = UDX / (UDX + UUX)
   }
   pUD.ts = mean(UDdist.ts >= obs.ud.ts)
-  fpr.ts = median(UDdist.ts) / obs.ud.ts
+  efpp.ts = median(UDdist.ts) / obs.ud.ts
   UD.tissue[[ts]] = list(dist = UDdist.ts, obs = round(obs.ud.ts,2), pval = round(pUD.ts,2), 
-                         fpr = round(fpr.ts,2))
+                         efpp = round(efpp.ts,2))
 }
 names(UD.tissue) = colnames(devcor)
 
@@ -109,9 +104,9 @@ for(ts in 1:4){
     DUdist.ts[i] = DUX / (DUX + DDX)
   }
   pDU.ts = mean(DUdist.ts >= obs.du.ts)
-  fpr.ts = median(DUdist.ts) / obs.du.ts
+  efpp.ts = median(DUdist.ts) / obs.du.ts
   DU.tissue[[ts]] = list(dist=DUdist.ts, obs = round(obs.du.ts,2), pval = round(pDU.ts,2),
-                         fpr = round(fpr.ts,2))
+                         efpp = round(efpp.ts,2))
 }
 names(DU.tissue) = colnames(devcor)
 
@@ -140,21 +135,21 @@ rev_each_plot = reshape2::melt(rev.tissue) %>%
   xlab('Reversal Proportion') +
   geom_vline(data = rev_test, mapping = aes(xintercept= obs), linetype ='dashed', color = 'darkred' ) +
   geom_text(data= rev_test, size=  sizex,
-            mapping = aes(x = c(0.44, 0.58,0.6, 0.67, 0.5, 0.65, 0.6, 0.65) , y = 90, label = paste('Obs =', obs) )) +
+            mapping = aes(x = c(0.44, 0.58,0.6, 0.67, 0.5, 0.65, 0.6, 0.65) , y = 90, 
+                          label = paste('Obs =', obs) )) +
   geom_text(data= rev_test,size=  sizex,
-            mapping = aes(x = c(0.44, 0.58,0.6, 0.67, 0.5, 0.65, 0.6, 0.65) , y=80, label = paste('FPR =', fpr) )) +
+            mapping = aes(x = c(0.44, 0.58,0.6, 0.67, 0.5, 0.65, 0.6, 0.65) , y=80, 
+                          label = paste('eFPP =', efpp) )) +
   geom_text(data= rev_test,size=  sizex,
-            mapping = aes(x = c(0.44, 0.58,0.6, 0.67, 0.5, 0.65, 0.6, 0.65) , y=70, label = paste('p.val =', pval))) +
+            mapping = aes(x = c(0.44, 0.58,0.6, 0.67, 0.5, 0.65, 0.6, 0.65) , y=70, 
+                          label = paste('p.val =', pval))) +
   theme_bw() +
   theme(axis.text = element_text(size =5))
 
-ggsave('./results/SI_figures/Figure_S8.pdf', rev_each_plot, width = 16, height = 15, units='cm', useDingbats = F )
+ggsave('./results/SI_figures/Figure_S8.pdf', rev_each_plot, width = 16, height = 15, units='cm', 
+       useDingbats = F )
 ggsave('./results/SI_figures/Figure_S8.png', rev_each_plot, width = 16, height = 15, units='cm' )  
 
-########################################
-########################################
-########################################
-########################################
 
 ########################################
 ######################################## Test significance of shared reversal genes among tissues
@@ -198,29 +193,38 @@ for(i in 1:1000){
   DDdist[i] = DDX / (DUX + DDX)
 }
 
-rev_shared_test = reshape2::melt(data.frame( pval = round(c(mean(UDdist >= updown_obs), mean(DUdist >= downup_obs)),2),
-            fpr = round(c(median(UDdist) / updown_obs, median(DUdist) / downup_obs ),2),
+rev_shared_test = reshape2::melt(data.frame( pval = round(c(mean(UDdist >= updown_obs),
+                                                            mean(DUdist >= downup_obs)),2),
+            efpp = round(c(median(UDdist) / updown_obs, median(DUdist) / downup_obs ),2),
             obs = round(c(updown_obs,downup_obs),2), Reversal = c('UpDown','DownUp') )) %>%
-  spread(key=variable, value=value)
+  spread(key=variable, value=value) %>%
+  mutate(Reversal = factor(Reversal, levels = c('UpDown', 'DownUp')))
+
+shared_rev_perm_test = reshape2::melt(data.frame( UpDown = UDdist, DownUp = DUdist)) %>%
+  set_names(c('Reversal','Proportion'))
+saveRDS(shared_rev_perm_test, './data/processed/tidy/shared_rev_perm_test.rds')
 
 rev_shared_plot = reshape2::melt(data.frame( UpDown = UDdist, DownUp = DUdist)) %>%
   set_names(c('Reversal','value')) %>%
+  mutate(Reversal = factor(Reversal, levels = c('UpDown', 'DownUp'))) %>%
   ggplot(aes(x = value)) +
   facet_grid(~Reversal, scales = 'free_x') +
   geom_histogram() +
   ylab('Frequency') +
   xlab('Reversal Proportion') +
-  geom_vline(data = rev_shared_test, mapping = aes(xintercept= obs), linetype ='dashed', color = 'darkred' ) +
+  geom_vline(data = rev_shared_test, mapping = aes(xintercept= obs), linetype ='dashed', 
+             color = 'darkred' ) +
   geom_text(data= rev_shared_test, size=  sizex,
             mapping = aes(x = c(0.6, 0.72) , y = 65, label = paste('Obs =', obs) )) +
   geom_text(data= rev_shared_test,size=  sizex,
-            mapping = aes(x = c(0.6, 0.72) , y=60, label = paste('FPR =', fpr) )) +
+            mapping = aes(x = c(0.6, 0.72) , y=60, label = paste('eFPP =', efpp) )) +
   geom_text(data= rev_shared_test, size=  sizex,
             mapping = aes(x = c(0.6, 0.72) , y=56, label = paste('p.val =', pval))) +
   theme_bw() +
   theme(axis.text = element_text(size =5))
 
-ggsave('./results/SI_figures/Figure_S9.pdf', rev_shared_plot, width = 12, height = 8, units='cm', useDingbats = F )
+ggsave('./results/SI_figures/Figure_S9.pdf', rev_shared_plot, width = 12, height = 8, units='cm', 
+       useDingbats = F )
 ggsave('./results/SI_figures/Figure_S9.png', rev_shared_plot, width = 12, height = 8, units='cm' )  
 
 
@@ -239,15 +243,15 @@ bg = setNames(rep(0, length(c(rev.common$UpDown, rev.common$UpUp)) ),
               nm = c(rev.common$UpDown, rev.common$UpUp) )
 bg[names(bg)%in%rev.common$UpDown] = 1
 
-updown_shared_go = go_bp_enrich.test.Mm(bg, selection = 1)
-upup_shared_go = go_bp_enrich.test.Mm(bg, selection = 0)
+updown_shared_go = go_bp_enrich.test.Mm(bg, selection = 1, padj = 'BH')
+upup_shared_go = go_bp_enrich.test.Mm(bg, selection = 0, padj = 'BH')
 
 bg = setNames(rep(0, length(c(rev.common$DownUp,rev.common$DownDown))),
               nm = c(rev.common$DownUp,rev.common$DownDown) )
 bg[names(bg)%in%rev.common$DownUp] = 1
 
-downup_shared_go = go_bp_enrich.test.Mm(bg, selection = 1)
-downdown_shared_go = go_bp_enrich.test.Mm(bg, selection = 0)
+downup_shared_go = go_bp_enrich.test.Mm(bg, selection = 1, padj = 'BH')
+downdown_shared_go = go_bp_enrich.test.Mm(bg, selection = 0, padj = 'BH')
 
 shared_reversal_go = list(updown_shared_go = updown_shared_go,
      upup_shared_go = upup_shared_go, 
@@ -257,3 +261,4 @@ shared_reversal_go = list(updown_shared_go = updown_shared_go,
 saveRDS(shared_reversal_go,
         './data/processed/raw/shared_reversal_gora.rds')
 
+################

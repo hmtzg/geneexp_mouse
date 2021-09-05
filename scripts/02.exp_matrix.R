@@ -11,6 +11,12 @@ names(age) = samp_id
 names(ind_id) = samp_id
 names(samp_tissue) = samp_id
 
+# prep for deseq2:
+data.frame(fname = nms, ind_id = names(nms),
+           tissue = samp_tissue, 
+           age = age, sample_id = samp_id) %>%
+  saveRDS(. , file = './data/processed/raw/fname_samples.rds')
+
 # load each FPKM data and assign it to lane number; MA1_3, MA1_5 etc:
 for(i in 1:length(flist)) assign(nms[i],read.table(flist[i],sep="\t",header = T))
 
@@ -79,7 +85,7 @@ saveRDS(samp_tissue, file="./data/preprocess/tissue_ids.rds")
 mat2 = mat[!apply(mat,1,function(x){ sum(x==0)>15 } ), ] # 6684 genes removed
 mat3 = log2(mat2+1)
 
-saveRDS(mat3, file='./data/preprocess/log2_pcodinggenes_matrix.rds')
+saveRDS(mat3, file='./data/preprocess/log2_pcodinggenes_rawmatrix.rds')
 
 library(preprocessCore) 
 expr = normalize.quantiles(mat3)

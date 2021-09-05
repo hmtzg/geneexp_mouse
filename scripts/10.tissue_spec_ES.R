@@ -125,13 +125,14 @@ fisher.test(table(mat.dc)[,c(2,1)])
 
 ########
 ### tis.spec genes enrichment among div-conv genes:
-spec.dc.mat = data.frame(spec = rownames(exp)%in%ts.specQ3.genes + 1,
-                         divconv = rownames(exp)%in%dcgenes + 1)
+spec.dc.mat = data.frame(spec = rownames(exp)%in%ts.specQ3.genes ,
+                         divconv = rownames(exp)%in%dcgenes )
 # spec 1: not ts specific, 2: ts specific
 # divconv 1: not dc gene, 2: dc gene
 
 fisher.test(table(spec.dc.mat)) # 
 # OR: 1.149, pval = 0.00051
+saveRDS(spec.dc.mat, file='./data/processed/raw/ts_spec_dc_enrichment.rds')
 
 dc_vs_tisspec = table(spec.dc.mat)[c(2,1),c(2,1)]
 colnames(dc_vs_tisspec) = c('DC', ' Non-DC')
@@ -240,7 +241,8 @@ for(i in names(revg)){
 }
 eachtissue_OR
 eacttissue_table
-
+saveRDS(list(OR= eachtissue_OR, table= eacttissue_table),
+        file='./data/processed/raw/tis_spec_rev_enrichment.rds')
 #table_s9 = lapply(eacttissue_table, function(x) data.frame(rbind(x)))
 write.xlsx(eacttissue_table, 'results/SI_tables/TableS9.xlsx')
 

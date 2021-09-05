@@ -1,6 +1,6 @@
 getwd()
 library(openxlsx)
-id = read.xlsx("./docs/mm_sample_id.xlsx",sheet = 1)
+id = read.xlsx("./data/preprocess/mm_sample_id.xlsx",sheet = 1)
 head(id)
 id[,1] = as.character(id[,1])
 region = gsub("[0-9]","",id[,1])

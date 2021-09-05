@@ -1,7 +1,9 @@
 library(tidyverse)
 library(clusterProfiler)
 library(cluster)
+library(openxlsx)
 
+source('scripts/functions.R')
 expr = readRDS('./data/processed/raw/expression.rds')
 ind_id = readRDS('./data/processed/raw/individual_ids.rds')
 age = readRDS('./data/processed/raw/ages.rds')
@@ -10,37 +12,59 @@ colnames(expr) = ind_id
 
 ############################## calculate cov without cortex (3 tissues):
 
-exp2 = expr[, !samp_tissue == "Cortex"]
-genecov2 = sapply(unique(colnames(exp2)), function(x){
-  sapply(rownames(exp2),function(y){
-    sd(exp2[y, colnames(exp2) == x]) / mean(exp2[y, colnames(exp2) == x])
-  })
-})
-
-genecovtidy2 = reshape2::melt(genecov2) %>%
-  set_names('gene_id','ind_id','CoV')
-
-saveRDS(genecovtidy2, file="./data/processed/tidy/CoV_wo_cortex.rds")
+# exp2 = expr[, !samp_tissue == "Cortex"]
+# genecov2 = sapply(unique(colnames(exp2)), function(x){
+#   sapply(rownames(exp2),function(y){
+#     sd(exp2[y, colnames(exp2) == x]) / mean(exp2[y, colnames(exp2) == x])
+#   })
+# })
+# 
+# genecovtidy2 = reshape2::melt(genecov2) %>%
+#   set_names('gene_id','ind_id','CoV')
+# 
+# saveRDS(genecovtidy2, file="./data/processed/tidy/CoV_wo_cortex.rds")
 
 #################### remove one individual from other tissues that lacks expression in cortex
+
 expr = expr[, !colnames(expr) =='465']
 names(age) = ind_id
 samp_tissue = samp_tissue[!names(age)=="465"]
 age = age[!names(age)=="465"]
 ageu = age[unique(names(age))]
 
-#################### calculate CoV among tissues for each individual
-genecov = sapply(unique(colnames(expr)),function(x){
+############################## calculate cov without each tissue (3 tissues, using 15 individuals):
+# ts = unique(samp_tissue)
+# cov3ts = lapply(ts, function(i){
+#   print(paste('Calculating CoV without:',i))
+#   cov3tsX = sapply(unique(colnames(expr)), function(x){
+#     expX = expr[, !samp_tissue%in%i]
+#     sapply(rownames(expX), function(y){
+#       sd(expX[y, colnames(expX)==x]) / mean( expX[y, colnames(expX) == x] )
+#     })
+#   })
+#   cov3tsX
+# })
+# names(cov3ts) = paste0('wo_', ts)
+# cov3tstidy  = reshape2::melt(cov3ts) %>% 
+#   set_names(c('gene_id', 'ind_id', 'CoV', 'Excluded')) %>%
+#   mutate(ind_id = as.character(ind_id)) %>%
+#   left_join(data.frame(age=ageu, ind_id=names(ageu))) %>%
+#   mutate(period = ifelse(age<90,'Development', 'Ageing') )
+# saveRDS(cov3tstidy, file='./data/processed/tidy/CoV_wo_eachtissue.rds')
+
+#################### calculate CoV among 4 tissues for each individual
+
+genecov = sapply(unique(colnames(expr)), function(x){
   sapply(rownames(expr),function(y){
     sd(expr[y, colnames(expr) == x]) / mean(expr[y, colnames(expr) == x])
   })
 })
 genecovtidy = reshape2::melt(genecov) %>%
   set_names('gene_id','ind_id','CoV')
+
 saveRDS(genecovtidy, file="./data/processed/tidy/CoV.rds")
 
 #################### calculate CoV-age correlations in development and ageing
-
 covch_D = t(sapply(rownames(genecov),function(x){
   x_dev = cor.test(genecov[x, ageu<90], ageu[ageu<90], m ="s")
   c(x_dev$est, x_dev$p.val)
@@ -56,45 +80,50 @@ covch_A = cbind(covch_A, p.adjust(covch_A[,2], method = "BH"))
 colnames(covch_A)[c(2,3)] = c("pval"," BH")
 
 covch_dev = data.frame(covch_D, period = 'development', gene_id = rownames(covch_D), row.names = NULL) %>%
-  rename(CoV_change = rho, 
-         FDR = X.BH)
+  rename(CoV_change = rho, FDR = X.BH)
 
 covch_aging = data.frame(covch_A, period = 'aging', gene_id = rownames(covch_A), row.names = NULL) %>%
-  rename(CoV_change = rho, 
-         FDR = X.BH)
+  rename(CoV_change = rho, FDR = X.BH)
 
 covch = rbind(covch_dev, covch_aging)
+
 saveRDS(covch, './data/processed/tidy/CoV_change.rds')
 
-
+#################### CoV-age correlations for 3 tissues;
+# covch3ts = cov3tstidy %>%
+#   group_by(period, Excluded, gene_id) %>%
+#   summarise(rho  = cor.test(CoV, age, m='s')$est,
+#             pval = cor.test(CoV, age, m='s')$p.val)
+# covch3ts = covch3ts %>%
+#   group_by(period) %>%
+#   mutate(BH = p.adjust(pval, method = 'BH'))
+# saveRDS(covch3ts, './data/processed/tidy/CoV_change_wo_eachtissue.rds')
+# covch3ts %>%
+#   mutate(type = ifelse(rho>0,'di','co')) %>%
+#   group_by(Excluded, period, type) %>%
+#   summarise(count = length(gene_id)) %>%
+#   ggplot(aes(x=Excluded, y=count, fill=period)) +
+#   geom_bar(stat='identity', position = 'dodge')
+# covch3ts %>%
+#   mutate(type = ifelse(rho>0,'di','co')) %>%
+#   filter(BH<0.1) %>%
+#   group_by(Excluded, period, type) %>%
+#   summarise(count = length(gene_id))
+  
 #######################
 #######################
-#######################
-#######################
-
-#######################
-#######################
-####################### test conv/div difference with jacknife: (not dc but cd ratio is calculated)
+####################### test conv/div ratio with jacknife: (not dc but cd ratio is calculated)
 ####################### (for significant genes)
 #######################
 
 genecov.dev = genecov[, ageu < 90]
 genecov.aging = genecov[, ageu > 90]
-### test development:
-divconv_ratio = sapply(colnames(genecov.dev), function(exc){
-  excgenecov = genecov.dev[, !colnames(genecov.dev)%in%exc]
-  excage = ageu[!names(ageu)%in%exc]
-  excage = excage[excage<90]
-  sub_cov_dev = t(sapply(rownames(excgenecov), function(x){
-    a = cor.test(excgenecov[x,], excage, m='s' )
-    c(a$est, a$p.val)
-  }))
-  sub_cov_dev = cbind(sub_cov_dev, p.adjust(sub_cov_dev[,2], m='BH'))
-  colnames(sub_cov_dev) = c('rho', 'p', 'BH')
-  sub_cov_dev_sig = sub_cov_dev[sub_cov_dev[,3]<0.1, ]
-  div_conv_ratio = sum(sub_cov_dev_sig[,1]<0) / sum(sub_cov_dev_sig[,1] > 0)
-  return(div_conv_ratio)
-})
+
+codi_dev = LOO_CoDiR(genecov.dev, ageu[ageu<90], method='spearman', qval=0.1, qmethod='BH', estimate.all = T)
+codi_aging = LOO_CoDiR(genecov.aging, ageu[ageu>90],method='spearman',qval=0.1,qmethod='BH',estimate.all = T)
+
+codi_dev
+codi_aging
 
 ## jackknife standard error:
 dc_sig = cbind(Dev = c( sum(covch_D[covch_D[,3]< 0.1, 1]>0),
@@ -102,69 +131,20 @@ dc_sig = cbind(Dev = c( sum(covch_D[covch_D[,3]< 0.1, 1]>0),
                Ageing = c( sum(covch_A[covch_A[,3]< 0.1, 1]>0),
                         sum(covch_A[covch_A[,3]< 0.1, 1]<0)))
 rownames(dc_sig) = c('Divergent','Convergent')
-  
-obs = dc_sig[2,'Dev'] / dc_sig[1,'Dev']
-emprical_average = mean(divconv_ratio, na.rm=T)
-jk_se = round(( sum((divconv_ratio - emprical_average)^2, na.rm=T)*(4/5) )^0.5 , 2)
-## jackknife standard error:
-Q_dot = mean(divconv_ratio, na.rm=T)
-jk_bias = (5-1)*(Q_dot - obs)
 
-## http://www.comparingpartitions.info/?link=Tut9
-vard = sum((divconv_ratio - emprical_average)^2, na.rm=T) / 4
-CI95_dev = c(emprical_average - 2*(vard/5)^0.5,
-             emprical_average + 2*(vard/5)^0.5)
-
-#### ageing:
-divconv_ratio_aging = sapply(colnames(genecov.aging), function(exc){
-  excgenesd = genecov.aging[, !colnames(genecov.aging)%in%exc]
-  excage = ageu[!names(ageu)%in%exc]
-  excage = excage[excage>90]
-  sub_cov = t(sapply(rownames(excgenesd), function(x){
-    a = cor.test(excgenesd[x,], excage, m='s' )
-    c(a$est, a$p.val)
-  }))
-  sub_cov = cbind(sub_cov, p.adjust(sub_cov[,2], m='BH'))
-  colnames(sub_cov) = c('rho', 'p', 'BH')
-  sub_cov_sig = sub_cov[sub_cov[,3]<0.1, ]
-  div_conv_ratio = sum(sub_cov_sig[,1]<0) / sum(sub_cov_sig[,1] > 0)
-  return(div_conv_ratio)
-})
-
-## jackknife standard error:
-obs = dc_sig[2,'Ageing'] / dc_sig[1,'Ageing']
-emprical_average = mean(divconv_ratio_aging, na.rm=T)
-jk_se = round(( sum((divconv_ratio - emprical_average)^2, na.rm=T)*(5/6) )^0.5 , 2)
-## jackknife standard error:
-Q_dot = mean(divconv_ratio, na.rm=T)
-jk_bias = (6-1)*(Q_dot - obs)
-
-vara = sum((divconv_ratio_aging - emprical_average)^2, na.rm=T) / 6
-CI95_aging = c(emprical_average - 2*(vara/6)^0.5,
-               emprical_average + 2*(vara/6)^0.5)
-
-saveRDS(cbind(CI95_dev, CI95_aging),
-        './data/processed/raw/cov_ratio_jk_CI.rds')
+saveRDS(list(dev = codi_dev, aging = codi_aging),
+        './data/processed/raw/cov_ratio_jk_pseudovalues.rds')
 
 #################### 
 #################### 
 #################### test for all genes
 #################### 
+codi_dev_all = LOO_CoDiR(genecov.dev, ageu[ageu<90], method='spearman', qval=1.1, 
+                         qmethod='BH', estimate.all = T)
+codi_aging_all = LOO_CoDiR(genecov.aging, ageu[ageu>90], method='spearman', qval=1.1,
+                           qmethod='BH', estimate.all = T)
 
 ### test development:
-divconv_ratio_all = sapply(colnames(genecov.dev), function(exc){
-  excgenecov = genecov.dev[, !colnames(genecov.dev)%in%exc]
-  excage = ageu[!names(ageu)%in%exc]
-  excage = excage[excage<90]
-  sub_cov_dev = t(sapply(rownames(excgenecov), function(x){
-    a = cor.test(excgenecov[x,], excage, m='s' )
-    c(a$est, a$p.val)
-  }))
-  colnames(sub_cov_dev) = c('rho', 'p')
-  #sub_cov_dev_sig = sub_cov_dev[sub_cov_dev[,3]<0.1, ]
-  div_conv_ratio = sum(sub_cov_dev[,1]<0) / sum(sub_cov_dev[,1] > 0)
-  return(div_conv_ratio)
-})
 
 ## jackknife standard error:
 dc_all = cbind(Dev = c( sum(covch_D[, 1]>0),
@@ -173,68 +153,38 @@ dc_all = cbind(Dev = c( sum(covch_D[, 1]>0),
                            sum(covch_A[, 1]<0)))
 rownames(dc_all) = c('Divergent','Convergent')
 
-obs_all = dc_all[2,'Dev'] / dc_all[1,'Dev']
-emprical_average_all = mean(divconv_ratio_all)
-jk_se_all = round(( sum((divconv_ratio_all - emprical_average_all)^2)*(6/7) )^0.5 , 2)
-## jackknife standard error:
-Q_dot_all = mean(divconv_ratio_all)
-jk_bias_all = (7-1)*(Q_dot_all - obs_all)
-
-## http://www.comparingpartitions.info/?link=Tut9
-vard_all = sum((divconv_ratio_all - emprical_average_all)^2) / 6
-CI95_dev_all = c(emprical_average_all - 2*(vard_all/7)^0.5,
-             emprical_average_all + 2*(vard_all/7)^0.5)
-
 ## aging
-divconv_ratio_aging_all = sapply(colnames(genecov.aging), function(exc){
-  excgenesd = genecov.aging[, !colnames(genecov.aging)%in%exc]
-  excage = ageu[!names(ageu)%in%exc]
-  excage = excage[excage>90]
-  sub_cov = t(sapply(rownames(excgenesd), function(x){
-    a = cor.test(excgenesd[x,], excage, m='s' )
-    c(a$est, a$p.val)
-  }))
-  #sub_cov = cbind(sub_cov, p.adjust(sub_cov[,2], m='BH'))
-  colnames(sub_cov) = c('rho', 'p')
-  div_conv_ratio = sum(sub_cov[,1]<0) / sum(sub_cov[,1] > 0)
-  return(div_conv_ratio)
-})
 
-## jackknife standard error:
-obs_all = dc_all[2,'Ageing'] / dc_all[1,'Ageing']
-emprical_average_all = mean(divconv_ratio_aging_all)
-jk_se_all = round(( sum((divconv_ratio_aging_all - emprical_average_all)^2, na.rm=T)*(6/7) )^0.5 , 2)
-## jackknife standard error:
-Q_dot_all = mean(divconv_ratio_aging_all)
-jk_bias_all = (7-1)*(Q_dot_all - obs_all)
+saveRDS(list(codi_dev_all, codi_aging_all),
+        './data/processed/raw/cov_ratio_jk_pseudovalues_nosig.rds')
 
-vara_all = sum((divconv_ratio_aging_all - emprical_average_all)^2, na.rm=T) / 6
-CI95_aging_all = c(emprical_average_all - 2*(vara_all/7)^0.5,
-               emprical_average_all + 2*(vara_all/7)^0.5)
-
-saveRDS(cbind(CI95_dev_all, CI95_aging_all),
-        './data/processed/raw/cov_ratio_jk_CI_nosig.rds')
-
-#################### 
-#################### 
-#################### 
-#################### 
+# LOO_JK_CI(codi_dev)
+# LOO_JK_CI(codi_aging)
+# codi_dev2= codi_dev
+# codi_dev2[is.na(codi_dev2)]=1
+# codi_aging2 = codi_aging
+# codi_aging2[is.na(codi_aging2)] = 1
+# LOO_JK_CI(codi_dev2)
+# LOO_JK_CI(codi_aging2)
+# LOO_JK_CI(codi_dev_all)
+# LOO_JK_CI(codi_aging_all)
 
 #################### 
 #################### 
 #################### Divergent-Convergent genes GSEA among development divergent genes:
 #################### 
+
 div_dev = covch_D[covch_D[,1] > 0, 1]
 ddc_genes = div_dev*covch_A[names(div_dev),1]
 
 saveRDS(ddc_genes, './data/processed/raw/dev_divergent_genes_dc_rank.rds')
-
-dc_gse = gseGO(geneList = sort(ddc_genes, decreasing = T), OrgDb = "org.Mm.eg.db", ont = "BP", pvalueCutoff = 1,
-                keyType = "ENSEMBL", nPerm = 1000, minGSSize = 10, maxGSSize = 500, pAdjustMethod = 'BY',
+library(org.Mm.eg.db)
+dc_gse = gseGO(geneList = sort(ddc_genes, decreasing = T), OrgDb = org.Mm.eg.db, ont = "BP", 
+               pvalueCutoff = 1,
+                keyType = "ENSEMBL", nPerm = 1000, minGSSize = 10, maxGSSize = 500, pAdjustMethod = 'BH',
                 verbose = F)
-saveRDS(dc_gse, file="./data/processed/raw/dc_gse.rds")
+saveRDS(dc_gse, file="./data/processed/raw/dc_gse.rd")
 
-# dc_gse = readRDS(file="./data/processed/raw/dc_gse.rds")
 dc_gse_genelist =  strsplit(dc_gse@result[,11], split = '/')
 names(dc_gse_genelist) = dc_gse@result[,'ID']
 dc_gse_genelist =reshape2::melt(dc_gse_genelist) %>% 
@@ -281,12 +231,44 @@ OR2 = data.frame(gene_id=rep(names(ddc_genes),4), DCpattern = rep(ddc_genes,4) ,
   group_by(tissue) %>%
   summarise(OR = fisher.test(cbind(Rev, NonRev))$est,
             p = fisher.test(cbind(Rev, NonRev))$p.val)
-  
+
+OR2
 ####################
 #################### reversal genes (for each tissue) vs dc genes (among development divergent genes)
 #################### test updown and downup genes separately
 ####################
 
+OR_UD = data.frame(gene_id=rep(names(ddc_genes),4), DCpattern = rep(ddc_genes,4) ,
+                 tissue= rep(c('Cortex','Lung', 'Liver', 'Muscle'),each = length(ddc_genes)), 
+                 row.names=NULL) %>%
+  mutate(DCpattern = ifelse(DCpattern<0,'DC', 'DD')) %>%
+  left_join(revgenes) %>%
+  mutate(Revness = ifelse(direction == 'UpDown', 'Rev','NonRev')) %>% 
+  select(-direction) %>% 
+  mutate(Revness = replace_na(Revness, 'NonRev')) %>%
+  group_by(Revness, tissue, DCpattern) %>%
+  summarise(n=n()) %>%
+  spread(Revness, n) %>%
+  group_by(tissue) %>%
+  summarise(OR = fisher.test(cbind(Rev, NonRev))$est,
+            p = fisher.test(cbind(Rev, NonRev))$p.val)
+OR_UD
+
+OR_DU = data.frame(gene_id=rep(names(ddc_genes),4), DCpattern = rep(ddc_genes,4) ,
+                   tissue= rep(c('Cortex','Lung', 'Liver', 'Muscle'),each = length(ddc_genes)),
+                   row.names=NULL) %>%
+  mutate(DCpattern = ifelse(DCpattern<0,'DC', 'DD')) %>%
+  left_join(revgenes) %>%
+  mutate(Revness = ifelse(direction == 'DownUp', 'Rev','NonRev')) %>% 
+  select(-direction) %>% 
+  mutate(Revness = replace_na(Revness, 'NonRev')) %>%
+  group_by(Revness, tissue, DCpattern) %>%
+  summarise(n=n()) %>%
+  spread(Revness, n) %>%
+  group_by(tissue) %>%
+  summarise(OR = fisher.test(cbind(Rev, NonRev))$est,
+            p = fisher.test(cbind(Rev, NonRev))$p.val)
+OR_DU
 
 ####################
 ####################
@@ -294,16 +276,11 @@ OR2 = data.frame(gene_id=rep(names(ddc_genes),4), DCpattern = rep(ddc_genes,4) ,
 ####################
 ####################
 
-covA = readRDS("/home/black/Dropbox/projects/ageing/proc_data/perm/aging.cov.perm.rds")
-head(div_dev)
+covA = readRDS("./data/processed/raw/aging.cov.perm.rds")
 
 # DiCo/DiDi: 
-# div_dev = covch_D[covch_D[,1] > 0, 1]
-# ddc_genes = div_dev*covch_A[names(div_dev),1]
-co.t = summary(covch_A[covch_A[,1]<0,1])['3rd Qu.']
-co = covch_A[covch_A[,1]<co.t,1]
-
-ddc_genes2 = div_dev[names(div_dev)%in%names(co)]*covch_A[rownames(covch_A)%in%intersect(names(div_dev), names(co)), 1]
+div_dev = covch_D[covch_D[,1] > 0, 1]
+length(ddc_genes)
 
 # -:dico, +:didi
 obs_dico = sum(ddc_genes<0) / (sum(ddc_genes<0)+sum(ddc_genes>0))
@@ -315,21 +292,23 @@ DiCodist = sapply(1:ncol(covA), function(perm){
 })
 names(DiCodist) = paste0('p',1:length(DiCodist))
 dico_p = round(mean(DiCodist >= obs_dico),3)
-dico_fpr = round(median(DiCodist) / obs_dico,3)
+dico_efpp = round(median(DiCodist) / obs_dico,3)
+saveRDS(data.frame(Perms= names(DiCodist), rho = DiCodist, row.names=NULL),
+        './data/processed/tidy/DiCo_sig_perm.rds')
 
 dico_prop_perm = data.frame(Perms= names(DiCodist), rho = DiCodist, row.names=NULL) %>% 
   ggplot(aes(x=rho)) +
   geom_histogram(bins=40) +
   geom_vline(xintercept = obs_dico, linetype='dashed', col='darkred') +
   annotate('text', x= 0.55, y=65, label=paste('Obs = ', round(obs_dico,2)), hjust = 0, size=2) + 
-  annotate('text', x= 0.55, y=63, label=paste('FPR = ',dico_fpr), hjust = 0, size=2) + 
+  annotate('text', x= 0.55, y=63, label=paste('eFPP = ',dico_efpp), hjust = 0, size=2) + 
   annotate('text', x= 0.55, y=61, label=paste('p.val = ',dico_p), hjust = 0, size=2) +
   xlab('DiCo Proportion') +
   ylab('Frequency') +
   theme_bw()
 
-ggsave('./results/SI_figures/Figure_S30.pdf',units='cm', width=12, height=12, useDingbats=F)
-ggsave('./results/SI_figures/Figure_S30.png',units='cm', width=12, height=12)
+ggsave('./results/SI_figures/Figure_S16.pdf',dico_prop_perm,units='cm', width=12, height=12, useDingbats=F)
+ggsave('./results/SI_figures/Figure_S16.png',dico_prop_perm, units='cm', width=12, height=12)
 
 #############
 ############# DiCo with rho cutoff
@@ -390,15 +369,3 @@ ggsave('./results/SI_figures/Figure_S30.png',units='cm', width=12, height=12)
 # 
 # 
 # 
-
-
-
-
-
-
-
-
-
-
-
-

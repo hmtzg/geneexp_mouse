@@ -6,7 +6,7 @@ library(RColorBrewer)
 pntnorm <- (1/0.352777778)
 theme_set(theme_pubr(base_size = 6, legend = 'top') +
             theme(legend.key.size = unit(2,'pt')))
-#source('./scripts/functions.R')
+source('./scripts/functions.R')
 
 ########################################
 ######################################## 
@@ -63,6 +63,9 @@ saveRDS(pexpcors, './data/processed/tidy/pairwise_tissue_expression_cors.rds')
 ######################################## no sig. cutoff (test significance of fig 1c. for each pair)
 ########################################
 
+expr_ch = readRDS('./data/processed/tidy/expression_change.rds')
+aging.perm = readRDS('./data/processed/raw/permutations_ageing.rds')
+dev.perm = readRDS('./data/processed/raw/permutations_dev.rds')
 # calculate observed correlations:
 cors = expr_ch %>%
   select(-p, -FDR) %>%
@@ -113,7 +116,7 @@ for(i in 1:6){
   dev.perm.results = cbind(dev.perm.results,c(p1,f1))
 }
 colnames(dev.perm.results) = colnames(corperm.dev)
-rownames(dev.perm.results) = c("p.val","fdr")
+rownames(dev.perm.results) = c("permutation p-value","eFPP")
 
 aging.perm.results = c()
 chs = combn(4,2)
@@ -124,17 +127,20 @@ for(i in 1:6){
   aging.perm.results = cbind(aging.perm.results,c(p1,f1))
 }
 colnames(aging.perm.results) = colnames(corperm.dev)
-rownames(aging.perm.results) = c("p.val","fdr")
+rownames(aging.perm.results) = c("permutation p-value","eFPP")
 
 pwise_cor_perm_test = 
-  as.data.frame(rbind( round(t(rbind(rho = unname(c(cors[2:4,1], cors[3:4,2],cors[4,3])), dev.perm.results)),3),
-                       round(t(rbind(rho = unname(c(cors[6:8,5], cors[7:8,6],cors[8,7])), aging.perm.results)),3))) %>% 
+  as.data.frame(rbind( round(t(rbind(rho = unname(c(cors[2:4,1], cors[3:4,2],cors[4,3])), 
+                                     dev.perm.results)),3),
+                       round(t(rbind(rho = unname(c(cors[6:8,5], cors[7:8,6],cors[8,7])), 
+                                     aging.perm.results)),3))) %>% 
   mutate(`Tissue A` = rep(sapply(strsplit(colnames(dev.perm.results), '-'),function(x)x[1]),2)) %>%
   mutate(`Tissue B` = rep(sapply(strsplit(colnames(dev.perm.results), '-'),function(x)x[2]),2)) %>%
-  set_names(c('rho', 'p.val', 'FDR','Tissue A','Tissue B')) %>%
+  #set_names(c('rho', 'p.val', 'FDR','Tissue A','Tissue B')) %>%
   mutate(Period = rep(c('Development', 'Ageing'), each = 6)) %>%
-  relocate(`Tissue A`, `Tissue B`, Period, rho, p.val, FDR)
-
+  relocate(`Tissue A`, `Tissue B`, Period, rho, `permutation p-value`, eFPP)
+rownames(pwise_cor_perm_test) = NULL
+saveRDS(pwise_cor_perm_test,'./data/processed/tidy/pwise_expch_cor_perm_test.rds')
 write.xlsx(pwise_cor_perm_test, file='./results/SI_tables/TableS3.xlsx', row.names=T)
 
 ########################################
@@ -180,37 +186,17 @@ for(i in 1:ncol(dev.perm$cortex)){
 }
 
 perm_overlaps = reshape2::melt(perm_overlaps) %>% 
-  set_names(c('direction', 'period', 'N Overlap', 'N Tissue','permutatin'))
+  set_names(c('direction', 'period', 'N Overlap', 'N Tissue','permutation'))
 
 saveRDS(perm_overlaps, file='./data/processed/raw/tissue_gene_overlaps_perm.rds')
 
 overlap_test = perm_overlaps %>%
   left_join(obs_overlap) %>%
   group_by(direction, period, `N Tissue`) %>%
-  summarise(p_val = mean(`N Overlap` >= unique(Obs)),
-            FPR =  round(median(`N Overlap`)/ unique(Obs),2)) %>%
+  summarise(Perm_p = mean(`N Overlap` >= unique(Obs)),
+            eFPP =  round(median(`N Overlap`)/ unique(Obs),2)) %>%
   left_join(obs_overlap)
 
-# sizex = 2.5
-# plot_overlaps = perm_overlaps %>%
-#   ggplot(aes(x=`N Overlap`)) +
-#   facet_grid(period+direction ~  `N Tissue`, scales = 'free') +
-#   geom_histogram() +
-#   xlab('Number of Overlap Genes') +
-#   ylab('Frequency')  +
-#   geom_vline(data = obs_overlap, mapping = aes(xintercept= Obs), linetype ='dashed', color = 'darkred' ) +
-#   geom_text(data= overlap_test, size=  sizex,
-#             mapping = aes(x = rep(c(4500, 3900, 1900),4) , y=110, label = paste('Obs =', Obs) )) +
-#   geom_text(data= overlap_test,size=  sizex,
-#             mapping = aes(x = rep(c(4500, 3900, 1900),4) , y=100, label = paste('FPR =', FPR) )) +
-#   geom_text(data= overlap_test,size=  sizex,
-#             mapping = aes(x = rep(c(4500, 3900, 1900),4) , y=90, label = paste('p.val =', p_val) )) +
-#   theme_bw() +
-#   theme(axis.text = element_text(size =6))
-
-# moved to SI_Figures.R and modified
-# ggsave('./results/SI_figures/fig_S4.pdf', plot_overlaps, width = 16, height = 15, units='cm', useDingbats = F )
-# ggsave('./results/SI_figures/fig_S4.png', plot_overlaps, width = 16, height = 15, units='cm' )  
 
 ########################################
 ########################################
@@ -297,63 +283,11 @@ overlap_fdr_test = perm_overlaps_fdr %>%
   mutate(`N Tissue` = paste(`N Tissue`, c('Tissues')) ) %>% 
   right_join(obs_overlap_fdr, by = c('N Tissue', 'period', 'direction')) %>% 
   group_by(direction, period, `N Tissue`) %>%
-  summarise(p_val = mean(`N Overlap` >= unique(Obs)),
-            FPR =  round(median(`N Overlap`)/ unique(Obs),2)) %>%
+  summarise(Perm_p = mean(`N Overlap` >= unique(Obs)),
+            eFPP =  round(median(`N Overlap`)/ unique(Obs),2)) %>%
   ungroup() %>%
-  mutate(p_val = ifelse(p_val == 0, '< 0.001', p_val)) %>%
+  mutate(Perm_p = ifelse(Perm_p == 0, '< 0.001', Perm_p)) %>%
   left_join(obs_overlap_fdr)
-
-# sizex = 2
-# fig_s6_a = perm_overlaps_fdr %>% 
-#   mutate(`N Tissue` = paste(`N Tissue`, c('Tissues')) ) %>% 
-#   right_join(obs_overlap_fdr, by = c('N Tissue', 'period', 'direction')) %>%
-#   filter(period == 'Development') %>%
-#   ggplot(aes(x=`N Overlap`)) +
-#   facet_grid(direction ~  `N Tissue`, scales = 'free') +
-#   geom_histogram() +
-#   xlab('Number of Overlap Genes') +
-#   ylab('Frequency')  +
-#   geom_vline(data = filter(overlap_fdr_test, period == 'Development'),
-#              mapping = aes(xintercept= Obs), linetype ='dashed', color = 'darkred' ) +
-#   geom_text(data= filter(overlap_fdr_test, period == 'Development'), size = sizex,
-#             mapping = aes(x = c(1350, 340, 90, 1320,390,80) , y=200, label = paste('Obs =', Obs) )) +
-#   geom_text(data= filter(overlap_fdr_test, period == 'Development'), size=  sizex,
-#             mapping = aes(x = c(1350, 340, 90, 1320,390,80) , y=180, label = paste('FPR =', FPR) )) +
-#   geom_text(data= filter(overlap_fdr_test, period == 'Development'), size=  sizex,
-#             mapping = aes(x = c(1350, 340, 90, 1320,390,80) , y=160, label = paste('p.val =', p_val) )) +
-#   theme_bw() +
-#   theme(axis.text = element_text(size =6))
-# 
-# fig_s6_b = perm_overlaps_fdr %>% 
-#   mutate(`N Tissue` = paste(`N Tissue`, c('Tissues')) ) %>% 
-#   right_join(obs_overlap_fdr, by = c('N Tissue', 'period', 'direction')) %>%
-#   filter(period == 'Ageing') %>%
-#   ggplot(aes(x=`N Overlap`)) +
-#   facet_wrap(~direction, scales = 'free',nrow = 2, strip.position = 'right') +
-#   geom_histogram() +
-#   xlab('Number of Overlap Genes') +
-#   ylab('Frequency')  +
-#   geom_vline(data = filter(overlap_fdr_test, period == 'Ageing'),
-#              mapping = aes(xintercept= Obs), linetype ='dashed', color = 'darkred' ) +
-#   geom_text(data= filter(overlap_fdr_test, period == 'Development'), size = sizex,
-#             mapping = aes(x = c(41, NA,NA,29,NA,NA) , y=100, label = paste('Obs =', Obs) )) +
-#   geom_text(data= filter(overlap_fdr_test, period == 'Development'), size=  sizex,
-#             mapping = aes(x = c(41, NA,NA,29,NA,NA) , y=88, label = paste('FPR =', FPR) )) +
-#   geom_text(data= filter(overlap_fdr_test, period == 'Development'), size=  sizex,
-#             mapping = aes(x = c(41,NA,NA,29,NA,NA) , y=76, label = paste('p.val =', p_val) )) +
-#   theme_bw() +
-#   theme(axis.text = element_text(size =6))
-# 
-# fig_s6 = ggarrange(fig_s6_a,fig_s6_b, ncol = 2, widths = c(1, 0.5), labels = c('a.','b.'))
-
-# moved to SI_Figures.R and modified:
-# ggsave('./results/SI_figures/fig_S6.pdf', fig_s6 , width = 18, height = 10, units='cm', useDingbats = F )
-# ggsave('./results/SI_figures/fig_S6.png', fig_s6 , width = 18, height = 10, units='cm' )  
-
-####################
-####################
-####################
-####################
 
 ####################
 #################### GO Over representation  Analysis with topGO package:
@@ -389,27 +323,19 @@ shared_genes_go = sapply(unique(sig_genes$period), function(p){
     
     genelist[names(genelist)%in%foreground] = 1
     if(sum(genelist)>=10){
-      go =go_bp_enrich.test.Mm(genelist = genelist, selection = 1)
+      go = go_bp_enrich.test.Mm(genelist = genelist, selection = 1,padj = 'BH')
       return(go) } 
   }, simplify = F, USE.NAMES = T)
 }, simplify = F, USE.NAMES = T)
 
-names(shared_genes_go) = c('Development', 'Ageing')
+#names(shared_genes_go) = c('Development', 'Ageing')
+names(shared_genes_go) =  unique(sig_genes$period)
+table_sX = unlist(shared_genes_go, recursive = F)
 
-table_s3 = unlist(shared_genes_go, recursive = F)
-
-write.xlsx(table_s3, file='./results/SI_tables/TableS4.xlsx', row.names=F)
-
-
-####################
-####################
-####################
-####################
+write.xlsx(table_sX, file='./results/SI_tables/TableS4.xlsx', row.names=F)
 
 
 ####################
 ####################
 ####################
 ####################
-####################
-

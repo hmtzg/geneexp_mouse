@@ -81,28 +81,6 @@ pb1 = pca_dat %>%
   theme_bw()
 
 sizex = 2
-pb1annot = pca_dat %>%
-  select(-varExp) %>%
-  filter(period == 'all', type == 'raw', PC == 'PC3') %>%
-  left_join(select(sample_info,-ind_id, -log2age)) %>%
-  mutate(period = ifelse(age < 90, 'dev','ageing')) %>%
-  group_by(tissue, period) %>%
-  summarise(rho = round(cor.test(age, value, m='s')$est,2),
-            pval= round(cor.test(age, value, m='s')$p.val,2)) %>%
-  ungroup() %>%
-  arrange(-rho, group_by = period) %>%
-  mutate(y_pos_dev = c(95,NA,NA,80,NA,NA,65,50)) %>%
-  mutate(y_pos_ageing = c(NA,25,40,NA,70,55,NA,NA)) 
-  
-pb1 = pb1 +
-  geom_text(data = filter(pb1annot, period =='dev'), size = sizex, nudge_y = -0.5,
-            mapping = aes(x=3, y=y_pos_dev,label = paste('rho ==', rho)) , parse=T) +
-  geom_text(data = filter(pb1annot, period =='dev'), size = sizex, 
-            mapping = aes(x=10, y=y_pos_dev,label = paste(', p-val =', pval)) , parse=F) +
-  geom_text(data = filter(pb1annot, period =='ageing'), size = sizex, nudge_y = -0.5,
-            mapping = aes(x=160, y=y_pos_ageing,label = paste('rho ==', rho)) , parse=T) +
-  geom_text(data = filter(pb1annot, period =='ageing'), size = sizex, 
-            mapping = aes(x=560, y=y_pos_ageing,label = paste(', p-val =', pval)) , parse=F)
 
 pb2 = pca_dat %>%
   select(-varExp) %>%
@@ -118,31 +96,6 @@ pb2 = pca_dat %>%
   guides(color = F) +
   xlab('Age in days (in log2 scale)') +
   theme_bw()
-
-##  pc4- yas korelasyon sonuclari
-pb2annot = pca_dat %>%
-  select(-varExp) %>%
-  filter(period == 'all', type == 'raw', PC == 'PC4') %>%
-  left_join(select(sample_info,-ind_id, -log2age)) %>%
-  mutate(period = ifelse(age < 90, 'dev','ageing')) %>%
-  group_by(tissue, period) %>%
-  summarise(rho = round(cor.test(age, value, m='s')$est,2),
-            pval= cor.test(age, value, m='s')$p.val) %>%
-  mutate(pval = ifelse(pval <0.01, ', p-val < 0.01',paste(', p-val = ',round(pval,2), sep ='') )) %>%
-  ungroup() %>%
-  arrange(-rho, group_by = period) %>%
-  mutate(y_pos_dev = c(NA,NA,NA,NA,-45,-30,0,-15)) %>%
-  mutate(y_pos_ageing = c(50,80,95,65,NA,NA,NA,NA)) 
-
-pb2 = pb2 +
-  geom_text(data = filter(pb2annot, period =='dev'), size = sizex, nudge_y = -0.5,
-            mapping = aes(x=3, y=y_pos_dev,label = paste('rho ==', rho)) , parse=T) +
-  geom_text(data = filter(pb2annot, period =='dev'), size = sizex, 
-            mapping = aes(x=10, y=y_pos_dev,label =  pval) , parse=F) +
-  geom_text(data = filter(pb2annot, period =='ageing'), size = sizex, nudge_y = -0.5,
-            mapping = aes(x=160, y=y_pos_ageing,label = paste('rho ==', rho)) , parse=T) +
-  geom_text(data = filter(pb2annot, period =='ageing'), size = sizex, 
-            mapping = aes(x=560, y=y_pos_ageing,label = pval) , parse=F)
 
 ##
 pb3 = pca_dat %>%
@@ -189,6 +142,7 @@ cors = expdf %>%
   as.matrix() %>%
   cor(method="s", use="complete.obs")
 
+saveRDS(cors, './data/processed/raw/pwise_expch_cors.rds')
 diag(cors) = 0
 
 #annotations
@@ -202,17 +156,22 @@ my_col = list(Period = c(Development = "#FE6100",
                          Ageing ="#648FFF"))
 
 
-corplot = pheatmap(cors, breaks = seq(-1, 1, length.out=101), color = colorRampPalette(rev(brewer.pal(n = 11, name = "RdBu")[c(1:3,6,9:11)]))(101), 
+corplot = pheatmap(cors, breaks = seq(-1, 1, length.out=101), 
+                   color = colorRampPalette(rev(brewer.pal(n = 11, name = "RdBu")[c(1:3,6,9:11)]))(101), 
                  annotation_row = annot, annotation_col = annot, annotation_colors = my_col, 
                  legend_labels = c(1,0,-1), legend_breaks = c(1,0,-1),  fontsize = 18,
                  annotation_names_row = F, annotation_names_col = F,
                  width = 5 , height = 4, 
                  cellwidth = 25, cellheight = 25,
                  cluster_rows = F, cluster_cols = F, border_color = "gray60",
-                 labels_row = setNames(c("CTX", "LV", "LNG", "MS"), c("Cortex", "Liver", "Lung", "Muscle"))[gsub("age_|dev_", "", rownames(cors))], 
-                 labels_col = setNames(c("CTX", "LV", "LNG", "MS"), c("Cortex", "Liver", "Lung", "Muscle"))[gsub("age_|dev_", "", rownames(cors))], 
-                 show_rownames = T, show_colnames = T,display_numbers=T, number_format="%.2f", number_color="black",
-                 fontsize_number=6)
+                 labels_row = setNames(c("CTX", "LV", "LNG", "MS"), 
+                                       c("Cortex", "Liver", "Lung", "Muscle"))[gsub("age_|dev_", "", 
+                                                                                    rownames(cors))], 
+                 labels_col = setNames(c("CTX", "LV", "LNG", "MS"), 
+                                       c("Cortex", "Liver", "Lung", "Muscle"))[gsub("age_|dev_", "", 
+                                                                                    rownames(cors))], 
+                 show_rownames = T, show_colnames = T,display_numbers=T, number_format="%.2f", 
+                 number_color="black", fontsize_number=6)
 pc=corplot
 save_phmap(corplot,"results/figure1/fig1c_corplot.svg",
            width=15, height=15)
@@ -295,11 +254,4 @@ pf = revgenes %>%
 ggsave('./results/figure1/fig1f.pdf', pf, units='cm', height = 10, width = 8, useDingbats=F)
 ggsave('./results/figure1/fig1f.png', pf, units='cm', height = 10, width = 8)
 
-pce = ggarrange(pc, ggarrange(ggplot(), pe, nrow=2,heights = c(1,1.7), legend="none"), 
-              ncol=2, common.legend = T, legend="right")
-ggsave("results/figure1/fig1ce.pdf", pce,
-       width = 9, height = 4)
-
-ggsave("/Users/ulas/Drive/Projects/MiceAge/hmt/figures/fig1f.pdf", pf,
-       width = 3, height = 4)
 

@@ -1,8 +1,10 @@
 library(data.table)
 library(tidyverse)
 
-att = read_tsv('./data/raw/GTEx/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt', guess_max = 25000)
-phe = read_tsv('./data/raw/GTEx/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt', guess_max = 1000)
+att = read_tsv('./data/other_datasets/GTEx/GTEx_Analysis_v8_Annotations_SampleAttributesDS.txt', 
+               guess_max = 25000)
+phe = read_tsv('./data/other_datasets/GTEx/GTEx_Analysis_v8_Annotations_SubjectPhenotypesDS.txt', 
+               guess_max = 1000)
 att$SUBJID = sapply(strsplit(att$SAMPID,'-'),function(x)paste(x[1],x[2],sep='-'))
 phe$SEX = c('male','female')[phe$SEX]
 phe = phe %>%
@@ -19,7 +21,11 @@ allattr = att %>%
 allattr = allattr %>%
   filter(death %in% c(1,2))
 
-dat=fread('./data/raw/GTEx/expression/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct',select = c('Name',allattr$sample_id))
+# file is a symbolic link, read from the original directory:
+# dat=fread('../../../../pseudodropbox/GTEX/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct',
+#           select = c('Name',allattr$sample_id))
+dat=fread('./data/other_datasets/GTEx/expression/GTEx_Analysis_2017-06-05_v8_RNASeQCv1.1.9_gene_tpm.gct',
+          select = c('Name',allattr$sample_id))
 samplesx=colnames(dat)[-1]
 
 dat = as.data.frame(dat)
@@ -27,7 +33,8 @@ rownames(dat) = dat$Name
 dat$Name = NULL
 dat = as.matrix(dat)
 samplesx = intersect(allattr$sample_id, colnames(dat))
-samples_by_tissues = tapply(as.character(allattr$sample_id),INDEX=allattr$minor_tissue,FUN = function(x)unique(c(x)))
+samples_by_tissues = tapply(as.character(allattr$sample_id),
+                            INDEX=allattr$minor_tissue, FUN = function(x)unique(c(x)))
 dat = lapply(samples_by_tissues,function(samps){
   samps = intersect(samps,samplesx)
   dat[,samps]
