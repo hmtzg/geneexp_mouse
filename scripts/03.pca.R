@@ -186,6 +186,24 @@ mdist %>%
 # dev: (PC3,4) 0.90, 0.00562 (old) -> (PC1,2,3,4) 0.99, 0.0000146
 # ageing: (PC3,4) -0.303, 0.429 (old) -> (PC1,2,3,4) -0.87, 0.00256
 
+mdistplot = mdist %>%
+  mutate(period=ifelse(age<90,'development', 'aging')) %>%
+  mutate(period = factor(period, levels=c('development', 'aging'))) %>%
+  ggplot(aes(x=age, y=mdist)) +
+  geom_point() +
+  scale_x_continuous(trans='log2') +
+  geom_smooth(method = 'loess', se=F, color='midnightblue') +
+  geom_vline(xintercept = 90, linetype='dashed', color='gray20') +
+  ggpubr::stat_cor(aes(group=period),method='spearman', cor.coef.name = 'rho',
+                   label.x.npc = c(0.1, 0.65), label.y.npc = c(0.9, 0.4), size=3) +
+  ylab('Mean Euclidean Distance') +
+  xlab('Age in days (in log2 scale)') + theme_bw()
+
+ggsave('./results/figure1/mdis.pdf', mdistplot, units = 'cm', width = 12, height = 8,
+       useDingbats = F)
+ggsave('./results/figure1/mdist.png', mdistplot, units = 'cm', width = 12, height = 8)
+
+
 ######
 #### dev only pairwise dist:
 dist_dat_dev = pca_data %>%
