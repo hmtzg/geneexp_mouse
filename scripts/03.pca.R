@@ -8,11 +8,6 @@ sample_info = readRDS('./data/processed/tidy/sample_info.rds')
 samp_id = names(ts.ord)
 ## PCA all regions with expression data:
 pc = prcomp(t(exp),scale = T)
-# cor(pc$x[,1], age, m="s") # 0.16
-# cor(pc$x[,2], age, m="s") # 0.26
-# cor(pc$x[,3], age, m="s") # 0.06
-# cor.test(pc$x[,4], age, m="s") # 0.62
-
 agedev = age[age<93]
 expdev = exp[, age<93]
 pcdev = prcomp(t(expdev), scale = T)
@@ -39,12 +34,12 @@ which(apply(is.na(exp.sc.ag),1,function(x)sum(x)>0) )
 exp.sc.ag = exp.sc.ag[!apply(is.na(exp.sc.ag),1,function(x)sum(x)>0),]
 pc.sc.ag = prcomp(t(exp.sc.ag),scale = T)
 
-pca_data_all = list(pc.sc.ag,
-                    pc,
-                    pc.sc,
-                    pcag,
-                    pcdev,
-                    pc.sc.dev)
+pca_data_all = list(pc.sc.ag, #  aging scaled
+                    pc, # all raw
+                    pc.sc, # all scaled
+                    pcag, # aging raw
+                    pcdev, # dev raw
+                    pc.sc.dev) # dev scaled
 names(pca_data_all) = c('aging_notissue','all_raw','all_notissue','aging_raw','development_raw',
                         'development_notissue')
 
@@ -75,52 +70,81 @@ saveRDS(pca_data,'./data/processed/tidy/pca_data.rds')
 #             p = cor.test(age,value,m='s')$p.val)
 # write.xlsx(pc_age_cors, './data/Table_S0.xlsx')
 
-pc_age_cors  = pca_data %>%
-  rename(`Scale period` = period) %>%
+pc_age_cors = pca_data %>%
+  rename(`PCA period` = period) %>%
   left_join(select(sample_info,-ind_id,-log2age)) %>%
   mutate(`age period` = ifelse(age< 90,'Dev','Aging') ) %>%
-  group_by(`Scale period`, type, PC, tissue, `age period`) %>%
+  group_by(`PCA period`, type, PC, tissue, `age period`) %>%
   summarise(rho = cor.test(age,value,m='s')$est,
             p = cor.test(age,value,m='s')$p.val)
 
 write.xlsx(pc_age_cors, './results/SI_tables/TableS1.xlsx')
 
+## PC4 - age cors (alldata - raw - dev): (fig 1b)
 pc_age_cors %>%
-  filter(type=='notissue' & `Scale period` == 'all' & `age period` == 'Dev') %>%
-  filter(PC=='PC1')
-# `Scale period` type     PC    tissue `age period`   rho         p
-# <chr>          <chr>    <fct> <fct>  <chr>        <dbl>     <dbl>
-#   1 all            notissue PC1   Cortex Dev          0.955 0.000806 
-# 2 all            notissue PC1   Liver  Dev          0.991 0.0000146
-# 3 all            notissue PC1   Lung   Dev          0.883 0.00845  
-# 4 all            notissue PC1   Muscle Dev          0.955 0.000806 
-pc_age_cors %>%
-  filter(type=='notissue' & `Scale period` == 'all' & `age period` == 'Dev') %>%
-  filter(PC=='PC2')
-# `Scale period` type     PC    tissue `age period`    rho         p
-# <chr>          <chr>    <fct> <fct>  <chr>         <dbl>     <dbl>
-#   1 all            notissue PC2   Cortex Dev          -0.991 0.0000146
-# 2 all            notissue PC2   Liver  Dev           0.883 0.00845  
-# 3 all            notissue PC2   Lung   Dev          -0.901 0.00562  
-# 4 all            notissue PC2   Muscle Dev           0.306 0.504  
-pc_age_cors %>%
-  filter(type=='raw' & `Scale period` == 'development') %>%
-  filter(PC=='PC2')
-# `Scale period` type  PC    tissue `age period`   rho       p
-# <chr>          <chr> <fct> <fct>  <chr>        <dbl>   <dbl>
-#   1 development    raw   PC2   Cortex Dev          0.793 0.0334 
-# 2 development    raw   PC2   Liver  Dev          0.937 0.00185
-# 3 development    raw   PC2   Lung   Dev          0.721 0.0676 
-# 4 development    raw   PC2   Muscle Dev          0.775 0.0408 
-pc_age_cors %>%
-  filter(type=='raw' & `Scale period` == 'development') %>%
+  filter(type=='raw' & `PCA period` == 'all' & `age period` == 'Dev') %>%
   filter(PC=='PC4')
-# `Scale period` type  PC    tissue `age period`    rho         p
-# <chr>          <chr> <fct> <fct>  <chr>         <dbl>     <dbl>
-#   1 development    raw   PC4   Cortex Dev          -0.955 0.000806 
-# 2 development    raw   PC4   Liver  Dev          -0.991 0.0000146
-# 3 development    raw   PC4   Lung   Dev          -0.883 0.00845  
-# 4 development    raw   PC4   Muscle Dev          -0.955 0.000806 
+# `PCA period` type  PC    tissue `age period`    rho         p
+# <chr>        <chr> <fct> <fct>  <chr>         <dbl>     <dbl>
+# 1 all          raw   PC4   Cortex Dev          -0.955 0.000806 
+# 2 all          raw   PC4   Liver  Dev          -0.991 0.0000146
+# 3 all          raw   PC4   Lung   Dev          -0.883 0.00845  
+# 4 all          raw   PC4   Muscle Dev          -0.955 0.000806 
+
+## PC1 - age cors (alldata - scaled - dev): (fig 1 - fs2)
+pc_age_cors %>%
+  filter(type=='notissue' & `PCA period` == 'all' & `age period` == 'Dev') %>%
+  filter(PC=='PC1')
+# `PCA period` type     PC    tissue `age period`   rho         p
+# <chr>        <chr>    <fct> <fct>  <chr>        <dbl>     <dbl>
+# 1 all          notissue PC1   Cortex Dev          0.955 0.000806 
+# 2 all          notissue PC1   Liver  Dev          0.991 0.0000146
+# 3 all          notissue PC1   Lung   Dev          0.883 0.00845  
+# 4 all          notissue PC1   Muscle Dev          0.955 0.000806 
+
+## PC2 - age cors (alldata - scaled - dev): (fig 1 - fs2)
+pc_age_cors %>%
+  filter(type=='notissue' & `PCA period` == 'all' & `age period` == 'Dev') %>%
+  filter(PC=='PC2')
+# `PCA period` type     PC    tissue `age period`    rho         p
+# <chr>        <chr>    <fct> <fct>  <chr>         <dbl>     <dbl>
+# 1 all          notissue PC2   Cortex Dev          -0.991 0.0000146
+# 2 all          notissue PC2   Liver  Dev           0.883 0.00845  
+# 3 all          notissue PC2   Lung   Dev          -0.901 0.00562  
+# 4 all          notissue PC2   Muscle Dev           0.306 0.504   
+
+## PC2 - age cors (devdata - raw): (fig 1 - fs3ab)
+pc_age_cors %>%
+  filter(type=='raw' & `PCA period` == 'development') %>%
+  filter(PC=='PC2')
+# `PCA period` type  PC    tissue `age period`   rho       p
+# <chr>        <chr> <fct> <fct>  <chr>        <dbl>   <dbl>
+# 1 development  raw   PC2   Cortex Dev          0.793 0.0334 
+# 2 development  raw   PC2   Liver  Dev          0.937 0.00185
+# 3 development  raw   PC2   Lung   Dev          0.721 0.0676 
+# 4 development  raw   PC2   Muscle Dev          0.775 0.0408 
+
+## PC4 - age cors (devdata - raw): (fig 1 - fs3ab)
+pc_age_cors %>%
+  filter(type=='raw' & `PCA period` == 'development') %>%
+  filter(PC=='PC4')
+# `PCA period` type  PC    tissue `age period`    rho         p
+# <chr>        <chr> <fct> <fct>  <chr>         <dbl>     <dbl>
+# 1 development  raw   PC4   Cortex Dev          -0.955 0.000806 
+# 2 development  raw   PC4   Liver  Dev          -0.991 0.0000146
+# 3 development  raw   PC4   Lung   Dev          -0.883 0.00845  
+# 4 development  raw   PC4   Muscle Dev          -0.955 0.000806 
+
+## PC4 - age cors (agdata - raw): (fig 1 - fs3e)
+pc_age_cors %>%
+  filter(type=='raw' & `PCA period` == 'aging') %>%
+  filter(PC=='PC4')
+# `PCA period` type  PC    tissue `age period`    rho      p
+# <chr>        <chr> <fct> <fct>  <chr>         <dbl>  <dbl>
+# 1 aging        raw   PC4   Cortex Aging        -0.299 0.471 
+# 2 aging        raw   PC4   Liver  Aging        -0.723 0.0278
+# 3 aging        raw   PC4   Lung   Aging        -0.773 0.0145
+# 4 aging        raw   PC4   Muscle Aging         0.109 0.780 
 
 #################################
 ################################# does PC1,2,3 separate samples according to tissues? check with Anova
@@ -153,7 +177,6 @@ pwise_distMean = function(mat, id_col=1){
   # mat: matrix or data frame with columns as coordinates to calculate distance, and one id column
   # distance is calculated pairwise among rows of same ids
   # id_col: index of the id column
-  
   sapply(unique(mat[,id_col] ), function(x){
     ind = mat[mat[,id_col]==x,]
     mean(as.vector(dist(ind[, -id_col])))
@@ -182,27 +205,27 @@ mdist %>%
   group_by(period) %>%
   summarise(rho = cor(mdist,age, m='s'),
             p = cor.test(mdist,age, m='s')$p.val)
+# period    rho         p
+# <chr>   <dbl>     <dbl>
+# 1 ageing -0.866 0.00256  
+# 2 dev     0.991 0.0000146
 
-# dev: (PC3,4) 0.90, 0.00562 (old) -> (PC1,2,3,4) 0.99, 0.0000146
-# ageing: (PC3,4) -0.303, 0.429 (old) -> (PC1,2,3,4) -0.87, 0.00256
-
-mdistplot = mdist %>%
-  mutate(period=ifelse(age<90,'development', 'aging')) %>%
-  mutate(period = factor(period, levels=c('development', 'aging'))) %>%
-  ggplot(aes(x=age, y=mdist)) +
-  geom_point() +
-  scale_x_continuous(trans='log2') +
-  geom_smooth(method = 'loess', se=F, color='midnightblue') +
-  geom_vline(xintercept = 90, linetype='dashed', color='gray20') +
-  ggpubr::stat_cor(aes(group=period),method='spearman', cor.coef.name = 'rho',
-                   label.x.npc = c(0.1, 0.65), label.y.npc = c(0.9, 0.4), size=3) +
-  ylab('Mean Euclidean Distance') +
-  xlab('Age in days (in log2 scale)') + theme_bw()
-
-ggsave('./results/figure1/mdis.pdf', mdistplot, units = 'cm', width = 12, height = 8,
-       useDingbats = F)
-ggsave('./results/figure1/mdist.png', mdistplot, units = 'cm', width = 12, height = 8)
-
+# mdistplot = mdist %>%
+#   mutate(period=ifelse(age<90,'development', 'aging')) %>%
+#   mutate(period = factor(period, levels=c('development', 'aging'))) %>%
+#   ggplot(aes(x=age, y=mdist)) +
+#   geom_point() +
+#   scale_x_continuous(trans='log2') +
+#   geom_smooth(method = 'loess', se=F, color='midnightblue') +
+#   geom_vline(xintercept = 90, linetype='dashed', color='gray20') +
+#   ggpubr::stat_cor(aes(group=period),method='spearman', cor.coef.name = 'rho',
+#                    label.x.npc = c(0.1, 0.65), label.y.npc = c(0.9, 0.4), size=3) +
+#   ylab('Mean Euclidean Distance') +
+#   xlab('Age in days (in log2 scale)') + theme_bw()
+# 
+# ggsave('./results/figure1/mdis.pdf', mdistplot, units = 'cm', width = 12, height = 8,
+#        useDingbats = F)
+# ggsave('./results/figure1/mdist.png', mdistplot, units = 'cm', width = 12, height = 8)
 
 ######
 #### dev only pairwise dist:
@@ -224,7 +247,8 @@ saveRDS(mdist_dev, './data/processed/tidy/mean_euclidean_dist_dev.rds')
 mdist_dev %>%
   summarise(rho = cor(mdist,age, m='s'),
             p = cor.test(mdist,age, m='s')$p.val)
-#(old (PC3-4 only: rho=0.63, p=0.13)) --> rho = 0.95, p = 0.0008
+# rho            p
+# 1 0.9549937 0.0008055353
 
 #### ageing only pairwise dist:
 dist_dat_aging = pca_data %>%
@@ -240,7 +264,7 @@ mdist_aging = pwise_distMean(dist_dat_aging)
 mdist_aging = data.frame(ind_id= names(mdist_aging), mdist = mdist_aging, row.names = NULL) %>%
   left_join(unique(select(sample_info, ind_id, age)), by = 'ind_id')
 
-#saveRDS(mdist_aging, './data/processed/tidy/mean_euclidean_dist_aging.rds')
+saveRDS(mdist_aging, './data/processed/tidy/mean_euclidean_dist_aging.rds')
 
 mdist_aging %>%
   summarise(rho = cor(mdist,age, m='s'),
@@ -248,26 +272,22 @@ mdist_aging %>%
 # rho= -0.64, p=0.05959
 
 pc_age_cors %>%
-  filter(type=='raw' & `Scale period` == 'aging' & `age period` == 'Aging') %>%
-  filter(PC=='PC1')
+  filter(type=='raw' & `PCA period` == 'aging') %>%
+  filter(PC=='PC3')
 # `Scale period` type  PC    tissue `age period`     rho        p
 # <chr>          <chr> <fct> <fct>  <chr>          <dbl>    <dbl>
-#   1 aging          raw   PC1   Cortex Aging         0.683  0.0621  
+# 1 aging          raw   PC1   Cortex Aging         0.683  0.0621  
 # 2 aging          raw   PC1   Liver  Aging         0.924  0.000363
 # 3 aging          raw   PC1   Lung   Aging         0.832  0.00541 
 # 4 aging          raw   PC1   Muscle Aging        -0.0420 0.915  
 
 pc_age_cors %>%
-  filter(type=='raw' & `Scale period` == 'aging' & `age period` == 'Aging') %>%
+  filter(type=='raw' & `PCA period` == 'aging') %>%
   filter(PC=='PC4')
 # `Scale period` type  PC    tissue `age period`    rho      p
 # <chr>          <chr> <fct> <fct>  <chr>         <dbl>  <dbl>
-#   1 aging          raw   PC4   Cortex Aging        -0.299 0.471 
+# 1 aging          raw   PC4   Cortex Aging        -0.299 0.471 
 # 2 aging          raw   PC4   Liver  Aging        -0.723 0.0278
 # 3 aging          raw   PC4   Lung   Aging        -0.773 0.0145
 # 4 aging          raw   PC4   Muscle Aging         0.109 0.780 
-
-
-
-
 
