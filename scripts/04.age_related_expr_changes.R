@@ -1,4 +1,3 @@
-##############
 library(tidyverse)
 library(openxlsx)
 source('./scripts/functions.R')
@@ -55,6 +54,20 @@ age_related_genes = expch %>%
   filter( FDR < 0.1) %>%
   arrange(tissue, group_by=period)
 
+age_related_genes %>%
+  group_by(period, tissue) %>%
+  summarise(n = n(), npercent = n()/ 15063 * 100)
+# period      tissue     n npercent
+# <chr>       <chr>  <int>    <dbl>
+# 1 aging       Cortex    68   0.451 
+# 2 aging       Liver    156   1.04  
+# 3 aging       Lung    2319  15.4   
+# 4 aging       Muscle     2   0.0133
+# 5 development Cortex  6151  40.8   
+# 6 development Liver   4471  29.7   
+# 7 development Lung    3396  22.5   
+# 8 development Muscle  1941  12.9  
+
 ####################
 ####################
 ####################
@@ -100,28 +113,3 @@ table_sX = c(list('age_related_change' = age_related_genes), Upgenes = tissue_up
              Downgenes = tissue_down_go)
 
 write.xlsx(table_sX, file='./results/SI_tables/TableS2.xlsx', row.names=F)
-
-
-
-### GSEA for each tissue and each period separately:
-# library(clusterProfiler)
-# tissue_gsea = sapply(unique(expch$tissue), function(i){
-#   sapply(unique(expch$period), function(pr){
-#     a = expch %>%
-#       filter(period == 'development' & tissue == 'Cortex') %>%
-#       pull(rho, name = gene_id) %>%
-#       sort(., decreasing = T) %>%
-#       gseGO(geneList = ., OrgDb = "org.Mm.eg.db", ont = "BP", keyType = "ENSEMBL", nPerm = 1000, 
-#              minGSSize = 10,
-#             maxGSSize = 500, pvalueCutoff = 1, verbose = F, pAdjustMethod = 'BY')
-#     return(a)
-#   },simplify = F)
-# },simplify = F)
-# 
-# library(openxlsx)
-# table_s1_gsea = list('age_related_change' = age_related_genes,
-#                 'Cortex_development' = cortex_dev_gsea, 'Cortex_ageing' = cortex_aging_gsea,
-#                 'Lung_development' = lung_dev_gsea, 'Lung_ageing' = lung_aging_gsea,
-#                 'Liver_development' = liver_dev_gsea, 'Liver_ageing' = liver_aging_gsea,
-#                 'Muscle_development' = muscle_dev_gsea, 'Muscle_ageing' = muscle_aging_gsea)
-# write.xlsx(table_s1_gsea, file='./data/Table_S1_gsea.xlsx', row.names=T)

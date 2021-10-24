@@ -112,41 +112,73 @@ clT = lapply(kmT, function(x) table(x$cluster))
 clT = lapply(clT, function(x) paste('Cl:', names(x), ' (n=', x, ')', sep=''))
 for(i in 1:4) names(clT[[i]]) = 1:cluT[i]
 
-for(i in names(enrichresult)){
-  dep = which( enrichresult[[i]]['BH',]<0.1 & enrichresult[[i]]['OR',] < 1 )
-  enr = which( enrichresult[[i]]['BH',]<0.1 & enrichresult[[i]]['OR',] > 1 )
-  clT[[i]][names(clT[[i]])%in%dep] = paste(clT[[i]][names(clT[[i]])%in%dep], '-')
-  clT[[i]][names(clT[[i]])%in%enr] = paste(clT[[i]][names(clT[[i]])%in%enr], '+')
-}
-clT$Cortex
+# for(i in names(enrichresult)){
+#   dep = which( enrichresult[[i]]['BH',]<0.1 & enrichresult[[i]]['OR',] < 1 )
+#   enr = which( enrichresult[[i]]['BH',]<0.1 & enrichresult[[i]]['OR',] > 1 )
+#   clT[[i]][names(clT[[i]])%in%dep] = paste(clT[[i]][names(clT[[i]])%in%dep], '-')
+#   clT[[i]][names(clT[[i]])%in%enr] = paste(clT[[i]][names(clT[[i]])%in%enr], '+')
+# }
+
+enrcol = c('+1' = 'firebrick', '0' = 'gray50' , '-1' = 'midnightblue')
+
+xxct = scexpT$Cortex
+enrct = which(enrichresult$Cortex['OR',]>1 & enrichresult$Cortex['BH',] < 0.1)
+depct = which(enrichresult$Cortex['OR',]<1 & enrichresult$Cortex['BH',] < 0.1)
+
+xxct = xxct %>%
+  mutate(enr = ifelse(cluster%in%enrct, '+1', '0'))
+xxct$enr[xxct$cluster%in%depct] = '-1'
+
 # cortex plot : 15 clusters
-expcl_Cortex = scexpT$Cortex %>%
+expcl_Cortex = xxct %>%
   mutate(cluster = factor(cluster, levels=1:length(unique(cluster)))) %>%
-  ggplot(aes(x= age, y= scExpr )) +
+  ggplot(aes(x= age, y= scExpr, color=enr )) +
   facet_wrap(~cluster, ncol = 4,  scales = 'free_y', labeller=labeller(cluster=clT$Cortex)) +
   scale_x_continuous(trans = 'log2') +
   geom_vline(xintercept=90, linetype='dashed', alpha=0.3) +
-  geom_line(stat='smooth', method='loess', aes(group=gene_id), alpha=0.05, col='midnightblue' ) +
+  geom_line(stat='smooth', method='loess', aes(group=gene_id), alpha=0.05) +
+  scale_color_manual(values = enrcol) +
   xlab('Age in days (in log2 scale)') +
   ylab('Expression scaled across genes') +
   theme(legend.position = 'none',
         axis.text = element_text(size=6),
         axis.title = element_text(size=6),
         strip.text = element_text(size=6, margin=margin(l=1,b=1,t=1)))
-#expcl_Cortex
-ggsave('./results/SI_figures/expr_cluster/cortex.pdf', expcl_Cortex, units='cm', width = 10, height = 10,
-       useDingbat=F)
-ggsave('./results/SI_figures/expr_cluster/cortex.png', expcl_Cortex, units='cm', width = 10, height = 10)
 
-clT$Lung
+# expcl_Cortex = scexpT$Cortex %>%
+#   mutate(cluster = factor(cluster, levels=1:length(unique(cluster)))) %>%
+#   ggplot(aes(x= age, y= scExpr )) +
+#   facet_wrap(~cluster, ncol = 4,  scales = 'free_y', labeller=labeller(cluster=clT$Cortex)) +
+#   scale_x_continuous(trans = 'log2') +
+#   geom_vline(xintercept=90, linetype='dashed', alpha=0.3) +
+#   geom_line(stat='smooth', method='loess', aes(group=gene_id), alpha=0.05, col='midnightblue' ) +
+#   xlab('Age in days (in log2 scale)') +
+#   ylab('Expression scaled across genes') +
+#   theme(legend.position = 'none',
+#         axis.text = element_text(size=6),
+#         axis.title = element_text(size=6),
+#         strip.text = element_text(size=6, margin=margin(l=1,b=1,t=1)))
+#expcl_Cortex
+ggsave('./results/figure_supplements/f1s/FS12.pdf', expcl_Cortex, units='cm', width = 10, height = 10,
+       useDingbat=F)
+ggsave('./results/figure_supplements/f1s/FS12.png', expcl_Cortex, units='cm', width = 10, height = 10)
+
+xxln = scexpT$Lung
+enrln = which(enrichresult$Lung['OR',]>1 & enrichresult$Lung['BH',] < 0.1)
+depln = which(enrichresult$Lung['OR',]<1 & enrichresult$Lung['BH',] < 0.1)
+
+xxln = xxln %>%
+  mutate(enr = ifelse(cluster%in%enrln, '+1', '0'))
+xxln$enr[xxln$cluster%in%depln] = '-1'
 # lung plot : 17 clusters
-expcl_Lung = scexpT$Lung %>%
+expcl_Lung = xxln %>%
   mutate(cluster = factor(cluster, levels=1:length(unique(cluster)))) %>%
-  ggplot(aes(x= age, y= scExpr )) +
-  facet_wrap(~cluster, ncol = 3,  scales = 'free_y', labeller=labeller(cluster=clT$Lung)) +
+  ggplot(aes(x= age, y= scExpr, color=enr )) +
+  facet_wrap(~cluster, ncol = 4,  scales = 'free_y', labeller=labeller(cluster=clT$Lung)) +
   scale_x_continuous(trans = 'log2') +
   geom_vline(xintercept=90, linetype='dashed', alpha=0.3) +
-  geom_line(stat='smooth', method='loess', aes(group=gene_id), alpha=0.05, col='midnightblue' ) +
+  geom_line(stat='smooth', method='loess', aes(group=gene_id), alpha=0.05) +
+  scale_color_manual(values = enrcol) +
   xlab('Age in days (in log2 scale)') +
   ylab('Expression scaled across genes') +
   theme(legend.position = 'none',
@@ -154,18 +186,26 @@ expcl_Lung = scexpT$Lung %>%
         axis.title = element_text(size=8),
         strip.text = element_text(size=8, margin=margin(l=1,b=1,t=1)))
 #expcl_Lung
-ggsave('./results/SI_figures/expr_cluster/lung.pdf', expcl_Lung, units='cm', width = 10, height = 10,
+ggsave('./results/figure_supplements/f1s/FS13.pdf', expcl_Lung, units='cm', width = 10, height = 10,
        useDingbat=F)
-ggsave('./results/SI_figures/expr_cluster/lung.png', expcl_Lung, units='cm', width = 10, height = 10)
+ggsave('./results/figure_supplements/f1s//FS13.png', expcl_Lung, units='cm', width = 10, height = 10)
 
+xxlv = scexpT$Liver
+enrlv = which(enrichresult$Liver['OR',]>1 & enrichresult$Liver['BH',] < 0.1)
+deplv = which(enrichresult$Liver['OR',]<1 & enrichresult$Liver['BH',] < 0.1)
+
+xxlv = xxlv %>%
+  mutate(enr = ifelse(cluster%in%enrlv, '+1', '0'))
+xxlv$enr[xxlv$cluster%in%deplv] = '-1'
 # liver plot : 14 clusters
-expcl_Liver = scexpT$Liver %>%
+expcl_Liver = xxlv %>%
   mutate(cluster = factor(cluster, levels=1:length(unique(cluster)))) %>%
-  ggplot(aes(x= age, y= scExpr )) +
-  facet_wrap(~cluster, ncol = 3,  scales = 'free_y', labeller=labeller(cluster=clT$Liver)) +
+  ggplot(aes(x= age, y= scExpr, color=enr )) +
+  facet_wrap(~cluster, ncol = 4,  scales = 'free_y', labeller=labeller(cluster=clT$Liver)) +
   scale_x_continuous(trans = 'log2') +
   geom_vline(xintercept=90, linetype='dashed', alpha=0.3) +
-  geom_line(stat='smooth', method='loess', aes(group=gene_id), alpha=0.05, col='midnightblue' ) +
+  geom_line(stat='smooth', method='loess', aes(group=gene_id), alpha=0.05) +
+  scale_color_manual(values = enrcol) +
   xlab('Age in days (in log2 scale)') +
   ylab('Expression scaled across genes') +
   theme(legend.position = 'none',
@@ -173,18 +213,27 @@ expcl_Liver = scexpT$Liver %>%
         axis.title = element_text(size=8),
         strip.text = element_text(size=8, margin=margin(l=1,b=1,t=1)))
 #expcl_Liver
-ggsave('./results/SI_figures/expr_cluster/liver.pdf', expcl_Liver, units='cm', width = 10, height = 10,
+ggsave('./results/figure_supplements/f1s/FS14.pdf', expcl_Liver, units='cm', width = 10, height = 10,
        useDingbat=F)
-ggsave('./results/SI_figures/expr_cluster/liver.png', expcl_Liver, units='cm', width = 10, height = 10)
+ggsave('./results/figure_supplements/f1s/FS14.png', expcl_Liver, units='cm', width = 10, height = 10)
 
+
+xxms = scexpT$Muscle
+enrms = which(enrichresult$Muscle['OR',]>1 & enrichresult$Muscle['BH',] < 0.1)
+depms = which(enrichresult$Muscle['OR',]<1 & enrichresult$Muscle['BH',] < 0.1)
+
+xxms = xxms %>%
+  mutate(enr = ifelse(cluster%in%enrms, '+1', '0'))
+xxms$enr[xxms$cluster%in%depms] = '-1'
 # muscle plot : 17 clusters
-expcl_Muscle = scexpT$Muscle %>%
+expcl_Muscle = xxms %>%
   mutate(cluster = factor(cluster, levels=1:length(unique(cluster)))) %>%
-  ggplot(aes(x= age, y= scExpr )) +
-  facet_wrap(~cluster, ncol = 3,  scales = 'free_y', labeller=labeller(cluster=clT$Muscle)) +
+  ggplot(aes(x= age, y= scExpr, color=enr )) +
+  facet_wrap(~cluster, ncol = 4,  scales = 'free_y', labeller=labeller(cluster=clT$Muscle)) +
   scale_x_continuous(trans = 'log2') +
   geom_vline(xintercept=90, linetype='dashed', alpha=0.3) +
-  geom_line(stat='smooth', method='loess', aes(group=gene_id), alpha=0.05, col='midnightblue' ) +
+  geom_line(stat='smooth', method='loess', aes(group=gene_id), alpha=0.05) +
+  scale_color_manual(values = enrcol) +
   xlab('Age in days (in log2 scale)') +
   ylab('Expression scaled across genes') +
   theme(legend.position = 'none',
@@ -192,9 +241,9 @@ expcl_Muscle = scexpT$Muscle %>%
         axis.title = element_text(size=8),
         strip.text = element_text(size=8, margin=margin(l=1,b=1,t=1)))
 #expcl_Muscle
-ggsave('./results/SI_figures/expr_cluster/muscle.pdf', expcl_Muscle, units='cm', width = 10, height = 10,
+ggsave('./results/figure_supplements/f1s/FS15.pdf', expcl_Muscle, units='cm', width = 10, height = 10,
        useDingbat=F)
-ggsave('./results/SI_figures/expr_cluster/muscle.png', expcl_Muscle, units='cm', width = 10, height = 10)
+ggsave('./results/figure_supplements/f1s/FS15.png', expcl_Muscle, units='cm', width = 10, height = 10)
 
 
 ########### gora of expression clusters :

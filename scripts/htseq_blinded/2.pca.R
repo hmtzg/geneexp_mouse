@@ -188,3 +188,45 @@ mdist_dev %>%
             p = cor.test(mdist,age, m='s')$p.val)
 # rho = 0.81, p = 0.0269
 
+#### ageing only pairwise dist:
+dist_dat_aging = pca_data %>%
+  filter(PC %in% c('PC1','PC2','PC3', 'PC4'), period == 'aging', type =='raw') %>%
+  select(-period, -type, -varExp) %>% 
+  left_join(select(sample_info, -age,-log2age), by='sample_id') %>% 
+  mutate(ind_id = as.character(ind_id)) %>%
+  spread(key=PC, value=value) %>%
+  select(-sample_id,-tissue)
+
+mdist_aging = pwise_distMean(dist_dat_aging)
+
+mdist_aging = data.frame(ind_id= names(mdist_aging), mdist = mdist_aging, row.names = NULL) %>%
+  left_join(unique(select(sample_info, ind_id, age)), by = 'ind_id')
+
+saveRDS(mdist_aging, './data/htseq/blinded/mean_euclidean_dist_aging.rds')
+
+mdist_aging %>%
+  summarise(rho = cor(mdist,age, m='s'),
+            p = cor.test(mdist,age, m='s')$p.val)
+# rho= -0.49, p=0.1832248
+
+pc_age_cors %>%
+  filter(type=='raw' & `Scale period` == 'aging') %>%
+  filter(PC=='PC1')
+# `Scale period` type  PC    tissue `age period`     rho       p
+# <chr>          <chr> <fct> <fct>  <chr>          <dbl>   <dbl>
+#   1 aging          raw   PC1   Cortex Aging         0.731  0.0396 
+# 2 aging          raw   PC1   Liver  Aging        -0.0924 0.813  
+# 3 aging          raw   PC1   Lung   Aging         0.882  0.00163
+# 4 aging          raw   PC1   Muscle Aging         0.134  0.730  
+
+pc_age_cors %>%
+  filter(type=='raw' & `Scale period` == 'aging') %>%
+  filter(PC=='PC4')
+# `Scale period` type  PC    tissue `age period`     rho     p
+# <chr>          <chr> <fct> <fct>  <chr>          <dbl> <dbl>
+#   1 aging          raw   PC4   Cortex Aging        -0.539  0.168
+# 2 aging          raw   PC4   Liver  Aging        -0.118  0.763
+# 3 aging          raw   PC4   Lung   Aging         0.0336 0.932
+# 4 aging          raw   PC4   Muscle Aging        -0.185  0.634
+
+

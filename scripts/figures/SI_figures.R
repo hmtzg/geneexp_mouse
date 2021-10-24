@@ -5,6 +5,7 @@ library(cowplot)
 #library(magick)
 library(RColorBrewer)
 library(corrplot)
+
 theme_set(theme_pubr(base_size = 6, legend = 'top') +
             theme(legend.key.size = unit(2,'pt')))
 pntnorm <- (1/0.352777778)
@@ -20,26 +21,22 @@ expr_ch = readRDS('./data/processed/tidy/expression_change.rds')
 pca_dat = readRDS('./data/processed/tidy/pca_data.rds')
 perm_overlaps=readRDS('./data/processed/raw/tissue_gene_overlaps_perm.rds')
 perm_overlaps_fdr=readRDS('./data/processed/raw/tissue_siggene_fdr01_overlaps_perm.rds')
-# dev.perm = readRDS("./data/processed/raw/permutations_dev.rds")
-# aging.perm = readRDS("./data/processed/raw/permutations_ageing.rds")
 cov_dat = readRDS('./data/processed/tidy/CoV.rds')
-cov_dat_wo_cortex = readRDS("./data/processed/tidy/CoV_wo_cortex.rds")
-cov_dat_wo_each = readRDS('./data/processed/tidy/CoV_wo_eachtissue.rds')
 cov_ch = readRDS('./data/processed/tidy/CoV_change.rds')
-#cov_ch_3ts = readRDS('./data/processed/tidy/CoV_change_wo_eachtissue.rds')     
 pexpcors  = readRDS('./data/processed/tidy/pairwise_tissue_expression_cors.rds')
 intra_ts_cov = readRDS('./data/other_datasets/scRNA-seq/processed/intra_tissue_mean_cov.rds')
 deconv = readRDS('./data/other_datasets/scRNA-seq/processed/deconvolutions_combined.rds')
 
-# cov_gsea = readRDS('./data/processed/figures/tidy/CoV_GSEA.rds')
-# divcon_gsea = readRDS('./data/processed/figures/tidy/divcon_GSEA.rds')
-# revgenes = readRDS('./data/processed/figures/tidy/revgenes.tissues.rds')
 
+######################## Figure 1 supplement figures ########################
+######################## Figure 1 supplement figures ########################
+######################## Figure 1 supplement figures ########################
 
-############
+############ F1
 ############
 ############  Figure S1, sample age distribution -----------------------
 ############
+
 ages_log2 = sample_info %>%
   ggplot(aes(y = age, x= tissue, color = tissue)) +
   geom_hline(yintercept = 90, linetype = 'dashed', color = 'gray35') +
@@ -53,8 +50,9 @@ ages_log2 = sample_info %>%
   xlab(NULL) +
   guides(color = F)
 
-ggsave('./results/SI_figures/Figure_S1.pdf',ages_log2, units = 'cm', width = 8, height = 6, useDingbats = F)
-ggsave('./results/SI_figures/Figure_S1.png',ages_log2, units = 'cm', width = 8, height = 6)
+ggsave('./results/figure_supplements/f1s/FS1.pdf',ages_log2, units = 'cm', width = 8, height = 6, 
+       useDingbats = F)
+ggsave('./results/figure_supplements/f1s/FS1.png',ages_log2, units = 'cm', width = 8, height = 6)
 
 # calculate variations explained in all kinds of pca results:
 all_raw_var = (pca_dat %>%
@@ -87,7 +85,7 @@ dev_notissue_var = (pca_dat %>%
                       select(varExp, PC) %>%
                       unique())$varExp
 
-############
+############ F1
 ############
 ############  Figure S2, PCA with all samples and tissue effect removed -----------------------
 ############
@@ -111,9 +109,9 @@ all_nt_pca12 = pca_dat %>%
         legend.box = 'horizontal',
         legend.background = element_rect(fill = 'gray85',color = 'gray25')) 
 
-ggsave('./results/SI_figures/SI_panels/Figure_S2a.pdf',all_nt_pca12, units = 'cm', width = 8, height = 8,
-       useDingbats =F)
-ggsave('./results/SI_figures/SI_panels/Figure_S2a.png',all_nt_pca12, units = 'cm', width = 8, height = 8)
+# ggsave('./results/figure_supplements/f1s/FS2a.pdf',all_nt_pca12, units = 'cm', width = 8, height = 8,
+#        useDingbats =F)
+# ggsave('./results/figure_supplements/f1s//FS2a.png',all_nt_pca12, units = 'cm', width = 8, height = 8)
 
 all_nt_pc1age = pca_dat %>%
   select(-varExp) %>%
@@ -146,11 +144,11 @@ all_nt_pc2age = pca_dat %>%
 all_nt_pc12 = ggarrange(all_nt_pca12, ggarrange(all_nt_pc1age, all_nt_pc2age, ncol = 1, nrow= 2), ncol = 2, 
                         nrow= 1, widths = c(1,0.5), common.legend = F, align = 'v')
 
-ggsave('./results/SI_figures/Figure_S2.pdf',all_nt_pc12, units = 'cm', width = 16, height = 9,
+ggsave('./results/figure_supplements/f1s/FS2.pdf',all_nt_pc12, units = 'cm', width = 16, height = 9,
        useDingbats = F)
-ggsave('./results/SI_figures/Figure_S2.png',all_nt_pc12, units = 'cm', width = 16, height = 9)
+ggsave('./results/figure_supplements/f1s/FS2.png',all_nt_pc12, units = 'cm', width = 16, height = 9)
 
-############
+############ F1
 ############
 ############  Figure S3, PCA with development samples only -----------------------
 ############ (and ageing samples only)
@@ -165,7 +163,7 @@ dev_raw_pca12 = pca_dat %>%
   geom_point(alpha = 0.7) +
   scale_color_manual(values = tissuecol) +
   scale_size_continuous(range = c(0.5,3), trans= 'log2',breaks = c(2,8,30,60)) +
-  coord_fixed(ratio = dev_raw_var[2]/dev_raw_var[1], clip = 'off') +
+  #coord_fixed(ratio = dev_raw_var[2]/dev_raw_var[1], clip = 'off') +
   xlab(paste('PC1 (', round(dev_raw_var[1]*100),'%)',sep='')) +
   ylab(paste('PC2 (', round(dev_raw_var[2]*100),'%)',sep='')) +
   guides(color = guide_legend('Tissue'), 
@@ -176,9 +174,9 @@ dev_raw_pca12 = pca_dat %>%
         legend.box = 'horizontal',
         legend.background = element_rect(fill = 'gray85',color = 'gray25')) 
 
-ggsave('./results/SI_figures/SI_panels/Figure_S3a.pdf',dev_raw_pca12, units = 'cm', width = 8, height = 5,
-       useDingbats =F)
-ggsave('./results/SI_figures/SI_panels/Figure_S3a.png',dev_raw_pca12, units = 'cm', width = 8, height = 5)
+# ggsave('./results/figure_supplements/f1s/FS3a.pdf',dev_raw_pca12, units = 'cm', width = 8, height = 5,
+#        useDingbats =F)
+# ggsave('./results/figure_supplements/f1s/FS3a.png',dev_raw_pca12, units = 'cm', width = 8, height = 5)
 
 # panel b
 dev_raw_pca34 = pca_dat %>%
@@ -190,7 +188,7 @@ dev_raw_pca34 = pca_dat %>%
   geom_point(alpha = 0.7) +
   scale_color_manual(values = tissuecol) +
   scale_size_continuous(range = c(0.5,3), trans= 'log2',breaks = c(2,8,30,60)) +
-  coord_fixed(ratio = dev_raw_var[4]/dev_raw_var[3], clip = 'off') +
+  #coord_fixed(ratio = dev_raw_var[4]/dev_raw_var[3], clip = 'off') +
   xlab(paste('PC3 (', round(dev_raw_var[3]*100),'%)',sep='')) +
   ylab(paste('PC4 (', round(dev_raw_var[4]*100),'%)',sep='')) +
   guides(color = guide_legend('Tissue'),
@@ -201,9 +199,9 @@ dev_raw_pca34 = pca_dat %>%
         legend.box = 'vertical',
         legend.background = element_rect(fill = 'gray85',color = 'gray25'))
 
-ggsave('./results/SI_figures/SI_panels/Figure_S3b.pdf',dev_raw_pca34, units = 'cm', width = 8, height = 5,
-       useDingbats =F)
-ggsave('./results/SI_figures/SI_panels/Figure_S3b.png',dev_raw_pca34, units = 'cm', width = 8, height = 5)
+# ggsave('./results/figure_supplements/f1s/FS3b.pdf',dev_raw_pca34, units = 'cm', width = 8, height = 5,
+#        useDingbats =F)
+# ggsave('./results/figure_supplements/f1s/FS3b.png',dev_raw_pca34, units = 'cm', width = 8, height = 5)
 
 dev_raw_pc1age = pca_dat %>%
   select(-varExp) %>%
@@ -216,7 +214,7 @@ dev_raw_pc1age = pca_dat %>%
   scale_color_manual(values = tissuecol) +
   scale_x_continuous(trans = 'log2') +
   guides(color = F) +
-  xlab('Age in days (in log2)')
+  xlab('Age in days (log2)')
 
 dev_raw_pc2age = pca_dat %>%
   select(-varExp) %>%
@@ -229,7 +227,7 @@ dev_raw_pc2age = pca_dat %>%
   scale_color_manual(values = tissuecol) +
   scale_x_continuous(trans = 'log2') +
   guides(color = F) +
-  xlab('Age in days (in log2)')
+  xlab('Age in days (log2)')
 
 dev_raw_pc3age = pca_dat %>%
   select(-varExp) %>%
@@ -242,7 +240,7 @@ dev_raw_pc3age = pca_dat %>%
   scale_color_manual(values = tissuecol) +
   scale_x_continuous(trans = 'log2') +
   guides(color = F) +
-  xlab('Age in days (in log2)')
+  xlab('Age in days (log2)')
 
 dev_raw_pc4age = pca_dat %>%
   select(-varExp) %>%
@@ -255,12 +253,7 @@ dev_raw_pc4age = pca_dat %>%
   scale_color_manual(values = tissuecol) +
   scale_x_continuous(trans = 'log2') +
   guides(color = F) +
-  xlab('Age in days (in log2)')
-
-dev_raw_pc1234 = ggarrange(ggarrange(dev_raw_pca12, dev_raw_pca34 + theme(legend.position = 'none'),
-                                     ncol = 2, align = 'h', labels = c('a.', 'b.'), vjust = 2.7),
-                           ggarrange(dev_raw_pc1age, dev_raw_pc2age,dev_raw_pc3age, dev_raw_pc4age,
-                                     align = 'hv', ncol =4), nrow=2, heights = c(1, 0.5), labels = c(NA,'c.'))
+  xlab('Age in days (log2)')
 
 ## panel d
 aging_raw_pca12 = pca_dat %>%
@@ -272,7 +265,7 @@ aging_raw_pca12 = pca_dat %>%
   geom_point(alpha = 0.7) +
   scale_color_manual(values = tissuecol) +
   scale_size_continuous(range = c(0.5,3), trans= 'log2',breaks = c(93,232,649,904)) +
-  coord_fixed(ratio = aging_raw_var[2]/aging_raw_var[1], clip = 'off') +
+  #coord_fixed(ratio = aging_raw_var[2]/aging_raw_var[1], clip = 'off') +
   xlab(paste('PC1 (', round(aging_raw_var[1]*100),'%)',sep='')) +
   ylab(paste('PC2 (', round(aging_raw_var[2]*100),'%)',sep='')) +
   guides(color = guide_legend('Tissue'), 
@@ -292,7 +285,7 @@ aging_raw_pca34 = pca_dat %>%
   geom_point(alpha = 0.7) +
   scale_color_manual(values = tissuecol) +
   scale_size_continuous(range = c(0.5,3), trans= 'log2',breaks = c(93,232,649,904)) +
-  coord_fixed(ratio = aging_raw_var[4]/aging_raw_var[3], clip = 'off') +
+  #coord_fixed(ratio = aging_raw_var[4]/aging_raw_var[3], clip = 'off') +
   xlab(paste('PC3 (', round(aging_raw_var[3]*100),'%)',sep='')) +
   ylab(paste('PC4 (', round(aging_raw_var[4]*100),'%)',sep='')) +
   guides(color = guide_legend('Tissue'),
@@ -314,7 +307,7 @@ aging_raw_pc1age = pca_dat %>%
   scale_color_manual(values = tissuecol) +
   scale_x_continuous(trans = 'log2') +
   guides(color = F) +
-  xlab('Age in days (in log2)')
+  xlab('Age in days (log2)')
 aging_raw_pc2age = pca_dat %>%
   select(-varExp) %>%
   filter(period == 'aging', type == 'raw') %>%
@@ -326,7 +319,7 @@ aging_raw_pc2age = pca_dat %>%
   scale_color_manual(values = tissuecol) +
   scale_x_continuous(trans = 'log2') +
   guides(color = F) +
-  xlab('Age in days (in log2)')
+  xlab('Age in days (log2)')
 aging_raw_pc3age = pca_dat %>%
   select(-varExp) %>%
   filter(period == 'aging', type == 'raw') %>%
@@ -338,7 +331,7 @@ aging_raw_pc3age = pca_dat %>%
   scale_color_manual(values = tissuecol) +
   scale_x_continuous(trans = 'log2') +
   guides(color = F) +
-  xlab('Age in days (in log2)')
+  xlab('Age in days (log2)')
 aging_raw_pc4age = pca_dat %>%
   select(-varExp) %>%
   filter(period == 'aging', type == 'raw') %>%
@@ -350,36 +343,31 @@ aging_raw_pc4age = pca_dat %>%
   scale_color_manual(values = tissuecol) +
   scale_x_continuous(trans = 'log2') +
   guides(color = F) +
-  xlab('Age in days (in log2)')
+  xlab('Age in days (log2)')
 
+dev_raw_pc1234 = ggarrange(
+  ggarrange(dev_raw_pca12, dev_raw_pca34 + theme(legend.position = 'none'),nrow = 2, align = 'v',
+            labels = c('a.', 'b.'), vjust = 2,font.label = list(size=8)),
+  ggarrange(dev_raw_pc1age, dev_raw_pc2age,dev_raw_pc3age, dev_raw_pc4age, align = 'hv', nrow =4),
+  ncol=2, widths = c(1, 0.5), labels = c(NA,'c.'),font.label = list(size=8)
+)
 
-# aging_raw_pc1234 = ggarrange(ggarrange(aging_raw_pca12, aging_raw_pca34 + theme(legend.position = 'none'),
-#                                      nrow = 2, align = 'v', labels = c('a.', 'b.'), vjust = 2),
-#                            ggarrange(aging_raw_pc1age, aging_raw_pc2age, aging_raw_pc3age, aging_raw_pc4age,
-#                                      align = 'hv', nrow =4), ncol=2, widths = c(1, 0.5), labels = c(NA,'c.'))
-
-dev_raw_pc1234 = ggarrange(ggarrange(dev_raw_pca12, dev_raw_pca34 + theme(legend.position = 'none'),
-                                     nrow = 2, align = 'v', labels = c('a.', 'b.'), vjust = 2),
-                           ggarrange(dev_raw_pc1age, dev_raw_pc2age,dev_raw_pc3age, dev_raw_pc4age,
-                                     align = 'hv', nrow =4), 
-                           ncol=2, widths = c(1, 0.5), labels = c(NA,'c.'))
-
-aging_raw_pc1234 = ggarrange(ggarrange(aging_raw_pca12, aging_raw_pca34 + theme(legend.position = 'none'),
-                                       nrow = 2, align = 'v', labels = c('d.', 'e.'), vjust = 2),
-                             ggarrange(aging_raw_pc1age, aging_raw_pc2age, aging_raw_pc3age, aging_raw_pc4age,
-                                       align = 'hv', nrow =4), 
-                             ncol=2, widths = c(1, 0.5), labels = c(NA,'f.'))
+aging_raw_pc1234 = ggarrange(
+  ggarrange(aging_raw_pca12, aging_raw_pca34 + theme(legend.position = 'none'), nrow = 2, align = 'v', 
+            labels = c('d.', 'e.'), vjust = 2,font.label = list(size=8)),
+  ggarrange(aging_raw_pc1age, aging_raw_pc2age, aging_raw_pc3age, aging_raw_pc4age, align = 'hv', nrow =4),
+  ncol=2, widths = c(1, 0.5), labels = c(NA,'f.'), font.label = list(size=8))
 
 figs3 = ggarrange(dev_raw_pc1234, aging_raw_pc1234, ncol = 2, common.legend = T)
 figs3
 
-ggsave('./results/SI_figures/Figure_S3.pdf', figs3, units = 'cm', width = 16, height = 12,
+ggsave('./results/figure_supplements/f1s/FS3.pdf', figs3, units = 'cm', width = 16, height = 12,
        useDingbats = F)
-ggsave('./results/SI_figures/Figure_S3.png', figs3, units = 'cm', width = 16, height = 12, bg = 'white')
+ggsave('./results/figure_supplements/f1s/FS3.png', figs3, units = 'cm', width = 16, height = 12, bg = 'white')
 
+############ F1
 ############
-############
-############  Figure S4, permutation test for shared up/down genes across tissues w/o sig. cutoff -----------
+############ Figure S4, permutation test for shared up/down genes across tissues w/o sig. cutoff -----------
 ############
 
 obs_overlap = expr_ch %>%
@@ -421,23 +409,24 @@ plot_overlaps = perm_overlaps %>%
   theme_bw() +
   theme(axis.text = element_text(size =6))
 
-ggsave('./results/SI_figures/Figure_S4.pdf', plot_overlaps, width = 16, height = 15, units='cm', 
+ggsave('./results/figure_supplements/f1s/FS4.pdf', plot_overlaps, width = 16, height = 15, units='cm', 
        useDingbats = F)
-ggsave('./results/SI_figures/Figure_S4.png', plot_overlaps, width = 16, height = 15, units='cm' )  
+ggsave('./results/figure_supplements/f1s/FS4.png', plot_overlaps, width = 16, height = 15, units='cm' )  
 
+############ F1
 ############
-############
-############  Figure S5, # of sig. overlap across tissues, dev-ageing magnitude comparison ------------
+############ Figure S5, # of sig. overlap across tissues, dev-ageing magnitude comparison ------------
 ############
 
 # significant ones:
 star = data.frame(direction = rep(c('down','up'),3),
                   y_pos = c(461, 285, 139, 46, 34, 24),
-                  period= rep(c('Development','Ageing'),c(4,2)),
+                  period= factor(rep(c('Development','Ageing'),c(4,2)),
+                                 levels=c('Development','Ageing')),
                   n= c(3,3,4,4,2,2))
 
 siggenes_overlap = expr_ch %>%
-  filter(FDR < 0.1) %>%
+  filter(FDR < 0.1) %>% 
   mutate(direction = `Expression Change` > 0) %>%
   mutate(direction = ifelse( direction == TRUE, 'up', 'down')) %>%
   mutate(period = str_to_title(period)) %>%
@@ -463,9 +452,9 @@ siggenes_overlap = expr_ch %>%
         legend.background = element_rect(fill = 'gray85', color = 'gray25')) +
   xlab(NULL) + ylab(NULL) 
 
-ggsave('./results/SI_figures/SI_panels/Figure_S5a.pdf', siggenes_overlap, width = 15, height = 8, units='cm',
-       useDingbats = F )
-ggsave('./results/SI_figures/SI_panels/Figure_S5a.png', siggenes_overlap, width = 15, height = 8, units='cm')  
+# ggsave('./results/figure_supplements/f1s/FS5a.pdf', siggenes_overlap, width = 15, height = 8, units='cm',
+#        useDingbats = F )
+# ggsave('./results/figure_supplements/f1s/FS5a.png', siggenes_overlap, width = 15, height = 8, units='cm')  
 
 # magnitude change comparison between development and ageing with paired wilcox test:
 expr_ch %>%
@@ -475,6 +464,12 @@ expr_ch %>%
   summarise(diff =  abs(development) - abs(aging)) %>%
   summarise(p_val = wilcox.test(diff, mu = 0)$p.val) %>%
   mutate(BH = p.adjust(p_val, method='BH'))
+# tissue     p_val        BH
+# <chr>      <dbl>     <dbl>
+# 1 Cortex 0         0        
+# 2 Liver  0         0        
+# 3 Lung   7.38e-281 7.38e-281
+# 4 Muscle 0         0      
 
 label_b = data.frame(tissue = c('Cortex','Liver','Lung','Muscle'),
            diff = c(rep(1,4)))
@@ -493,20 +488,20 @@ magnitude_comparison = expr_ch %>%
   theme(legend.position = 'none') +
   geom_text(data = label_b, label = "*")
 
-ggsave('./results/SI_figures/SI_panels/Figure_S5b.pdf',magnitude_comparison, width = 15, height = 8, 
-       units='cm', useDingbats = F )
-ggsave('./results/SI_figures/SI_panels/Figure_S5b.png', magnitude_comparison, width = 15, height = 8, 
-       units='cm' )  
+# ggsave('./results/SI_figures/SI_panels/Figure_S5b.pdf',magnitude_comparison, width = 15, height = 8, 
+#        units='cm', useDingbats = F )
+# ggsave('./results/SI_figures/SI_panels/Figure_S5b.png', magnitude_comparison, width = 15, height = 8, 
+#        units='cm' )  
 
 fig_s5 = ggarrange(siggenes_overlap, magnitude_comparison, ncol= 2, labels = c('a.','b.'), 
-                   widths = c(1, 0.7), hjust = -0.1)
+                   widths = c(1, 0.7), hjust = -0.1, font.label = list(size=8))
 
-ggsave('./results/SI_figures/Figure_S5.pdf', fig_s5, width = 15, height = 8, units='cm', useDingbats = F )
-ggsave('./results/SI_figures/Figure_S5.png', fig_s5, width = 15, height = 8, units='cm' )  
+ggsave('./results/figure_supplements/f1s/FS5.pdf', fig_s5, width = 15, height = 8, units='cm', useDingbats = F )
+ggsave('./results/figure_supplements/f1s/FS5.png', fig_s5, width = 15, height = 8, units='cm' )  
 
+############ F1
 ############
-############
-############  Figure S6, permutation test for sig. overlap genes across tissues -----------------------
+############ Figure S6, permutation test for sig. overlap genes across tissues -----------------------
 ############
 
 obs_overlap_fdr = expr_ch %>%
@@ -578,14 +573,16 @@ fig_s6_b = perm_overlaps_fdr %>%
   theme_bw() +
   theme(axis.text = element_text(size =6))
 
-fig_s6 = ggarrange(fig_s6_a,fig_s6_b, ncol = 2, widths = c(1, 0.5), labels = c('a.','b.'))
+fig_s6 = ggarrange(fig_s6_a,fig_s6_b, ncol = 2, widths = c(1, 0.5), labels = c('a.','b.'),
+                   font.label = list(size=8))
 
-ggsave('./results/SI_figures/Figure_S6.pdf', fig_s6 , width = 18, height = 10, units='cm', useDingbats = F )
-ggsave('./results/SI_figures/Figure_S6.png', fig_s6 , width = 18, height = 10, units='cm' )  
+ggsave('./results/figure_supplements/f1s/FS6.pdf', fig_s6 , width = 18, height = 10, units='cm',
+       useDingbats = F )
+ggsave('./results/figure_supplements/f1s/FS6.png', fig_s6 , width = 18, height = 10, units='cm' )  
 
+############ F1
 ############
-############
-############  Figure S7, correlation plot: tissue similarity of expression changes abs(rho)>0.6 -----------
+############ Figure S7, correlation plot: tissue similarity of expression changes abs(rho)>0.6 -----------
 ############
 
 cors.06 = expr_ch %>%
@@ -602,115 +599,76 @@ cors.06 = cors.06[c(1,2,3,4,7,6,5,8),c(1,2,3,4,7,6,5,8)]
 periodcode = c(Development = "#FE6100", Ageing ="#648FFF")
 diag(cors.06) = 0
 
-#pdf("./results/SI_figures/Fig_S7.pdf")
-png("./results/SI_figures/Fig_S7.png")
+pdf("./results/figure_supplements/f1s/FS7.pdf", height=7.4)
 corrplot(cors.06, order = "ori", tl.pos = "lt", diag=T, tl.col = rep(periodcode, each=4), font =2,
          tl.cex = 1.2, method="square", outline=T, type="upper",
-         col = colorRampPalette(rev(brewer.pal(n=11, name='RdBu')[c(2:4,6,9:11)]))(200) )
+         col = colorRampPalette(rev(brewer.pal(n=11, name='RdBu')[c(1:3,6,9:11)]))(100) )
 corrplot(cors.06, order="ori",tl.pos = "n", diag=F, tl.col = rep(periodcode, each=4), font=2,
          tl.cex = 1.2, method="shade", outline=T, addCoef.col = "black", add=T, type="lower",
-         col = colorRampPalette(rev(brewer.pal(n=11, name='RdBu')[c(2:3,6,9:11)]))(101) )
+         col = colorRampPalette(rev(brewer.pal(n=11, name='RdBu')[c(1:3,6,9:11)]))(100) )
 dev.off()
 
-############
+png("./results/figure_supplements/f1s/FS7.png", height = 500)
+corrplot(cors.06, order = "ori", tl.pos = "lt", diag=T, tl.col = rep(periodcode, each=4), font =2,
+         tl.cex = 1.2, method="square", outline=T, type="upper",
+         col = colorRampPalette(rev(brewer.pal(n=11, name='RdBu')[c(1:3,6,9:11)]))(100) )
+corrplot(cors.06, order="ori",tl.pos = "n", diag=F, tl.col = rep(periodcode, each=4), font=2,
+         tl.cex = 1.2, method="shade", outline=T, addCoef.col = "black", add=T, type="lower",
+         col = colorRampPalette(rev(brewer.pal(n=11, name='RdBu')[c(1:3,6,9:11)]))(100) )
+dev.off()
+
+############ F1
 ############
 ############  Figure S8, permutation test for reversals in each tissue: -----------------------
 ############ (plot in 06.reversal_analysis.R script)
 
-############
+############ F1
 ############
 ############  Figure S9, permutation test for shared reversals among tissue: -----------------------
 ############ (plot in 06.reversal_analysis.R script)
 
+############ F1
 ############
+############  Figure S10, Confirmation of the results of  Figure-1 using VST normalisation: ----------
+############ (plot in htseq_blinded/figure1.R script)
+
+############ F1
 ############
-############ Figure S10, CoV change with 16 samples excluding cortex tissue -----------------------
-############ 
+############  Figure S11, Correlation between QN and VST normalisation methods using 
+############  age-related expression changes
+############ (plot in htseq_blinded/compare_qn_vst.R script)
 
-# mean/median cov values without cortex: REMOVED
-# cov_sum_wo_cortex = cov_dat_wo_cortex %>%
-#   mutate(ind_id = factor(ind_id)) %>%
-#   left_join(unique(select(sample_info,-tissue,-sample_id))) %>%
-#   group_by(ind_id, age) %>%
-#   summarise(meanCoV = mean(CoV),
-#             medianCoV = median(CoV)) %>% 
-#   mutate(period = c('Ageing','Development')[1+(age<=90)])
-# 
-# cov_sumch1_wo = cov_sum_wo_cortex %>%
-#   ungroup() %>%
-#   group_by(period) %>%
-#   summarise(cor = cor.test(meanCoV, age, method = 's')$est,
-#             cor.p = cor.test(meanCoV, age, method = 's')$p.val)
-# 
-# cov_sumch2_wo = cov_sum_wo_cortex %>%
-#   ungroup() %>%
-#   group_by(period) %>%
-#   summarise(cor = cor.test(medianCoV, age, method = 's')$est,
-#             cor.p = cor.test(medianCoV, age, method = 's')$p.val)
-
-## CoV average for each individual and mean(CoV)-age correlation (without cortex):
-# cov_mean_wo_cortex = ggplot(cov_sum_wo_cortex, aes(x = age, y= meanCoV)) +
-#   geom_point(size=1.5, color="steelblue", alpha=0.9) +
-#   geom_smooth(se=T,color = 'midnightblue', fill='lightblue') +
-#   scale_x_continuous(trans = 'log2') +
-#   geom_vline(xintercept = 90, linetype='dashed',color = 'gray35') +
-#   xlab('Age in days (in log2 scale)') + 
-#   ylab('Mean CoV') +
-#   annotate('text', x=95, y=0.40, label='Ageing', hjust=0, size = szx/pntnorm, fontface='bold') +
-#   annotate('text', x=95, y=0.393, hjust=0, size = szx/pntnorm,
-#            label = parse(text = paste('rho["CoV,age"] ==' ,
-#                                       (round(filter(cov_sumch1_wo, period=='Ageing')$cor,2))))) +
-#   annotate('text', x=95, y=0.386,  hjust=0, size = szx/pntnorm,
-#            label = parse(text = paste0('p ==' ,
-#                                        (round(filter(cov_sumch1_wo, period=='Ageing')$cor.p,3))))) +
-#   annotate('text', x=2, y=0.445, label='Development', hjust=0, size = szx/pntnorm, fontface='bold') +
-#   annotate('text', x=2, y=0.438, hjust=0, size = szx/pntnorm,
-#            label = parse(text = paste('rho["CoV,age"] ==' ,
-#                                       (round(filter(cov_sumch1_wo, period=='Development')$cor,2))))) +
-#   annotate('text', x=2, y=0.431, hjust=0, size = szx/pntnorm,
-#            label = parse(text = paste0('p ==' ,
-#                                        (round(filter(cov_sumch1_wo, period=='Development')$cor.p,3))))) +
-#   ggtitle('Cortex Excluded (n=16)')
-# cov_mean_wo_cortex
-# ggsave('./results/SI_figures/SI_panels/Figure_S10a.pdf',cov_mean_wo_cortex, units = 'cm', 
-#        width = 8, height = 8, useDingbats = F)
-# ggsave('./results/SI_figures/SI_panels/Figure_S10a.png',cov_mean_wo_cortex, units = 'cm', 
-#        width = 8, height = 8)
-
-# cov_median_wo_cortex = ggplot(cov_sum_wo_cortex, aes(x = age, y= medianCoV)) +
-#   geom_point(size=1.5, color="steelblue", alpha=0.9) +
-#   geom_smooth(se=T,color = 'midnightblue', fill='lightblue') +
-#   scale_x_continuous(trans = 'log2') +
-#   geom_vline(xintercept = 90, linetype='dashed',color = 'gray35') +
-#   xlab('Age in days (in log2 scale)') +
-#   ylab('Median CoV') +
-#   annotate('text', x=95, y=0.25, label='Ageing', hjust=0, size = szx/pntnorm, fontface='bold') +
-#   annotate('text', x=95, y=0.24, hjust=0,size = szx/pntnorm, 
-#            label = parse(text = paste('rho["CoV,age"] ==' ,
-#                                       (round(filter(cov_sumch2_wo, period=='Ageing')$cor,2))))) +
-#   annotate('text', x=95, y=0.23, hjust=0, size = szx/pntnorm,
-#            label = parse(text = paste0('p ==' ,
-#                                        (round(filter(cov_sumch2_wo, period=='Ageing')$cor.p,3))))) +
-#   annotate('text', x=2, y=0.303, label='Development', hjust=0, size = szx/pntnorm, fontface='bold') +
-#   annotate('text', x=2, y=0.293, hjust=0, size = szx/pntnorm,
-#            label = parse(text = paste('rho["CoV,age"] ==' ,
-#                                       (round(filter(cov_sumch2_wo, period=='Development')$cor,2))))) +
-#   annotate('text', x=2, y=0.283, hjust=0, size = szx/pntnorm,
-#            label = parse(text = paste0('p ==' ,
-#                                        (round(filter(cov_sumch2_wo, period=='Development')$cor.p,3))))) +
-#   ggtitle('Cortex Excluded (n=16)')
-# cov_median_wo_cortex
-# 
-# s10ab = ggarrange(cov_mean_wo_cortex , cov_median_wo_cortex, labels = c('a.','b.'),
-#                   ncol = 2, nrow = 1, align = 'hv', hjust = c(-0.2,-0.2))
-# ggsave('./results/SI_figures/SI_panels/Figure_S10b.pdf',cov_median_wo_cortex, units = 'cm', 
-#        width = 8, height = 8, useDingbats = F)
-# ggsave('./results/SI_figures/SI_panels/Figure_S10b.png',cov_median_wo_cortex, units = 'cm', 
-#        width = 8, height = 8)
-
+############ F1
 ############
-############ median CoV change with all samples ------------------
-############ 
+############  Figure S12, Clustering of genes by expression levels in cortex tissue: ----------
+############ (plot in 11.expr_cluster.R script)
+
+############ F1
+############
+############  Figure S13, Clustering of genes by expression levels in lung tissue: ----------
+############ (plot in 11.expr_cluster.R script)
+
+############ F1
+############
+############  Figure S14, Clustering of genes by expression levels in liver tissue: ----------
+############ (plot in 11.expr_cluster.R script)
+
+############ F1
+############
+############  Figure S15, Clustering of genes by expression levels in muscle tissue: ----------
+############ (plot in 11.expr_cluster.R script)
+
+
+
+######################## Figure 2 supplement figures ########################
+######################## Figure 2 supplement figures ########################
+######################## Figure 2 supplement figures ########################
+
+
+############ F2
+############
+############ Figure S1, Age-related change in CoV summarised across genes using median: ----------
+############
 
 cov_sum = cov_dat %>%
   mutate(ind_id = factor(ind_id)) %>%
@@ -747,187 +705,25 @@ cov_median = ggplot(cov_sum, aes(x = age, y= medianCoV)) +
   annotate('text', x=2, y=0.3475, hjust=0, size = szx/pntnorm,
            label = parse(text = paste0('p ==' ,(round(filter(cov_sumch, period=='Development')$cor.p,2)))))
 cov_median
-
-# s10 = ggarrange(cov_median, cov_mean_wo_cortex , cov_median_wo_cortex, labels = c('a.','b.','c.'),
-#           ncol = 3, nrow = 1, align = 'hv', hjust = c(-0.2,-0.2))
-s10 = cov_median
-# ggsave('./results/SI_figures/Figure_S10.pdf',s10, units = 'cm', width = 16, height = 8, 
-#        useDingbats = F)
-ggsave('./results/SI_figures/Figure_S10.pdf', s10, units = 'cm', width = 8, height = 8, 
+ggsave('./results/figure_supplements/fs2/FS1.pdf', cov_median, units = 'cm', width = 8, height = 8, 
        useDingbats = F)
-ggsave('./results/SI_figures/Figure_S10.png', s10, units = 'cm', width = 8, height = 8)
+ggsave('./results/figure_supplements/fs2/FS1.png', cov_median, units = 'cm', width = 8, height = 8)
 
 
+############ F2
 ############
+############ Figure S2, Clustering of DiCo genes by expression variations (CoV) among tissues: ----------
+############ (plot in 09.DiCo_cluster.R script)
+
+############ F2
 ############
-############ Figure S11, CoV change excluding each tissue ------------------ REMOVED
-############ 
+############ Figure S3, Clustering of DiCo genes by expression levels in tissues: ----------
+############ (plot in 09.DiCo_cluster.R script)
 
-# cov_sum3ts = cov_dat_wo_each %>%
-#   mutate(Excluded = gsub('wo_','', Excluded)) %>%
-#   mutate(Excluded = paste0('Exclude: ', Excluded) ) %>%
-#   mutate(ind_id = factor(ind_id)) %>%
-#   left_join(unique(select(sample_info,-tissue,-sample_id, -log2age))) %>%
-#   group_by(ind_id, age, Excluded) %>%
-#   summarise(meanCoV = mean(CoV),
-#             medianCoV = median(CoV)) %>% 
-#   mutate(period = c('Ageing','Development')[1+(age<90)])
-# 
-# cov_sumch3ts = cov_sum3ts %>%
-#   ungroup() %>%
-#   group_by(period, Excluded) %>%
-#   summarise(mean_rho = cor.test(meanCoV, age, method = 's')$est,
-#             mean_p = cor.test(meanCoV, age, method = 's')$p.val,
-#             median_rho = cor.test(medianCoV, age, method = 's')$est,
-#             median_p = cor.test(medianCoV, age, method = 's')$p.val)
-
-# cov_sumch3ts
-# agpos = c(0.42, 0.47, 0.485, 0.485)
-# rpos = c(0.005, 0.005, 0.002, 0.002)
-# ppos = agrpos*2
-# devpos = c(0.45, 0.50, 0.51, 0.505)
-# cov_exc_mean = cov_sum3ts %>%
-#   mutate(period = factor(period, levels=c('Development', 'Ageing'))) %>%
-#   ggplot( aes(x = age, y = meanCoV)) +
-#   facet_wrap(~Excluded, scales = 'free_y', ncol = 4) +
-#   #facet_wrap(~Excluded, ncol = 4) +
-#   geom_point(size=1.5, color="steelblue", alpha=0.9) +
-#   geom_smooth(se=T,color = 'midnightblue', fill='lightblue') +
-#   scale_x_continuous(trans = 'log2') +
-#   geom_vline(xintercept = 90, linetype='dashed',color = 'gray35') +
-#   xlab('Age in days (in log2 scale)') + 
-#   ylab('Mean CoV') +
-#   # stat_cor(aes(group=period),method='spearman', cor.coef.name = 'rho["Cov,age"]', label.sep = '\n',
-#   #          label.x.npc = c(0, 0.55), label.y.npc = c(0.9, 0.2),size=2)
-#   geom_text(data = filter(cov_sumch3ts,period=='Ageing'), fontface='bold', size = szx/pntnorm,
-#             mapping = aes(x=95, y = agpos, label=period), hjust=0 ) +
-#   geom_text(data = filter(cov_sumch3ts, period=='Ageing'), parse=T, hjust=0.2, size = szx/pntnorm, 
-#             mapping = aes(x=96, y = agpos-rpos, label = paste0('rho[ageing]==', round(mean_rho,2) ))) +
-#   geom_text(data = filter(cov_sumch3ts, period=='Ageing'), parse=T, hjust=0, size = szx/pntnorm,
-#             mapping = aes(x=95, y = agpos-ppos, label = paste('p==', round(mean_p,3) ))) +
-#   geom_text(data = filter(cov_sumch3ts, period=='Development'), fontface='bold', size = szx/pntnorm,
-#             mapping = aes(x=2, y = devpos, label=period), hjust=0 ) +
-#   geom_text(data = filter(cov_sumch3ts, period=='Development'), parse=T, hjust=0, size = szx/pntnorm,
-#             mapping = aes(x=2, y = devpos-rpos, label = paste('rho[dev.]==', round(mean_rho,2) ))) +
-#   geom_text(data = filter(cov_sumch3ts, period=='Development'), parse=T, hjust=0, size = szx/pntnorm,
-#             mapping = aes(x=2, y = devpos-ppos, label = paste('p==', round(mean_p,3) )))
-# cov_exc_mean
-
-# agpos2 = c(0.25, 0.30, 0.325, 0.33)
-# rpos2 = c(0.006, 0.006, 0.003, 0.003)
-# ppos2 = rpos2*2
-# devpos2 = c(0.30, 0.35, 0.353, 0.353)
-# cov_exc_median = cov_sum3ts %>%
-#   mutate(period = factor(period, levels=c('Development', 'Ageing'))) %>%
-#   ggplot( aes(x = age, y = medianCoV)) +
-#   #facet_grid(~Excluded, scales = 'free_y') +
-#   facet_wrap(~Excluded, ncol = 4, scales='free_y') +
-#   geom_point(size=1.5, color="steelblue", alpha=0.9) +
-#   geom_smooth(se=T,color = 'midnightblue', fill='lightblue') +
-#   scale_x_continuous(trans = 'log2') +
-#   geom_vline(xintercept = 90, linetype='dashed',color = 'gray35') +
-#   xlab('Age in days (in log2 scale)') + 
-#   ylab('Median CoV') +
-#   # stat_cor(aes(group=period),method='spearman', cor.coef.name = 'rho["Cov,age"]', label.sep = '\n',
-#   #          label.x.npc = c(0, 0.55), label.y.npc = c(0.9, 0.2),size=2)
-#   geom_text(data = filter(cov_sumch3ts, period=='Ageing'), fontface='bold', size = szx/pntnorm,
-#             mapping = aes(x=95, y = agpos2, label=period), hjust=0 ) +
-#   geom_text(data = filter(cov_sumch3ts, period=='Ageing'), parse=T, hjust=0.2, size = szx/pntnorm,
-#             mapping = aes(x=95, y = agpos2-rpos2, label = paste('rho["ageing"]==', round(median_rho,2)))) +
-#   geom_text(data = filter(cov_sumch3ts, period=='Ageing'), parse=T, hjust=0, size = szx/pntnorm,
-#             mapping = aes(x=95, y = agpos2-ppos2, label = paste('p==', round(median_p,3) ))) +
-#   geom_text(data = filter(cov_sumch3ts, period=='Development'), fontface='bold', size = szx/pntnorm,
-#             mapping = aes(x=2, y = devpos2, label=period), hjust=0 ) +
-#   geom_text(data = filter(cov_sumch3ts, period=='Development'), parse=T, hjust=0, size = szx/pntnorm,
-#             mapping = aes(x=2, y = devpos2-rpos2, label = paste('rho["dev."]==', round(median_rho,2) ))) +
-#   geom_text(data = filter(cov_sumch3ts, period=='Development'), parse=T, hjust=0, size = szx/pntnorm,
-#             mapping = aes(x=2, y = devpos2-ppos2, label = paste('p==', round(median_p,3) )))
-# cov_exc_median
-
-# fig11 = ggarrange(cov_exc_mean, cov_exc_median, nrow=2, labels=c('a.','b.'), align='hv',
-#                    vjust=c(1.1, -0.2))
-# fig11
-# 
-# ggsave('./results/SI_figures/Figure_S11.pdf', fig11, units = 'cm', width = 16, height = 12,
-#        useDingbats = F)
-# ggsave('./results/SI_figures/Figure_S11.png', fig11, units = 'cm', width = 16, height = 12)
-# 
-# ggsave('./results/SI_figures/Figure_S10.pdf',fig_s10, units = 'cm', width = 16, height = 8, 
-#        useDingbats = F)
-# ggsave('./results/SI_figures/Figure_S10.png',fig_s10, units = 'cm', width = 16, height = 8)
-
+############ F2
 ############
+############ Figure S4, Number of genes with divergence and convergence tendencies in development and ageing:
 ############
-############ Figure S11, CoV change excluding each cortex and muscle ------------------ added
-############ 
-
-cov_sum3ts = cov_dat_wo_each %>%
-  mutate(Excluded = gsub('wo_','', Excluded)) %>%
-  mutate(Excluded = paste0('Exclude: ', Excluded) ) %>%
-  mutate(ind_id = factor(ind_id)) %>%
-  left_join(unique(select(sample_info,-tissue,-sample_id, -log2age))) %>%
-  group_by(ind_id, age, Excluded) %>%
-  summarise(meanCoV = mean(CoV),
-            medianCoV = median(CoV)) %>%
-  mutate(period = c('Ageing','Development')[1+(age<90)]) %>%
-  filter(Excluded%in%c('Exclude: Cortex','Exclude: Muscle'))
-
-cov_sumch3ts = cov_sum3ts %>%
-  ungroup() %>%
-  group_by(period, Excluded) %>%
-  summarise(mean_rho = cor.test(meanCoV, age, method = 's')$est,
-            mean_p = cor.test(meanCoV, age, method = 's')$p.val,
-            median_rho = cor.test(medianCoV, age, method = 's')$est,
-            median_p = cor.test(medianCoV, age, method = 's')$p.val)
-
-cov_exc_mean = cov_sum3ts %>%
-  mutate(period = factor(period, levels=c('Development', 'Ageing'))) %>%
-  ggplot( aes(x = age, y = meanCoV)) +
-  facet_wrap(~Excluded, scales = 'free_y', ncol = 2) +
-  #facet_wrap(~Excluded, ncol = 4) +
-  geom_point(size=1.5, color="steelblue", alpha=0.9) +
-  geom_smooth(se=T,color = 'midnightblue', fill='lightblue') +
-  scale_x_continuous(trans = 'log2') +
-  geom_vline(xintercept = 90, linetype='dashed',color = 'gray35') +
-  xlab('Age in days (in log2 scale)') +
-  ylab('Mean CoV') +
-  stat_cor(aes(group=period), method='spearman', cor.coef.name = 'rho["Cov,age"]', label.sep = '\n',
-            label.x.npc = c(0, 0.65), label.y.npc = c(0.9, 0.3), size=2) +
-  geom_text(data = filter(cov_sumch3ts, period=='Ageing'), fontface='bold', size = szx/pntnorm,
-               mapping = aes(x=95, y = c(0.395, 0.483), label=period), hjust=0 ) + 
-  geom_text(data = filter(cov_sumch3ts, period=='Development'), fontface='bold', size = szx/pntnorm,
-            mapping = aes(x=2, y = c(0.445, 0.51), label=period), hjust=0 ) 
-cov_exc_mean
-cov_exc_median = cov_sum3ts %>%
-  mutate(period = factor(period, levels=c('Development', 'Ageing'))) %>%
-  #mutate(stats = 'Median CoV') %>%
-  ggplot( aes(x = age, y = medianCoV)) +
-  #facet_grid(stat~Excluded, scales = 'free_y') +
-  facet_wrap(~Excluded, ncol = 2, scales='free_y') +
-  geom_point(size=1.5, color="steelblue", alpha=0.9) +
-  geom_smooth(se=T,color = 'midnightblue', fill='lightblue') +
-  scale_x_continuous(trans = 'log2') +
-  geom_vline(xintercept = 90, linetype='dashed',color = 'gray35') +
-  xlab('Age in days (in log2 scale)') +
-  ylab('Median CoV') +
-  stat_cor(aes(group=period), method='spearman', cor.coef.name = 'rho["Cov,age"]', label.sep = '\n',
-           label.x.npc = c(0, 0.65), label.y.npc = c(0.9, 0.3),size=2) +
-  geom_text(data = filter(cov_sumch3ts, period=='Ageing'), fontface='bold', size = szx/pntnorm,
-            mapping = aes(x=95, y = c(0.24, 0.332), label=period), hjust=0 ) + 
-  geom_text(data = filter(cov_sumch3ts, period=='Development'), fontface='bold', size = szx/pntnorm,
-            mapping = aes(x=2, y = c(0.31, 0.36), label=period), hjust=0 ) 
-
-fig11 = ggarrange(cov_exc_mean, cov_exc_median, nrow=2, labels=c('a.','b.'), align='hv',
-                    vjust=c(1.1, -0.2))
-# figure for reviewers
-ggsave('./results/SI_figures/Figure_R1.pdf', fig11, units = 'cm', width = 16, height = 12,
-       useDingbats = F)
-ggsave('./results/SI_figures/Figure_R1.png', fig11, units = 'cm', width = 16, height = 12)
-
-############
-############
-############ Figure S12, CoV change direction without significance cutoff -----------------------
-############ 
 
 cd_count = cov_ch %>% 
   filter(`CoV_change` !=0 ) %>% 
@@ -951,19 +747,20 @@ cd_count_p = cd_count %>%
         axis.title = element_text(size=6),
         strip.text = element_text(size=6))
 
-ggsave("results/SI_figures/Figure_S12.pdf", cd_count_p, units='cm', width = 8, height = 7, useDingbats=F)
-ggsave("results/SI_figures/Figure_S12.png", cd_count_p, units='cm', width = 8, height = 7)
+ggsave("results/figure_supplements/fs2/FS4.pdf", cd_count_p, units='cm', width = 8, height = 7,
+       useDingbats=F)
+ggsave("results/figure_supplements/fs2/FS4.png", cd_count_p, units='cm', width = 8, height = 7)
 
+############ F2
 ############
-############
-############ Figure S13, age-related change in pairwise expression correlations among tissues -------
+############ Figure S5, Pairwise tissue expression correlations: ----------
 ############ 
 
 annottext = pexpcors %>%
   mutate(period = ifelse(uage < 90,'development','aging')) %>%
   group_by(pair, period) %>%
-  summarise(p.val = round(cor.test(uage, rho, m='s')$p.val,2),
-            rho = round(cor.test(uage, rho, m='s')$est,3)) %>%
+  summarise(p.val = round(cor.test(uage, rho, m='s')$p.val,3),
+            rho = round(cor.test(uage, rho, m='s')$est,2)) %>%
   pivot_longer(cols=c(p.val, rho), names_to='stat')
 
 szx = 7
@@ -986,13 +783,14 @@ pwisecors = ggplot(pexpcors) +
   geom_text(data = filter(annottext, period =='aging' & stat == 'p.val'), vjust = 4,
             mapping = aes(x = 330, y= Inf, label = paste('p==',value) ), parse =  T,size = szx/pntnorm) 
 
-ggsave('./results/SI_figures/Figure_S13.pdf', pwisecors, units = 'cm', width = 10, height = 10, 
+ggsave('./results/figure_supplements/fs2/FS5.pdf', pwisecors, units = 'cm', width = 10, height = 10, 
        useDingbats =F)
-ggsave('./results/SI_figures/Figure_S13.png', pwisecors, units = 'cm', width = 10, height = 10)
+ggsave('./results/figure_supplements/fs2/FS5.png', pwisecors, units = 'cm', width = 10, height = 10)
 
+
+############ F2
 ############
-############
-############ Figure S14, mean or median expression correlation changes with age -----------------------
+############ Figure S6, Summary of pairwise expression correlations among tissues: ----------
 ############ 
 
 meancors = pexpcors %>% 
@@ -1032,19 +830,20 @@ mcorsplot = meancors %>%
   theme(strip.background = element_blank(),
         strip.placement = 'outside', strip.text = element_text(size = 8)) 
 
-ggsave('./results/SI_figures/SI_panels/Figure_S14a.pdf', mcorsplot, units = 'cm', width = 10, height = 6,
-       useDingbats =F)
-ggsave('./results/SI_figures/SI_panels/Figure_S14a.png', mcorsplot, units = 'cm', width = 10, height = 6)
+# ggsave('./results/figure_supplements/fs2/FS6a.pdf', mcorsplot, units = 'cm', width = 10, height = 6,
+#        useDingbats =F)
+# ggsave('./results/figure_supplements/fs2/FS6a.png', mcorsplot, units = 'cm', width = 10, height = 6)
 
 #### scale correlations and take mean
 #pcors.sc = sapply(pexpcors, function(x) scale(x))
-psccors = pexpcors %>% group_by(pair) %>% mutate(rho = scale(rho)[,1])
 
-psccors = reshape2::melt(pcors.sc) %>%
-  select(-Var2) %>%
-  set_names('id' ,'rho', 'pair') %>%
-  mutate(id = factor(id)) %>%
-  left_join(data.frame(uage, id = names(uage)) ) 
+# psccors = reshape2::melt(pcors.sc) %>%
+#   select(-Var2) %>%
+#   set_names('id' ,'rho', 'pair') %>%
+#   mutate(id = factor(id)) %>%
+#   left_join(data.frame(uage, id = names(uage)) ) 
+
+psccors = pexpcors %>% group_by(pair) %>% mutate(rho = scale(rho)[,1])
 
 meansccors = psccors %>% 
   group_by(id, uage) %>%
@@ -1084,24 +883,96 @@ mcorsplotsc = meansccors %>%
   theme(strip.background = element_blank(),
         strip.placement = 'outside',strip.text = element_text(size = 8)) 
 
-ggsave('./results/SI_figures/SI_panels/Figure_S14b.pdf', mcorsplotsc, units = 'cm', width = 10, height = 6,
+# ggsave('./results/figure_supplements/fs2/FS6b.pdf', mcorsplotsc, units = 'cm', width = 10, height = 6,
+#        useDingbats =F)
+# ggsave('./results/figure_supplements/fs2/FS6b.png', mcorsplotsc, units = 'cm', width = 10, height = 6)
+
+figure_S14  = ggarrange(mcorsplot, mcorsplotsc, nrow = 2, labels = c('a.', 'b.'),
+                        font.label = list(size=8))
+
+ggsave('./results/figure_supplements/fs2/FS6.pdf', figure_S14, units = 'cm', width = 15, height = 12, 
        useDingbats =F)
-ggsave('./results/SI_figures/SI_panels/Figure_S14b.png', mcorsplotsc, units = 'cm', width = 10, height = 6)
-
-figure_S14  = ggarrange(mcorsplot, mcorsplotsc, nrow = 2, labels = c('a.', 'b.') )
-
-ggsave('./results/SI_figures/Figure_S14.pdf', figure_S14, units = 'cm', width = 15, height = 12, 
-       useDingbats =F)
-ggsave('./results/SI_figures/Figure_S14.png', figure_S14, units = 'cm', width = 15, height = 12)
+ggsave('./results/figure_supplements/fs2/FS6.png', figure_S14, units = 'cm', width = 15, height = 12)
 
 
+############ F2
 ############
-############
-############ Figure S15, CoV and pairwise correlation changes with age in Jonker dataset ----------------
-############ (plot in ~//jonker/analysis.R)
+############ Figure S7, CoV and pairwise correlation analysis of Jonker dataset: ----------
+############ (plot in ?? script)
 
-########################### Figure S22
-##################### plot all, dc, non-dc genes:
+############ F2
+############
+############ Figure S8, PCA of  GTEx dataset covering cortex, liver, lung, and muscle tissues: ----------
+############ (plot in ?? script)
+
+
+############ F2
+############
+############ Figure S9, CoV and pairwise correlation analysis of GTEx dataset covering cortex, liver,
+############ lung, and muscle tissues: ----------
+############ (plot in ?? script)
+
+############ F2
+############
+############ Figure S10, PCA of GTEx dataset with ten tissues: ----------
+############ (plot in ?? script)
+
+
+############ F2
+############
+############ Figure S11, CoV and pairwise correlation analysis of GTEx dataset with ten tissues: ----------
+############ (plot in ?? script)
+
+############ F2
+############
+############ Figure S12, Permutation test result for the proportion of  DiCo genes: ----------
+############ (plot in ?? script)
+
+############ F2
+############
+############ Figure S13, Clustering of tissues by the presence of samples from the same individuals: --------
+############ (plot in ?? script)
+
+############ F2
+############
+############ Figure S14, Reproducing Figure 2 results with VST normalisation: --------
+############ (plot in ?? script)
+
+############ F2
+############
+############ Figure S15, Effect of heteroscedasticity to DiCo pattern: --------
+############ (plot in ?? script)
+
+############ F2
+############
+############ Figure S16, Sex effect on CoV analysis using GTEx: --------
+############ (plot in ?? script)
+
+
+######################## Figure 3 supplement figures ########################
+######################## Figure 3 supplement figures ########################
+######################## Figure 3 supplement figures ########################
+
+## No figure 3 supplement figure
+
+######################## Figure 4 supplement figures ########################
+######################## Figure 4 supplement figures ########################
+######################## Figure 4 supplement figures ########################
+
+############ F4
+############
+############ Figure S1, Significant expression change patterns in DiCo enriched categories: --------
+############ (plot in ?? script)
+
+
+######################## Figure 5 supplement figures ########################
+######################## Figure 5 supplement figures ########################
+######################## Figure 5 supplement figures ########################
+
+############ F5
+############
+############ Figure S1, Age-related changes in cell type proportions calculated using DiCo and non-DiCo genes:
+############
 
 colsx = colorRampPalette(brewer.pal(9,'Set1'))
 
@@ -1189,13 +1060,39 @@ p4 = deconv %>%
 fig_s22 = ggarrange(p1,p2,p3,p4,ncol=2, nrow=2, labels = c('a.','b.','c.','d.'),
                     font.label = list(size=8), align = 'h')
 
-ggsave('./results/SI_figures/Figure_S22.pdf', fig_s22, units = 'cm', width = 16, height = 14, 
+ggsave('./results/figure_supplements/fs5/FS1.pdf', fig_s22, units = 'cm', width = 16, height = 14, 
        useDingbats = F)
-ggsave('./results/SI_figures/Figure_S22.png', fig_s22, units = 'cm', width = 16, height = 14)
+ggsave('./results/figure_supplements/fs5/FS1.png', fig_s22, units = 'cm', width = 16, height = 14)
 
+############ F5
+############
+############ Figure S2, Permutation-based comparison between DiCo- and non-Dico- related cell 
+############ type proportion changes with age in the cortex: --------
+############ (plot in ?? script)
 
-############################
-################## Figure S23 ----- intra tissue cov
+############ F5
+############
+############ Figure S3, Permutation-based comparison between DiCo- and non-Dico- related cell 
+############ type proportion changes with age in the liver: --------
+############ (plot in ?? script)
+
+############ F5
+############
+############ Figure S4, Permutation-based comparison between DiCo- and non-Dico- related cell 
+############ type proportion changes with age in the lung: --------
+############ (plot in ?? script)
+
+############ F5
+############
+############ Figure S5, Permutation-based comparison between DiCo- and non-Dico- related cell 
+############ type proportion changes with age in the muscle: --------
+############ (plot in ?? script)
+
+############ F5
+############
+############ Figure S6, Intra-tissue CoV changes between cell types using Tabula Muris Senis dataset: ------
+############ 
+
 intracov = intra_ts_cov %>%
   mutate(`age group` = factor(`age group`, levels = c('m3', 'm18', 'm24')) ) %>%
   mutate(age = as.numeric( gsub('[a-z]','',`age group`) ) ) %>%
@@ -1219,10 +1116,7 @@ intracov1 = intracov +
                color=adjustcolor('gray10',alpha.f = 0.8))
 
 intracov1
-ggsave('./results/SI_figures/Figure_S23.pdf', intracov1, units = 'cm', width = 12, height = 8, 
+ggsave('./results/figure_supplements/fs5/FS6.pdf', intracov1, units = 'cm', width = 12, height = 8, 
        useDingbats =F)
-ggsave('./results/SI_figures/Figure_S23.png', intracov1, units = 'cm', width = 12, height = 8)
-
-
-
+ggsave('./results/figure_supplements/fs5/FS6.png', intracov1, units = 'cm', width = 12, height = 8)
 

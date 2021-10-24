@@ -1,11 +1,13 @@
+getwd()
 library(tidyverse)
 library(clusterProfiler)
 ddc_genes = readRDS('./data/processed/raw/dev_divergent_genes_dc_rank.rds')
 
+# repeat gse test 1k times:
 cnt=0
 library(org.Mm.eg.db)
 gse_reps = list()
-for(i in 1:20){
+for(i in 1:200){
   gse_repX = lapply(1:5, function(x){
     cnt <<- cnt+1
     print(cnt)

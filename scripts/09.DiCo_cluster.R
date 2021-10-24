@@ -81,8 +81,9 @@ dc_clusterX = dccovkmX %>%
         axis.title = element_text(size=8),
         strip.text = element_text(size=8, margin=margin(l=1,b=1,t=1)))
 
-ggsave('./results/SI_figures/Figure_S24.pdf', dc_clusterX, units='cm', width = 10, height = 10, useDingbat=F)
-ggsave('./results/SI_figures/Figure_S24.png', dc_clusterX, units='cm', width = 10, height = 10)
+ggsave('./results/figure_supplements/fs2/FS2.pdf', dc_clusterX, units='cm', width = 10, height = 10,
+       useDingbat=F)
+ggsave('./results/figure_supplements/fs2/FS2.png', dc_clusterX, units='cm', width = 10, height = 10)
 
 ########## save clusters
 saveRDS(kmX, './data/processed/raw/dc_km_clusters.rds')
@@ -117,7 +118,8 @@ write.xlsx(dc_clusterX_gora, './results/SI_tables/TableS7.xlsx')
 sc_exp = expr %>%
   filter(gene_id%in%dcgenes )  %>%
   left_join(sample_info, by='sample_id') %>%
-  right_join(inds, by=c('ind_id','age')) %>% # remove one individual from other tissues that lacks expression in cortex
+  right_join(inds, by=c('ind_id','age')) %>% # remove one individual from other tissues that lacks expression
+  #in cortex
   group_by(gene_id) %>%
   mutate(scexp = scale(expression)[,1]) %>%
   dplyr::select(-log2age, -ind_id, -age, -tissue, -expression)
@@ -152,10 +154,10 @@ expcl = sc_exp %>%
 
 exp_clusters = expcl %>%
     ggplot(aes(x= age, y= scexp, col = tissue, group = interaction(tissue, gene_id) )) +
-    facet_wrap(~cluster, ncol = 4,  scales = 'free_y', labeller = labeller(cluster=cle)) +
+    facet_wrap(~cluster, ncol = 5,  scales = 'free_y', labeller = labeller(cluster=cle)) +
     scale_x_continuous(trans = 'log2') +
     geom_vline(xintercept=90, linetype='dashed', alpha=0.4) +
-    geom_line(stat='smooth', method = 'loess', alpha = 0.1, show.legend = T, size = 0.1 ) +
+    geom_line(stat='smooth', method = 'loess', alpha = 0.3, show.legend = T, size = 0.1 ) +
     scale_color_manual(values = tissuecol) +
     xlab('Age in days (in log2 scale)') +
     ylab('Scaled Expression') +
@@ -163,8 +165,9 @@ exp_clusters = expcl %>%
     labs(colour = 'Tissue') +
     theme(legend.position = 'bottom')
 
-ggsave('./results/SI_figures/Figure_S25.pdf', exp_clusters, units='cm', width = 15, height = 18, useDingbats=F)
-ggsave('./results/SI_figures/Figure_S25.png', exp_clusters, units='cm', width = 15, height = 18)
+ggsave('./results/figure_supplements/fs2/FS3.pdf', exp_clusters, units='cm', width = 15, height = 18,
+       useDingbats=F)
+ggsave('./results/figure_supplements/fs2/FS3.png', exp_clusters, units='cm', width = 15, height = 18)
 
 
 ##### save expression clusters of dc genes:

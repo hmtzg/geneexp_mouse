@@ -254,88 +254,88 @@ saveRDS(pexpcors, './data/other_datasets/jonker/processed/pwise_exp_cors.rds')
 #.....
 
 ######## calculate CoV with excluding each tissue:
-idmap = ids
-names(idmap) = colnames(exp)
-ts = unique(tissue.ord)
-covex = lapply(ts, function(i){
-  print(paste('Calculating CoV without:',i))
-  cov3tsX = sapply(unique(colnames(exp2)), function(x){
-    expX = exp2[, !tissue.ord%in%i]
-    sapply(rownames(expX), function(y){
-      sd(expX[y, colnames(expX)==x]) / mean( expX[y, colnames(expX) == x] )
-    })
-  })
-  cov3tsX
-})
-names(covex) = paste0('wo_', ts)
+# idmap = ids
+# names(idmap) = colnames(exp)
+# ts = unique(tissue.ord)
+# covex = lapply(ts, function(i){
+#   print(paste('Calculating CoV without:',i))
+#   cov3tsX = sapply(unique(colnames(exp2)), function(x){
+#     expX = exp2[, !tissue.ord%in%i]
+#     sapply(rownames(expX), function(y){
+#       sd(expX[y, colnames(expX)==x]) / mean( expX[y, colnames(expX) == x] )
+#     })
+#   })
+#   cov3tsX
+# })
+# names(covex) = paste0('wo_', ts)
+# 
+# covextidy  = reshape2::melt(covex) %>%
+#   set_names(c('gene_id', 'ind_id', 'CoV', 'Excluded')) %>%
+#   mutate(ind_id = as.character(ind_id)) %>%
+#   left_join(data.frame(age=ageu, ind_id=names(ageu)))
+# 
+# saveRDS(covextidy, file='./data/other_datasets/jonker/processed/CoV_wo_eachtissue.rds')
+# 
+# covexch = covextidy %>%
+#   group_by(Excluded, gene_id) %>%
+#   summarise(rho  = cor.test(CoV, age, m='s')$est,
+#             pval = cor.test(CoV, age, m='s')$p.val)
+# 
+# covexch = covexch %>%
+#   mutate(BH = p.adjust(pval, method = 'BH'))
+# 
+# saveRDS(covexch, './data/other_datasets/jonker/processed/CoV_change_wo_eachtissue.rds')
 
-covextidy  = reshape2::melt(covex) %>%
-  set_names(c('gene_id', 'ind_id', 'CoV', 'Excluded')) %>%
-  mutate(ind_id = as.character(ind_id)) %>%
-  left_join(data.frame(age=ageu, ind_id=names(ageu)))
-
-saveRDS(covextidy, file='./data/other_datasets/jonker/processed/CoV_wo_eachtissue.rds')
-
-covexch = covextidy %>%
-  group_by(Excluded, gene_id) %>%
-  summarise(rho  = cor.test(CoV, age, m='s')$est,
-            pval = cor.test(CoV, age, m='s')$p.val)
-
-covexch = covexch %>%
-  mutate(BH = p.adjust(pval, method = 'BH'))
-
-saveRDS(covexch, './data/other_datasets/jonker/processed/CoV_change_wo_eachtissue.rds')
-
-# mean/ median CoV for each exlusion data:
-cov_sum3ts = covextidy %>%
-  mutate(Excluded = gsub('wo_','', Excluded)) %>%
-  mutate(Excluded = paste0('Exclude: ', Excluded) ) %>%
-  mutate(ind_id = factor(ind_id)) %>%
-  #left_join(unique(select(sample_info,-tissue,-sample_id, -log2age))) %>%
-  group_by(ind_id, age, Excluded) %>%
-  summarise(meanCoV = mean(CoV),
-            medianCoV = median(CoV))
-
-# mean/ median CoV change:
-cov_sumch3ts = cov_sum3ts %>%
-  group_by(Excluded) %>%
-  summarise(mean_rho = cor.test(meanCoV, age, method = 's')$est,
-            mean_p = cor.test(meanCoV, age, method = 's')$p.val,
-            median_rho = cor.test(medianCoV, age, method = 's')$est,
-            median_p = cor.test(medianCoV, age, method = 's')$p.val)
-
-# CoV excluded mean CoV change plot:
-cov_exc_mean = cov_sum3ts %>%
-  ggplot( aes(x = age, y = meanCoV)) +
-  facet_wrap(~Excluded, ncol = 5, scales='free_y') +
-  geom_point(size=1.5, color="steelblue", alpha=0.9) +
-  geom_smooth(method = 'lm', se=T,color = 'midnightblue', fill='lightblue') +
-  scale_x_continuous(trans = 'log2') +
-  xlab('Age in days (in log2 scale)') + 
-  ylab('Mean CoV') +
-  stat_cor(aes(x = age), method = 'spearman', cor.coef.name = 'rho', size = 6/pntnorm) 
-cov_exc_mean
-
-cov_exc_median = cov_sum3ts %>%
-  ggplot( aes(x = age, y = medianCoV)) +
-  facet_wrap(~Excluded, ncol = 5, scales='free_y') +
-  geom_point(size=1.5, color="steelblue", alpha=0.9) +
-  geom_smooth(method = 'lm', se=T,color = 'midnightblue', fill='lightblue') +
-  scale_x_continuous(trans = 'log2') +
-  xlab('Age in days (in log2 scale)') + 
-  ylab('Median CoV') +
-  stat_cor(aes(x = age), method = 'spearman', cor.coef.name = 'rho', size = 6/pntnorm) 
-
-jex = ggarrange(cov_exc_mean, cov_exc_median, nrow=2, labels=c('a.','b.'), align='hv',
-                vjust=c(1.1, -0.2), font.label = list(size=8))
-jex
-# ggsave('./results/Jonker/covch_exc.pdf', jex, units = 'cm', width = 16, height = 12,
-#        useDingbats = F)
-# ggsave('./results/Jonker/covch_exc.png', jex, units = 'cm', width = 16, height = 12)
-
-ggsave('./results/SI_figures/Figure_S30.pdf', jex, units='cm', width = 16, height = 12, 
-       useDingbats=F)
-ggsave('./results/SI_figures/Figure_S30.png', jex, units='cm', width = 16, height = 12)
+# # mean/ median CoV for each exlusion data:
+# cov_sum3ts = covextidy %>%
+#   mutate(Excluded = gsub('wo_','', Excluded)) %>%
+#   mutate(Excluded = paste0('Exclude: ', Excluded) ) %>%
+#   mutate(ind_id = factor(ind_id)) %>%
+#   #left_join(unique(select(sample_info,-tissue,-sample_id, -log2age))) %>%
+#   group_by(ind_id, age, Excluded) %>%
+#   summarise(meanCoV = mean(CoV),
+#             medianCoV = median(CoV))
+# 
+# # mean/ median CoV change:
+# cov_sumch3ts = cov_sum3ts %>%
+#   group_by(Excluded) %>%
+#   summarise(mean_rho = cor.test(meanCoV, age, method = 's')$est,
+#             mean_p = cor.test(meanCoV, age, method = 's')$p.val,
+#             median_rho = cor.test(medianCoV, age, method = 's')$est,
+#             median_p = cor.test(medianCoV, age, method = 's')$p.val)
+# 
+# # CoV excluded mean CoV change plot:
+# cov_exc_mean = cov_sum3ts %>%
+#   ggplot( aes(x = age, y = meanCoV)) +
+#   facet_wrap(~Excluded, ncol = 5, scales='free_y') +
+#   geom_point(size=1.5, color="steelblue", alpha=0.9) +
+#   geom_smooth(method = 'lm', se=T,color = 'midnightblue', fill='lightblue') +
+#   scale_x_continuous(trans = 'log2') +
+#   xlab('Age in days (in log2 scale)') + 
+#   ylab('Mean CoV') +
+#   stat_cor(aes(x = age), method = 'spearman', cor.coef.name = 'rho', size = 6/pntnorm) 
+# cov_exc_mean
+# 
+# cov_exc_median = cov_sum3ts %>%
+#   ggplot( aes(x = age, y = medianCoV)) +
+#   facet_wrap(~Excluded, ncol = 5, scales='free_y') +
+#   geom_point(size=1.5, color="steelblue", alpha=0.9) +
+#   geom_smooth(method = 'lm', se=T,color = 'midnightblue', fill='lightblue') +
+#   scale_x_continuous(trans = 'log2') +
+#   xlab('Age in days (in log2 scale)') + 
+#   ylab('Median CoV') +
+#   stat_cor(aes(x = age), method = 'spearman', cor.coef.name = 'rho', size = 6/pntnorm) 
+# 
+# jex = ggarrange(cov_exc_mean, cov_exc_median, nrow=2, labels=c('a.','b.'), align='hv',
+#                 vjust=c(1.1, -0.2), font.label = list(size=8))
+# jex
+# # ggsave('./results/Jonker/covch_exc.pdf', jex, units = 'cm', width = 16, height = 12,
+# #        useDingbats = F)
+# # ggsave('./results/Jonker/covch_exc.png', jex, units = 'cm', width = 16, height = 12)
+# 
+# ggsave('./results/SI_figures/Figure_S30.pdf', jex, units='cm', width = 16, height = 12, 
+#        useDingbats=F)
+# ggsave('./results/SI_figures/Figure_S30.png', jex, units='cm', width = 16, height = 12)
 
 
 #####
@@ -357,6 +357,43 @@ pwisecorplot = ggarrange(p1, p2, ncol=2, widths = c(2,3), labels= c(NA,'c.'),fon
 ggsave('./results/SI_figures/Figure_S15.pdf', pwisecorplot, units='cm', width = 16, height = 11, 
        useDingbats=F)
 ggsave('./results/SI_figures/Figure_S15.png', pwisecorplot, units='cm', width = 16, height = 11)
+
+
+p2x = ggplot(pexpcors) +
+  aes(x = Age, y = rho) +
+  facet_wrap(~pair, scales = 'free', ncol=3) +
+  geom_point(size=1, color="steelblue", alpha=0.9) +
+  geom_smooth(se=T, method='lm', color = 'midnightblue', fill='lightblue') +
+  scale_color_manual(values = Tissuecol) +
+  ylab('Sperman correlation coefficient') +
+  xlab('Age') +
+  stat_cor(method = 'spearman', cor.coef.name = 'rho', color = 'black',
+           size = 6/pntnorm, show.legend = F)
+ggsave('/home/hmt/Dropbox/conferences/hibit2021/pwisecors.pdf', p2x, units='cm', height = 16, width = 14)
+ggsave('/home/hmt/Dropbox/conferences/hibit2021/pwisecors.png', p2x, units='cm', height = 16, width = 14)
+## mean pairwise corrs:
+meancors = pexpcors %>% 
+  group_by(ind_id, Age) %>%
+  summarise(mean = mean(rho),
+            median = median(rho)) %>%
+  gather(key='method', value = 'rho', mean, median)
+
+szx = 4
+mcorsplot = meancors %>%
+  ggplot(aes(x=Age,y=rho)) +
+  facet_wrap(~method, strip.position = 'left', scales = 'free_y',
+             labeller = as_labeller(c(mean = 'Mean P.wise Expr. Correlation',
+                                      median = 'Median P.wise Expr. Correlation'))) +
+  geom_point(size=1.5, color="steelblue", alpha=0.9) +
+  geom_smooth(se=T, method = 'lm',color = 'midnightblue', fill='lightblue') +
+  scale_x_continuous(trans = 'log2') +
+  xlab('Age in days (in log2 scale)') + ylab(NULL) +
+  stat_cor(method = 'spearman', cor.coef.name = 'rho') +
+  theme(strip.background = element_blank(),
+        strip.placement = 'outside', strip.text = element_text(size = 8)) + theme_bw()
+ggsave('./results/Jonker/meanexpcors.pdf', mcorsplot, units = 'cm', width = 16, height = 10,
+       useDingbats =F)
+ggsave('./results/Jonker/meanexpcors.png', mcorsplot, units = 'cm', width = 16, height = 10)
 
 ########
 ######## DiCo enrichment for Jonker with dev. divergent genes from our dataset:

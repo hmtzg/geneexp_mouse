@@ -1,8 +1,8 @@
-library(Rvislib)
+#library(Rvislib)
 library(tidyverse)
 library(ggpubr)
 library(ggforce)
-theme_set(theme_rvis(base_size = 6, legend.pos = 'right'))
+#theme_set(theme_rvis(base_size = 6, legend.pos = 'right'))
 pntnorm <- (1/0.352777778)
 sexcolors <- setNames(c('#ffc9b5', '#8fb8de'), c('Female', 'Male'))
 tissuecol = c(`Adipose Tissue` = '#B2BFC2',

@@ -38,6 +38,7 @@ sum(duplicated(ensmap$tf_mmid)) # 0
 
 colnames(genemap) = c('tf_id', 'tf_hsid')
 
+saveRDS(ensmap, file='./data/tfbs/analysis.rdata')
 ensmap = ensmap %>% 
   left_join(genemap, by='tf_hsid')
 head(ensmap)
@@ -78,13 +79,13 @@ table(sapply(unique(bg$tf_sym), function(x){ sum(is.na(bg[bg$tf_sym%in%x,'patter
 bg %>%  
   group_by(gene_id) %>%
   summarise(n=unique(length(tf_sym))) %>%
-  select(n) %>% table() # 
+  dplyr::select(n) %>% table() # 
 
 # number of genes each TF targets
 bg %>%  
   group_by(tf_sym) %>%
   summarise(n=unique(length(gene_id))) %>%
-  select(n) %>% table() 
+  dplyr::select(n) %>% table() 
 # 1 TF targets only 2 genes
 # 1 TF targets only 4 gene
 # 1 TF targets only 10 gene
@@ -94,7 +95,7 @@ bg %>%
 bgX = bg %>%  
   group_by(tf_sym) %>%
   summarise(n=unique(length(gene_id))) %>%
-  filter(n>4 & n< 500) %>%
+  filter(n>=5) %>%
   left_join(bg) %>%
   mutate(pattern = factor(pattern))
 
@@ -136,11 +137,11 @@ mirTest = function(mat, miRcol = 1, genecol=3, patcol=5){
 tfMm = mirTest(bgX, miRcol = 1, genecol = 4, patcol = 6)
 tfMm2 = t(sapply(tfMm, function(x) c(x$Fistest$est, x$Fistest$p.val ) ))
 colnames(tfMm2) = c('OR', 'pvalue')
-tfMm2 = cbind(tfMm2, 'BY' = p.adjust(tfMm2[,'pvalue'], method='BY'))
+tfMm2 = cbind(tfMm2, 'BH' = p.adjust(tfMm2[,'pvalue'], method='BH'))
 tfMm2 = as.data.frame(tfMm2)
 
 tfMm2 %>% arrange(OR)
-tfMm2 %>% filter(BY < 0.1)  # non significant
+tfMm2 %>% filter(BH < 0.1)  # non significant
 
 #####################
 #####################

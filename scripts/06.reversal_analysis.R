@@ -1,5 +1,15 @@
 library(tidyverse)
 library(openxlsx)
+library(ggpubr)
+library(RColorBrewer)
+
+theme_set(theme_pubr(base_size = 6, legend = 'top') +
+            theme(legend.key.size = unit(2,'pt')))
+pntnorm <- (1/0.352777778)
+tissuecol = setNames(c('#233789', '#f49e92', '#801008','#dbb32e'),c('Cortex','Lung','Liver','Muscle'))
+varcol = setNames(c('dodgerblue','firebrick3'),c('div','con'))
+regcol = setNames(c('rosybrown3','paleturquoise3'),c('up','down'))
+revcol = setNames(c('brown4', '#1C7AD9', 'indianred', '#6FADEC'), c('UpDown','DownUp','UpUp','DownDown'))
 
 source('./scripts/functions.R')
 dev = readRDS("./data/processed/raw/development_expression_change.rds")
@@ -146,10 +156,9 @@ rev_each_plot = reshape2::melt(rev.tissue) %>%
   theme_bw() +
   theme(axis.text = element_text(size =5))
 
-ggsave('./results/SI_figures/Figure_S8.pdf', rev_each_plot, width = 16, height = 15, units='cm', 
+ggsave('./results/figure_supplements/f1s/FS8.pdf', rev_each_plot, width = 16, height = 15, units='cm', 
        useDingbats = F )
-ggsave('./results/SI_figures/Figure_S8.png', rev_each_plot, width = 16, height = 15, units='cm' )  
-
+ggsave('./results/figure_supplements/f1s/FS8.png', rev_each_plot, width = 16, height = 15, units='cm' )  
 
 ########################################
 ######################################## Test significance of shared reversal genes among tissues
@@ -223,9 +232,9 @@ rev_shared_plot = reshape2::melt(data.frame( UpDown = UDdist, DownUp = DUdist)) 
   theme_bw() +
   theme(axis.text = element_text(size =5))
 
-ggsave('./results/SI_figures/Figure_S9.pdf', rev_shared_plot, width = 12, height = 8, units='cm', 
+ggsave('./results/figure_supplements/f1s/FS9.pdf', rev_shared_plot, width = 12, height = 8, units='cm', 
        useDingbats = F )
-ggsave('./results/SI_figures/Figure_S9.png', rev_shared_plot, width = 12, height = 8, units='cm' )  
+ggsave('./results/figure_supplements/f1s/FS9.png', rev_shared_plot, width = 12, height = 8, units='cm' )  
 
 
 ########################################

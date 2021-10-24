@@ -60,7 +60,6 @@ expch_age = reshape2::melt(aging) %>%
 expch = rbind(expch_dev,expch_age) %>%
   set_names(c('gene_id','tissue','Expression Change','p','FDR','period'))
 
-# saveRDS(expch,'./data/processed/tidy/expression_change.rds')
 saveRDS(expch,'./data/htseq/blinded/expression_change.rds')
 
 age_related_genes = expch %>%

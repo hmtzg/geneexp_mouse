@@ -1,9 +1,9 @@
-getwd()
-library(clusterProfiler)
+#library(clusterProfiler)
 #library(enrichplot)
 library(tidyverse)
 library(ggpubr)
 library(RColorBrewer)
+library(goseq)
 
 theme_set(theme_pubr(base_size = 6, legend = 'top') +
             theme(legend.key.size = unit(2,'pt')))
@@ -11,113 +11,298 @@ pntnorm <- (1/0.352777778)
 
 dc = readRDS('./data/processed/raw/dc_gse.rds')
 signifGO = dc@result[,1:10] %>%
-  filter(qvalues < 0.1 & NES < 0) %>%
-  select(ID, NES)
-write.table(signifGO, file = 'results/figure4/signifGO_DiCo.csv', row.names = F, quote = F)  
+  filter( p.adjust< 0.1 & NES < 0) %>%
+  dplyr::select(ID, Description, NES) #  184 DiCo enriched
 
-repr = readRDS('./results/figure4/revigo_representative.rds')
+# write.table(signifGO, file = 'results/figure4/signifGO_DiCo.csv', row.names = F, quote = F,
+#             sep = '\t')
 
-library(GO.db)
-library(AnnotationDbi)
-library(org.Mm.eg.db)
-term = select(GO.db, columns = c("GOID","TERM"), keytype = "GOID", keys = keys(GO.db))
-terms = as.character(term[,2])
-names(terms) = as.character(term[,1])
-#save(terms, file = "./data/goterms_20210831.RData")
-saveRDS(terms, './data/goterms_20210831.rds')
-x <- c(as.list(GOBPOFFSPRING)) # children and all their children
-xx <- sapply(1:length(x), function(i) x[[i]] = c(names(x)[i], x[[i]]) )
-xxx <- sapply(1:length(xx), function(i) xx[[i]][ complete.cases(xx[[i]]) ] )
-length(x)
-length(xx)
-length(xxx)
-names(xx) <- names(x)
-names(xxx) <- names(x)
-xxx[[1]]
-go2gene = select(org.Mm.eg.db, keys = names(xxx), columns = c("GO","ENSEMBL"), keytype = "GO")
-GO2Gene = list()
-for(i in 1:length(xxx)){
-  print(i/length(xxx))
-  myg = go2gene[go2gene[,1]%in%xxx[[i]], 4]
-  myg = unique(myg[complete.cases(myg)])
-  GO2Gene[[i]] = myg
-}
-names(GO2Gene) = names(xxx)
-head(GO2Gene)
-length(GO2Gene)
-save(GO2Gene, file="./data/GO2GeneBP_20210831.RData")
-reprgenes = GO2Gene[repr$term_ID]
+# get dico genes
+genes = unique(names(which(readRDS('./data/processed/raw/dev_divergent_genes_dc_rank.rds')<0)))
+allgo = getgo(genes,"mm9","ensGene")
+allgo = allgo[!sapply(allgo,is.null)] #  4741 DiCo genes present in gos
+allgo = reshape2::melt(allgo) %>%
+  set_names(c('ID','gene'))
 
-reprgenes = reshape2::melt(reprgenes) %>% 
-  set_names(c('gene_id', 'GOID') ) %>%
-  left_join( set_names(repr, c('GOID', 'Representative') )  )
+signifGO_genes = left_join(signifGO,allgo)
+gogenemat = signifGO_genes %>%
+  dplyr::select(ID, gene) %>%
+  unique() %>%
+  mutate(value = 1) %>%
+  spread(ID, value, fill = 0)
 
-reprlevels = reprgenes %>% group_by(GOID, Representative) %>%
+gogenemat = as.data.frame(gogenemat)
+rownames(gogenemat) = gogenemat$gene
+gogenemat$gene = NULL
+gogenemat = as.matrix(gogenemat)
+# gogenemat: list of all genes present in GO categories 
+
+jaccardsim = apply(gogenemat, 2, function(x){
+  apply(gogenemat,2,function(y){
+    sum(x==1 & y==1) / sum(x==1 | y==1)
+  })
+})
+
+gocatx = signifGO
+simmat = jaccardsim[gocatx$ID,gocatx$ID] # change column/rows orders back
+k = 25
+treex = hclust(dist( t(gogenemat) ))
+treecl = cutree(treex, k)
+
+# choose representative GO groups based on max mean similarity to other groups in the same cluster:
+reps = sapply(1:k, function(i){
+  xx=names(which(treecl==i))
+  if(length(xx)>1){
+    xx = simmat[xx,xx]
+    names(which.max(rowMeans(xx)))
+  } else{
+    xx
+  }
+})
+
+repclus = setNames(lapply(1:k,function(i) names(which(treecl==i)) ),reps)
+newdf = reshape2::melt(repclus) %>% 
+  set_names(c('ID','rep')) %>%
+  arrange(rep) %>% 
+  left_join(signifGO) %>%
+  unique() 
+
+# representative categories:
+newdf %>%
+  mutate(rep = ID == rep) %>%
+  filter(rep) %>%
+  dplyr::select(ID, Description)
+
+# check median jaccard similarities of categories in the same cluster:
+streps = sort(sapply(names(repclus), function(i){ median(jaccardsim[repclus[[i]], i]) }))
+sort(sapply(names(repclus), function(i){ mean(jaccardsim[repclus[[i]], i]) }))
+
+newdf %>%
+  filter(rep%in%names(streps)[1]) %>%
+  dplyr::select(Description) #  unrelated groups
+
+newdf %>%
+  filter(rep%in%names(streps)[2]) # related groups
+
+newdf %>%
+  filter(rep%in%names(streps)[3]) # related groups
+
+newdf %>%
+  filter(rep%in%names(streps)[23]) # related groups
+
+reprgenes = signifGO_genes %>%
+  filter(ID %in%names(repclus)) %>%
+  dplyr::select(ID, gene, Description) %>%
+  set_names('ID','gene_id', 'Description')
+
+reprg = reprgenes %>%
+  mutate(repNames = ifelse(ID%in%'GO:0030193','Other GO', Description ) ) 
+
+reprg = reprg %>%
+  group_by(ID) %>%
   summarise(n=n()) %>%
-  arrange(-n)
-reprgenes = reprgenes %>%
-  mutate(GOID = factor(GOID, levels = reprlevels$GOID),
-         Representative = factor(Representative, levels = reprlevels$Representative ))
+  arrange(n) %>%
+  right_join(reprg)
 
+saveRDS(reprg, file='./results/figure4/gorepresentatives.rds')
+
+#####
+#####
+#####
+## re-cluster the out-group: GO:0030193
+
+sort(sapply(names(repclus), function(i){ median(jaccardsim[repclus[[i]], i]) }))
+# out-group: 'GO:0030193'
+outg = repclus[['GO:0030193']]
+
+gogenemat2 = gogenemat[,outg]
+jaccardsim2 = apply(gogenemat2,2,function(x){
+  apply(gogenemat,2,function(y){
+    sum(x==1 & y==1) / sum(x==1 | y==1)
+  })
+})
+
+treex2 = hclust(dist( t(gogenemat2)))
+##
+k2 = 20
+treecl2 = cutree(treex2,k2)
+reps2 = sapply(1:k2, function(i){
+  xx=names(which(treecl2==i))
+  if(length(xx)>1){
+    xx = simmat[xx,xx]
+    names(which.max(rowMeans(xx)))
+  } else{
+    xx
+  }
+})
+
+simmat['GO:0032543','GO:0072655']
+
+repclus2 = setNames(lapply(1:k2,function(i)names(which(treecl2==i))),reps2)
+newdf2 = reshape2::melt(repclus2) %>% 
+  set_names(c('ID','rep')) %>%
+  arrange(rep) %>% 
+  left_join(signifGO) %>%
+  unique() 
+
+newdf2 %>%
+  mutate(rep = ID == rep) %>%
+  filter(rep) %>%
+  dplyr::select(ID, Description)
+
+sort(sapply(names(repclus2), function(i){ median(jaccardsim2[repclus2[[i]], i]) }))
+
+# outgroup: median jaccardsim: 0.00725
+newdf2 %>%
+  filter(rep=='GO:0072577') 
+
+reprgenes2 = signifGO_genes %>%
+  filter(ID %in%names(repclus2)) %>%
+  dplyr::select(ID, gene, Description) %>%
+  set_names('ID','gene_id', 'Description')
+
+reprg2 = reprgenes2 %>%
+  mutate(repNames = ifelse(ID%in%'GO:0072577','Other GO', Description ) ) 
+
+reprg2 = reprg2 %>%
+  group_by(ID) %>%
+  summarise(n=n()) %>%
+  arrange(n) %>%
+  right_join(reprg2)
+
+reprg2
+
+saveRDS(reprg2, file='./results/figure4/gorepresentatives2.rds')
+
+################
+################
+################
+################
+##
 expch = readRDS('./data/processed/tidy/expression_change.rds') %>%
   mutate(period = gsub('aging', 'Ageing', period)) %>%
   mutate(period = str_to_title(period) ) %>%
   mutate(period = factor(period, levels = c('Development', 'Ageing'))) %>%
   dplyr::rename(Period = period)
 
-enricplot = expch %>%
-  inner_join(reprgenes) %>%
-  group_by(Period, GOID, tissue, Representative) %>%
+expch %>%
+  inner_join(reprg) %>% head
+
+#GO:0009611 : repsonse to wounding
+gx = reprg %>% filter(ID%in%'GO:0009611') %>% pull(gene_id)
+
+expch %>%
+  filter(gene_id%in%gx) %>%
+  group_by(Period, tissue) %>%
+  mutate(mrho = median(`Expression Change`)) %>%
+  ggplot(aes(fill=Period, y=mrho, x=tissue)) +
+  geom_bar(stat='identity', position= position_dodge()) +
+  geom_point( aes(x=tissue, y=`Expression Change`), inherit.aes = F )
+
+expch %>%
+  inner_join(reprg) %>% 
+  group_by(Period, ID, tissue, Description, repNames, n) %>%
   summarise(mrho = mean(`Expression Change`),
-            medrho = median(`Expression Change`)) %>% 
-  ggplot(aes(fill=Period, y=mrho, x=Representative)) +
+            medrho = median(`Expression Change`),
+            iqr = IQR(`Expression Change`) ) %>%
+  ggplot(aes(fill=Period, y=iqr, x=reorder(repNames, n) ) ) +
+  #geom_point(aes(y=`Expression Change`)) +
   geom_bar(stat='identity', position=position_dodge()) +
   facet_wrap(~tissue, ncol=4) +
   scale_fill_manual(values=brewer.pal(3,"Set1")[c(2,1)]) +
   coord_flip() +
-  geom_hline(yintercept = 0, size=0.3, linetype='solid', color='gray30')+
+  geom_hline(yintercept = 0, size=0.3, linetype='solid', color='gray30') +
+  geom_vline(xintercept = seq(1.5,25, by=1), linetype = 'dashed', size = 0.2, color = 'gray') +
   theme(legend.position = 'top',
-        axis.text.x = element_text(size=4), 
+        axis.text.x = element_text(size=4, vjust=2), 
+        axis.ticks.length.x = unit(0,'pt'),
         axis.text.y = element_text(size=5),
+        panel.border = element_blank(),
+        axis.line.y = element_blank(),
+        axis.line.x = element_blank(),
+        plot.title = element_text(vjust = -0.5),
+        legend.background = element_rect(color='black', size=0.1),
+        legend.key.size = unit(3, 'pt'),
         axis.title.x = element_text(size=6)) +
   xlab('') +
   ylab(bquote('Mean Expression Change ('*rho*')'))
 enricplot
-ggsave('./results/figure4/dicoGO.pdf',enricplot, units='cm', width = 16, height = 8, useDingbats=F)
-ggsave('./results/figure4/dicoGO.png',enricplot, units='cm', width = 16, height = 8)  
 
+
+enricplot_ogr = expch %>%
+  inner_join(reprg2) %>%
+  group_by(Period, ID, tissue, Description, repNames, n) %>%
+  summarise(mrho = mean(`Expression Change`),
+            medrho = median(`Expression Change`)) %>%
+  ggplot(aes(fill=Period, y=mrho, x=reorder(repNames, n) ) ) +
+  geom_bar(stat='identity', position=position_dodge()) +
+  facet_wrap(~tissue, ncol=4) +
+  scale_fill_manual(values=brewer.pal(3,"Set1")[c(2,1)]) +
+  coord_flip() +
+  geom_hline(yintercept = 0, size=0.3, linetype='solid', color='gray30') +
+  geom_vline(xintercept = seq(1.5,25, by=1), linetype = 'dashed', size = 0.2, color = 'gray') +
+  theme(legend.position = 'top',
+        axis.text.x = element_text(size=4, vjust=2), 
+        axis.ticks.length.x = unit(0,'pt'),
+        axis.text.y = element_text(size=5),
+        panel.border = element_blank(),
+        axis.line.y = element_blank(),
+        axis.line.x = element_blank(),
+        plot.title = element_text(vjust = -0.5),
+        legend.background = element_rect(color='black', size=0.1),
+        legend.key.size = unit(3, 'pt'),
+        axis.title.x = element_text(size=6)) +
+  xlab('') +
+  ylab(bquote('Mean Expression Change ('*rho*')'))
+enricplot_ogr
+
+ggsave('./results/figure4/dicoGO_ogr.pdf',enricplot_ogr, units='cm', width = 16, height = 12, useDingbats=F)
+ggsave('./results/figure4/dicoGO_ogr.png',enricplot_ogr, units='cm', width = 16, height = 12)  
+# 
+
+##
 enricplot2 = expch %>%
-  inner_join(reprgenes) %>%
-  group_by(Period, GOID, tissue, Representative) %>%
+  inner_join(reprg) %>%
+  group_by(Period, ID, tissue, Description, repNames, n) %>%
   summarise(mrho = mean(`Expression Change`),
             medrho = median(`Expression Change`)) %>% 
-  ggplot(aes(fill=Period, y=medrho, x=Representative)) +
+  ggplot(aes(fill=Period, y=medrho, x=reorder(repNames, n))) +
   geom_bar(stat='identity', position=position_dodge()) +
   facet_wrap(~tissue, ncol=4) +
   scale_fill_manual(values=brewer.pal(3,"Set1")[c(2,1)]) +
   coord_flip() +
   geom_hline(yintercept = 0, size=0.3, linetype='solid', color='gray30')+
+  geom_vline(xintercept = seq(1.5,25, by=1), linetype = 'dashed', size = 0.2, color = 'gray') +
   theme(legend.position = 'top',
-        axis.text.x = element_text(size=4), 
+        axis.text.x = element_text(size=4, vjust=2), 
+        axis.ticks.length.x = unit(0,'pt'),
         axis.text.y = element_text(size=5),
+        panel.border = element_blank(),
+        axis.line.y = element_blank(),
+        axis.line.x = element_blank(),
+        plot.title = element_text(vjust = -0.5),
+        legend.background = element_rect(color='black', size=0.1),
+        legend.key.size = unit(3, 'pt'),
         axis.title.x = element_text(size=6)) +
   xlab('') +
   ylab(bquote('Median Expression Change ('*rho*')'))
 enricplot2
-ggsave('./results/figure4/dicoGOmed.pdf',enricplot2, units='cm', width = 16, height = 8, useDingbats=F)
-ggsave('./results/figure4/dicoGOmed.png',enricplot2, units='cm', width = 16, height = 8)  
+##
+
+# ggsave('./results/figure4/dicoGOmed.pdf',enricplot2, units='cm', width = 16, height = 8, useDingbats=F)
+# ggsave('./results/figure4/dicoGOmed.png',enricplot2, units='cm', width = 16, height = 8)  
 
 enrichpfdr = expch %>%
-  inner_join(reprgenes) %>%
-  group_by(Period, GOID, tissue, Representative) %>%
+  inner_join(reprg) %>%
   filter(FDR<0.1) %>% 
-  summarise(n = n(),
+  group_by(Period, ID, tissue, Description, repNames, n) %>%
+  summarise(nfdr = n(),
             mrho = mean(`Expression Change`),
             medrho = median(`Expression Change`)) %>% 
-  ggplot(aes(fill=Period, y=mrho, x=Representative, width = (n/max(n))^0.5 ) ) +
+  ggplot(aes(fill=Period, y=mrho, x=reorder(repNames, nfdr) ) ) +
   geom_bar(stat='identity', position=position_dodge() ) +
   facet_wrap(~tissue, ncol=4) +
-  scale_fill_manual(values=brewer.pal(3,"Set1")[c(2,1)]) +
+  scale_fill_manual(values=brewer.pal(3,"Set1")[c(2,1)] ) +
   coord_flip() +
   geom_hline(yintercept = 0, size=0.3, linetype='solid', color='gray30')+
   theme(legend.position = 'top',
@@ -130,65 +315,3 @@ enrichpfdr
 ggsave('./results/figure4/dicoGOfdr.pdf',enrichpfdr, units='cm', width = 16, height = 8, useDingbats=F)
 ggsave('./results/figure4/dicoGOfdr.png',enrichpfdr, units='cm', width = 16, height = 8)  
 
-
-### for tissue specific genes:
-ts.spec = readRDS('./data/processed/raw/ts.specQ3.genes.rds') %>%
-  reshape2::melt() %>%
-  set_names(c('gene_id', 'Spec'))
-reprgenes %>%
-  left_join(ts.spec) %>%
-  group_by(GOID, Spec, Representative) %>%
-  summarise(n = length(gene_id))
-
-reprgenes %>%
-  inner_join(ts.spec) %>% 
-  inner_join(expch) %>% 
-  group_by(period, GOID, tissue, Representative) %>%
-  summarise(mrho = mean(`Expression Change`),
-            medrho = median(`Expression Change`)) %>% 
-  ggplot(aes(fill=period, y=mrho, x=Representative)) +
-  geom_bar(stat='identity', position=position_dodge()) +
-  facet_wrap(~tissue, ncol=4) +
-  scale_fill_manual(values=brewer.pal(3,"Set1")[c(2,1)]) +
-  #scale_y_continuous(trans='log2') +
-  coord_flip() +
-  geom_hline(yintercept = 0, size=0.3, linetype='solid', color='gray30',)+
-  theme(legend.position = 'top',
-        axis.text.x = element_text(size=4), 
-        axis.text.y = element_text(size=7)) +
-  xlab('') +
-  ylab('Mean Rho')
-
-# dc_rep = dc
-# dc_rep@result = dc@result[dc@result$ID%in%repr$term_ID,]
-# emapplot(dc_rep, color='NES')
-#dc_rep@result = dc@result[dc@result$Description%in%rep, 1:10]
-#dc_emap = emapplot(dc, color = 'NES', showCategory = 25, layout = 'nicely')
-#dc_emap
-#dc_emap$layers =  dc_emap$layers[-3]
-#dc_emap = dc_emap + 
-#  geom_text_repel(aes(x = x, y=y, label = name), size = 1.5)
-#  
-# dc_emap$labels$colour = 'NES'
-# 
-# dc_gse_plot = dc_emap +
-#   scale_color_gradient(low = 'indianred4', high = 'palevioletred2') +
-#   theme(legend.text = element_text(size = 4),
-#         text = element_text(size = 4))
-# 
-# ggsave('Dropbox/projects/ageing/results.n/sd.method/dc_gse_plot.pdf', dc_gse_plot, units = 'cm',
-#        height = 8, width = 12, useDingbats=F)
-# ggsave('Dropbox/projects/ageing/results.n/sd.method/dc_gse_plot.png', dc_gse_plot, units = 'cm',
-#        height = 8, width = 12)
-
-######
-# a=readRDS('Dropbox/projects/repos/geneexp_mouse/data/processed/raw/dev_divergent_genes_dc_rank.rds')
-# head(a)
-# b= strsplit(dc@result[1,11], '/')[[1]]
-# 
-# 
-# head(dc@result[,1:10])
-# head(dc@result[dc@result$NES>0,1:10],20)
-# 
-# which(dc@result$ID%in%'GO:0099504')
-# b= strsplit(dc@result[212,11], '/')[[1]]

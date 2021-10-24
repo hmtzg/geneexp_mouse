@@ -360,6 +360,31 @@ covresplot = ggarrange(p1, pairwiseplot, ncol =2, nrow = 1, labels = c(NA,'c.'),
 
 plotsave(ggobj = covresplot, prefix = './results/GTEx/CoV',width = 16, height = 8)
 
+
+## mean pairwise exp cors:
+mpwise= pairwisedat %>% 
+  gather(key = 'pairs', value='rho', -id, -age,-Age) %>%
+  group_by(id, Age) %>%
+  summarise(mean = mean(rho),
+            median = median(rho)) %>%
+  gather(key='method', value = 'rho', mean, median) %>%
+  ggplot(aes(x=Age,y=rho)) +
+  facet_wrap(~method, strip.position = 'left',
+             labeller = as_labeller(c(mean = 'Mean P.wise Expr. Corr.',
+                                      median = 'Median P.wise Expr. Corr.'))) +
+  geom_point(size=1.5, color="steelblue", alpha=0.9) +
+  geom_smooth(se=T, method = 'lm', color = 'midnightblue', fill='lightblue') +
+  scale_x_continuous(trans = 'log2') +
+  xlab('Age in years (in log2 scale)') + ylab(NULL) +
+  stat_cor(method = 'spearman', cor.coef.name = 'rho', size=4) +
+  theme(strip.background = element_blank(),
+        strip.placement = 'outside', strip.text = element_text(size = 8)) 
+
+ggsave('./results/GTEx/meanpwisecor.pdf', mpwise, units = 'cm', width = 12, height = 8,
+       useDingbats =F)
+ggsave('./results/GTEx/meanpwisecor.png', mpwise, units = 'cm', width = 12, height = 8)
+
+
 # Calculate CoV change with age per each gene
 covcor = expvals %>%
   select(GeneID, Age, CoV, id) %>%

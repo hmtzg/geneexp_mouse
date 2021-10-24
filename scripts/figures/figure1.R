@@ -80,8 +80,6 @@ pb1 = pca_dat %>%
   xlab('Age in days (in log2 scale)') +
   theme_bw()
 
-sizex = 2
-
 pb2 = pca_dat %>%
   select(-varExp) %>%
   filter(period == 'all', type == 'raw') %>%
@@ -120,7 +118,7 @@ pb3 = get_legend(pb3)
 # pb
 pab = ggarrange(ggarrange(pa1,pa2,ncol=2,common.legend=TRUE, widths = c(1, 1.8), legend="none"),
                 ggarrange(pb1,pb2,pb3 ,ncol=3, widths=c(1.3,1.3,0.7)), nrow=2, heights=c(1.5,1),
-                common.legend=F, labels = c('a.','b.'))
+                common.legend=F, labels = c('a.','b.'), font.label = list(size=8))
 ggsave("results/figure1/fig1ab.pdf", pab, units = 'cm',width = 19, height = 10, useDingbats = F)
 ggsave("results/figure1/fig1ab.png", pab, units = 'cm',width = 20, height = 10)
 

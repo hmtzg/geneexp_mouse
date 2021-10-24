@@ -7,6 +7,7 @@ ind.id = readRDS('./data/processed/raw/individual_ids.rds')
 age = readRDS('./data/processed/raw/ages.rds')
 samp_tissue = readRDS('./data/processed/raw/tissue_ids.rds')
 
+tissuecol = setNames(c('#233789', '#f49e92', '#801008','#dbb32e'),c('Cortex','Lung','Liver','Muscle'))
 colnames(exp) = ind.id
 names(age) = ind.id
 # remove one individual that lack expression in cortex
@@ -117,10 +118,10 @@ fisher.test(exprch_tisspec[,c(2,1)])
 
 
 #### among div-conv genes:
-mat.dc = mat[rownames(mat)%in%dcgenes,] # 1287 genes in total
-table(mat.dc)[,c(2,1)]
-fisher.test(table(mat.dc)[,c(2,1)])
-# OR: 38.52, pval < 1e10-16
+# mat.dc = mat[rownames(mat)%in%dcgenes,] # 1287 genes in total
+# table(mat.dc)[,c(2,1)]
+# fisher.test(table(mat.dc)[,c(2,1)])
+# # OR: 38.52, pval < 1e10-16
 
 
 ########
@@ -226,6 +227,8 @@ fisher.test(table(mat.dev[rownames(mat.dev2)%in%dcgenes,]))
 # fisher.test(table(mat)) # depleted
 
 #################################
+#################################
+#################################
 
 revg = readRDS('./data/processed/raw/revgenes.tissues.rds')
 
@@ -236,7 +239,7 @@ for(i in names(revg)){
   mat = data.frame(xspec  = ts.specQ3.genes%in%ts.specQ3.genes[names(ts.specQ3.genes)==i],
                    rev =  ts.specQ3.genes%in%revg[[i]]$UpDown )
   tst = fisher.test(table(mat))
-  eachtissue_OR[[i]]= c(tst$est, tst$p.val)
+  eachtissue_OR[[i]]= c('OR' = tst$est, 'pval' = tst$p.val)
   eacttissue_table[[i]] =  table(mat)
 }
 eachtissue_OR
@@ -245,4 +248,32 @@ saveRDS(list(OR= eachtissue_OR, table= eacttissue_table),
         file='./data/processed/raw/tis_spec_rev_enrichment.rds')
 #table_s9 = lapply(eacttissue_table, function(x) data.frame(rbind(x)))
 write.xlsx(eacttissue_table, 'results/SI_tables/TableS9.xlsx')
+
+ORs = sapply(eachtissue_OR,function(x) x) %>% reshape2::melt() %>%
+  set_names(c('stat', 'tissue', 'value')) %>%
+  spread(stat, value) %>%
+  set_names(c('tissue', 'OR', 'pval'))
+
+ts.specrevfisher = ORs %>%
+  mutate(LgOR = log2(OR)) %>%
+  ggplot(aes(x=tissue, y=LgOR)) +
+  geom_bar(stat='identity', fill='aquamarine4') +
+  ylab('Log2(OR)') + xlab('') +
+  geom_text(aes(x=tissue), label = '*', size=4)
+
+ggsave('./results/figure3/OR_tsspec_rev.pdf', units='cm', height = 10, width = 8, useDingbats=F)
+ggsave('./results/figure3/OR_tsspec_rev.png', units='cm', height = 10, width = 8)
+#####   
+
+bg = ts.specQ3.genes
+cort_tst = data.frame(cort_sp = bg%in%ts.specQ3$Cortex,
+           cort_rev = bg%in%c(revg$Cortex$UpDown))
+table(cort_tst)
+fisher.test(table(cort_tst))
+
+
+
+
+
+
 

@@ -25,7 +25,7 @@ dage = uage[uage<90]
 aage = uage[uage>90]
 
 # pairwise tissue expression correlations, and change with age
-exp= expr
+exp = expr
 chs = combn(4,2)
 pcors = list()
 for(i in 1:6){
@@ -49,7 +49,6 @@ agecors.aging = sapply(names(pcors), function(x){
     round(cor.test(pcors[[x]][names(aage)], aage, m='s')$p.val,3))
 })
 rownames(agecors.aging)[2] = 'p.val'
-
 #####
 pexpcors = reshape2::melt(pcors) %>%
   set_names('rho', 'pair') %>%
@@ -84,6 +83,13 @@ names(dev.perm)
 # reorder cors as permutation tissue order:
 cors = cors[c(1,3,2,4,5,7,6,8),c(1,3,2,4,5,7,6,8)]
 
+# compare development vs ageing:
+dcors = cors[1:4,1:4][lower.tri(cors[1:4,1:4])]
+acors = cors[5:8,5:8][lower.tri(cors[5:8,5:8])]
+wilcox.test(dcors, acors, paired = T)
+#V = 16, p-value = 0.3125
+
+###
 chs = combn(4,2)
 corperm.dev = c()
 for(i in 1:6){
@@ -144,11 +150,6 @@ saveRDS(pwise_cor_perm_test,'./data/processed/tidy/pwise_expch_cor_perm_test.rds
 write.xlsx(pwise_cor_perm_test, file='./results/SI_tables/TableS3.xlsx', row.names=T)
 
 ########################################
-########################################
-########################################
-########################################
-
-########################################
 ######################################## Permutation test for shared up/down genes (no significance cutoff )
 ######################################## in dev/aging among tissues: 
 ######################################## 2,3,4-tissue overlap test separately 
@@ -196,13 +197,6 @@ overlap_test = perm_overlaps %>%
   summarise(Perm_p = mean(`N Overlap` >= unique(Obs)),
             eFPP =  round(median(`N Overlap`)/ unique(Obs),2)) %>%
   left_join(obs_overlap)
-
-
-########################################
-########################################
-########################################
-########################################
-
 
 ########################################
 ######################################## Permutation test for shared up/down significant genes (FDR<0.1)

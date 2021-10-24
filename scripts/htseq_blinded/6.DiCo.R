@@ -196,10 +196,12 @@ OR1 = rev.shared %>%
             pval = fisher.test(cbind(Rev,NonRev))$p.val)
 # OR1: 0.7, p = 0.0019
 # shared reversal genes (updown+downup) are depleted among DiCo genes
+
 #################### reversal genes (for each tissue) vs dc genes (among development divergent genes)
 revgenes = readRDS('./data/htseq/blinded/revgenes.tissues_tidy.rds')
 OR2 = data.frame(gene_id=rep(names(ddc_genes),4), DCpattern = rep(ddc_genes,4) ,
-                 tissue= rep(c('Cortex','Lung', 'Liver', 'Muscle'),each = length(ddc_genes)), row.names=NULL) %>%
+                 tissue= rep(c('Cortex','Lung', 'Liver', 'Muscle'),
+                             each = length(ddc_genes)), row.names=NULL) %>%
   mutate(DCpattern = ifelse(DCpattern<0,'DC', 'DD')) %>%
   left_join(revgenes) %>%
   mutate(Revness = ifelse(direction == 'UpDown'| direction == 'DownUp','Rev','NonRev')) %>% 

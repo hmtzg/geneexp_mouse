@@ -44,21 +44,21 @@ select(-p, -FDR) %>%
 # 7 Development Lung   14710
 # 8 Development Muscle 14710
 
-expch_cors = expch_cor %>% 
-  mutate(period=factor(period, levels = c('Development', 'Ageing') )) %>%
-  ggplot(aes(x=tissue, y=cor, fill=period)) +
-  #facet_wrap(~period) +
-  geom_bar(stat='identity', position = 'dodge') +
-  scale_fill_manual(values =periodcol) +
-  scale_y_continuous(limits = c(0,1)) +
-  xlab('') +
-  ylab('Spearman\'s correlation coefficient') +
-  guides(fill = guide_legend('Period'))
-expch_cors
+# expch_cors = expch_cor %>% 
+#   mutate(period=factor(period, levels = c('Development', 'Ageing') )) %>%
+#   ggplot(aes(x=tissue, y=cor, fill=period)) +
+#   #facet_wrap(~period) +
+#   geom_bar(stat='identity', position = 'dodge') +
+#   scale_fill_manual(values =periodcol) +
+#   scale_y_continuous(limits = c(0,1)) +
+#   xlab('') +
+#   ylab('Spearman\'s correlation coefficient') +
+#   guides(fill = guide_legend('Period'))
+# expch_cors
 
-ggsave('./results/htseq/blinded/expch_cors_qn_vs_vst.pdf', expch_cors, units='cm', height = 5, width = 8,
-       useDingbats=F)
-ggsave('./results/htseq/blinded/expch_cors_qn_vs_vst.png', expch_cors, units='cm', height = 5, width = 8)
+# ggsave('./results/htseq/blinded/expch_cors_qn_vs_vst.pdf', expch_cors, units='cm', height = 5, width = 8,
+#        useDingbats=F)
+# ggsave('./results/htseq/blinded/expch_cors_qn_vs_vst.png', expch_cors, units='cm', height = 5, width = 8)
 
 expchcorplot = expch %>%
   select(-p, -FDR) %>% 
@@ -142,7 +142,7 @@ expch %>%
   summarise(cor = cor.test(`Expression Change`, `Exp. Ch. (QN)`, na.rm=T, m='s')$est) %>% arrange(period)
 # tissue period        cor
 # <chr>  <chr>       <dbl>
-#   1 Cortex Ageing      0.805
+#  1 Cortex Ageing      0.805
 # 2 Cortex Development 0.901
 # 3 Liver  Ageing      0.828
 # 4 Liver  Development 0.887
@@ -188,18 +188,5 @@ cov_qn %>% filter(period=='development' & FDR < 0.1) %>%
               select(gene_id, change) %>%
               rename(change_vst = change) ) %>%
   summarise(shared = table(change_qn, change_vst))
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

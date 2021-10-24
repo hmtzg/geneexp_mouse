@@ -183,7 +183,7 @@ dc_gse = gseGO(geneList = sort(ddc_genes, decreasing = T), OrgDb = org.Mm.eg.db,
                pvalueCutoff = 1,
                 keyType = "ENSEMBL", nPerm = 1000, minGSSize = 10, maxGSSize = 500, pAdjustMethod = 'BH',
                 verbose = F)
-saveRDS(dc_gse, file="./data/processed/raw/dc_gse.rd")
+saveRDS(dc_gse, file="./data/processed/raw/dc_gse.rds")
 
 dc_gse_genelist =  strsplit(dc_gse@result[,11], split = '/')
 names(dc_gse_genelist) = dc_gse@result[,'ID']

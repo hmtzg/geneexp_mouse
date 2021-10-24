@@ -136,7 +136,8 @@ dccontplot = dc_fisher %>%
   geom_bar(stat = 'identity', position = 'fill', width = 1, color = 'black') +
   geom_text(aes(label = paste('n=',n,sep='')), position = 'fill', 
             size = 7/pntnorm, vjust = 1.2, color = 'black') +
-  scale_fill_manual(values = regcol, guide = guide_legend(title = 'Direction of Expression Change')) +
+  scale_fill_manual(values = regcol,
+                    guide = guide_legend(title = 'Direction of Expression Change', title.vjust = 1)) +
   xlab(NULL) + ylab('') +
   annotate(geom='text',x=c(1.1,1.1,2.1,2.1)-0.5,y=c(0.95,0.05,0.95,0.05),
            label=paste('GR',c(1,3,2,4), sep=''), size = 6/pntnorm, fontface = 'bold') +
@@ -147,7 +148,8 @@ dccontplot = dc_fisher %>%
         axis.line.y = element_blank(),
         axis.line.x = element_blank(),
         plot.title = element_text(vjust = -0.5),
-        legend.background = element_rect(color='black',size = 0.1)) +
+        legend.background = element_rect(color='black',size = 0.1),
+        legend.key.size = unit(3, 'pt')) +
   ggtitle(fidctitle  )  
   #ggtitle(paste('DiCo Genes - OR=',round(1/fidc$estimate,2),scales::pvalue(fidc$p.value, add_p = T))) 
 
@@ -162,13 +164,14 @@ fiall = fisher.test(reshape2::acast(all_fisher, sametis~expchange))
 
 fiall$p.value
 1/fiall$estimate
-fiall.title = expression('DiCo Genes - OR=5.50 p=2.1x10'^'-129') 
+fiall.title = expression('All Genes - OR=5.50 p=2.1x10'^'-129') 
 allcontplot = all_fisher %>%
   ggplot(aes( x = sametis, fill = expchange, y = n)) +
   geom_bar(stat = 'identity', position = 'fill', width = 1, color = 'black') +
   geom_text(aes(label = paste('n=',n,sep='')), position = 'fill', size = 7/pntnorm, 
             vjust = 1.2, color = 'black') +
-  scale_fill_manual(values = regcol, guide = guide_legend(title = 'Direction of Expression Change')) +
+  scale_fill_manual(values = regcol, 
+                    guide = guide_legend(title = 'Direction of Expression Change')) +
   xlab(NULL) + ylab('Proportion') +
   theme(axis.ticks.length.x = unit(0,'pt'),
         axis.text.x = element_text(vjust = 2),
@@ -176,11 +179,13 @@ allcontplot = all_fisher %>%
         axis.line.y = element_blank(),
         axis.line.x = element_blank(),
         plot.title = element_text(vjust = -0.5),
-        legend.background = element_rect(color='black', size=0.1)) +
+        legend.background = element_rect(color='black', size=0.1),
+        legend.key.size = unit(3, 'pt'),
+        legend.spacing.x = unit(2.5, 'pt')) +
   ggtitle(fiall.title)  
   #ggtitle(paste('All Genes - OR=',round(1/fiall$estimate,2),scales::pvalue(fiall$p.value, add_p = T)))
 
-p1 = ggarrange(allcontplot, dccontplot, common.legend = T, legend = 'bottom', labels = c('a.','b.'), 
+p1 = ggarrange(allcontplot, dccontplot, common.legend = T, legend = 'top', labels = c('a.','b.'), 
                font.label = list(size = 8))
 
 GR1 = unique((expdat %>% filter((max_exp_ch != native_tissue) & (beta<0) & DC) %>% 
@@ -270,56 +275,80 @@ gr4plot = expdat %>%
   xlab('Age (in log2 scale)') + ylab('Gene Expression') 
 
 p2 = ggarrange(gr1plot, gr2plot, gr3plot,gr4plot,font.label = list(size = 8), 
-               labels = c('c.','d.','e.','f.'), ncol = 4, nrow = 1, common.legend = T, legend = 'bottom')
+               labels = c('c.','d.','e.','f.'), ncol = 4, nrow = 1, common.legend = T, legend = 'top')
 fig4af = ggarrange(p1, p2, ncol = 1 , nrow = 2, heights = c(1,1))
 
 ##### Fig 4g (Dico Enrichment plot)
-repr = readRDS('./results/figure4/revigo_representative.rds')
-load("./data/GO2GeneBP_20210831.RData")
-reprgenes = GO2Gene[repr$term_ID]
-
-reprgenes = reshape2::melt(reprgenes) %>% 
-  set_names(c('gene_id', 'GOID') ) %>%
-  left_join( set_names(repr, c('GOID', 'Representative') )  )
-
-reprlevels = reprgenes %>% group_by(GOID, Representative) %>%
-  summarise(n=n()) %>%
-  arrange(-n)
-reprgenes = reprgenes %>%
-  mutate(GOID = factor(GOID, levels = reprlevels$GOID),
-         Representative = factor(Representative, levels = reprlevels$Representative ))
 expch = readRDS('./data/processed/tidy/expression_change.rds') %>%
   mutate(period = gsub('aging', 'Ageing', period)) %>%
   mutate(period = str_to_title(period) ) %>%
   mutate(period = factor(period, levels = c('Development', 'Ageing'))) %>%
   dplyr::rename(Period = period)
 
+reprg = readRDS('./results/figure4/gorepresentatives.rds')
+
 enricplot = expch %>%
-  inner_join(reprgenes) %>%
-  group_by(Period, GOID, tissue, Representative) %>%
+  inner_join(reprg) %>%
+  group_by(Period, ID, tissue, Description, repNames, n) %>%
+  summarise(mrho = mean(`Expression Change`),
+            medrho = median(`Expression Change`)) %>%
+  ggplot(aes(fill=Period, y=mrho, x=reorder(repNames, n) ) ) +
+  geom_bar(stat='identity', position=position_dodge()) +
+  facet_wrap(~tissue, ncol=4) +
+  scale_fill_manual(values=brewer.pal(3,"Set1")[c(2,1)]) +
+  coord_flip() +
+  geom_hline(yintercept = 0, size=0.3, linetype='solid', color='gray30') +
+  geom_vline(xintercept = seq(1.5,25, by=1), linetype = 'dashed', size = 0.2, color = 'gray') +
+  theme(legend.position = 'top',
+        axis.text.x = element_text(size=4, vjust=2), 
+        axis.ticks.length.x = unit(0,'pt'),
+        axis.text.y = element_text(size=5),
+        panel.border = element_blank(),
+        axis.line.y = element_blank(),
+        axis.line.x = element_blank(),
+        plot.title = element_text(vjust = -0.5),
+        legend.background = element_rect(color='black', size=0.1),
+        legend.key.size = unit(3, 'pt'),
+        axis.title.x = element_text(size=6)) +
+  xlab('') +
+  ylab(bquote('Mean Expression Change ('*rho*')'))
+enricplot
+ggsave('./results/figure4/dicoGO.pdf',enricplot, units='cm', width = 16, height = 8, useDingbats=F)
+ggsave('./results/figure4/dicoGO.png',enricplot, units='cm', width = 16, height = 8)  
+
+enricplot2 = expch %>%
+  inner_join(reprg) %>%
+  group_by(Period, ID, tissue, Description, repNames, n) %>%
   summarise(mrho = mean(`Expression Change`),
             medrho = median(`Expression Change`)) %>% 
-  ggplot(aes(fill=Period, y=medrho, x=Representative)) +
+  ggplot(aes(fill=Period, y=medrho, x=reorder(repNames, n))) +
   geom_bar(stat='identity', position=position_dodge()) +
   facet_wrap(~tissue, ncol=4) +
   scale_fill_manual(values=brewer.pal(3,"Set1")[c(2,1)]) +
   coord_flip() +
   geom_hline(yintercept = 0, size=0.3, linetype='solid', color='gray30')+
-  geom_vline(xintercept = seq(1.5,17, by=1), linetype = 'dashed', size = 0.3, color = 'gray') +
+  geom_vline(xintercept = seq(1.5,25, by=1), linetype = 'dashed', size = 0.2, color = 'gray') +
   theme(legend.position = 'top',
-        axis.text.x = element_text(size=4), 
+        axis.text.x = element_text(size=4, vjust=2), 
+        axis.ticks.length.x = unit(0,'pt'),
         axis.text.y = element_text(size=5),
+        panel.border = element_blank(),
+        axis.line.y = element_blank(),
+        axis.line.x = element_blank(),
+        plot.title = element_text(vjust = -0.5),
+        legend.background = element_rect(color='black', size=0.1),
+        legend.key.size = unit(3, 'pt'),
         axis.title.x = element_text(size=6)) +
   xlab('') +
   ylab(bquote('Median Expression Change ('*rho*')'))
-enricplot
+enricplot2
+ggsave('./results/figure4/dicoGOmed.pdf',enricplot2, units='cm', width = 16, height = 8, useDingbats=F)
+ggsave('./results/figure4/dicoGOmed.png',enricplot2, units='cm', width = 16, height = 8)  
 
-ggsave('./results/figure4/dicoGO.pdf',enricplot, units='cm', width = 16, height = 8, useDingbats=F)
-ggsave('./results/figure4/dicoGO.png',enricplot, units='cm', width = 16, height = 8)  
 
-fig4  = ggarrange(fig4af, enricplot, nrow =2, labels=c(NA, 'f.'),font.label = list(size = 8))
+fig4  = ggarrange(fig4af, enricplot, nrow =2, labels=c(NA, 'g.'), font.label = list(size = 8))
 fig4
-plotsave(fig4,'./results/figure4/figure4_new', fig4, units='cm', width = 16, height = 16)
+plotsave(fig4,'./results/figure4/figure4', fig4, units='cm', width = 16, height = 16)
 
 #### enriched GO with expr. changes, FDR<0.1
 

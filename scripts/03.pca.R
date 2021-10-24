@@ -273,7 +273,7 @@ mdist_aging %>%
 
 pc_age_cors %>%
   filter(type=='raw' & `PCA period` == 'aging') %>%
-  filter(PC=='PC3')
+  filter(PC=='PC1')
 # `Scale period` type  PC    tissue `age period`     rho        p
 # <chr>          <chr> <fct> <fct>  <chr>          <dbl>    <dbl>
 # 1 aging          raw   PC1   Cortex Aging         0.683  0.0621  
