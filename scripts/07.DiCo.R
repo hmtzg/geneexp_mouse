@@ -307,8 +307,9 @@ dico_prop_perm = data.frame(Perms= names(DiCodist), rho = DiCodist, row.names=NU
   ylab('Frequency') +
   theme_bw()
 
-ggsave('./results/SI_figures/Figure_S16.pdf',dico_prop_perm,units='cm', width=12, height=12, useDingbats=F)
-ggsave('./results/SI_figures/Figure_S16.png',dico_prop_perm, units='cm', width=12, height=12)
+ggsave('./results/figure_supplements/fs2/FS12.pdf',dico_prop_perm,units='cm', width=12, height=12, 
+       useDingbats=F)
+ggsave('./results/figure_supplements/fs2/FS12.png',dico_prop_perm, units='cm', width=12, height=12)
 
 #############
 ############# DiCo with rho cutoff

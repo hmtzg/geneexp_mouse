@@ -1,6 +1,7 @@
 library(tidyverse)
 library(ggpubr)
 library(ggforce)
+#theme_set(theme_rvis(base_size = 6, legend.pos = 'right'))
 theme_set(theme_pubr(base_size = 6, legend = 'top') +
             theme(legend.key.size = unit(2,'pt')))
 pntnorm <- (1/0.352777778)
@@ -460,6 +461,52 @@ plotsave(ggobj = sexcorplot, prefix = './results/GTEx/sex_agecor',width = 16, he
 ############# CoV by excluding each tissue:
 ts = unique(expvals$Tissue)
 #ts=ts[1]
+covex = lapply(ts, function(tis){
+  expvals %>%
+    select(-CoV) %>%
+    filter(!Tissue%in%tis) %>%
+    group_by(GeneID, id) %>%
+    summarise(CoV = sd(Expression)/mean(Expression)) %>%
+    ungroup()  %>%
+    left_join(unique(select(attr, id, age)) ) 
+})
+names(covex) = ts
+
+covex = reshape2::melt(covex) %>%
+  rename(Exclude = L1, CoV = value) %>%
+  mutate(Age = c(25,35,45,55,65,75)[age])
+
+sumcovex = covex %>%
+  group_by(id, age, Age, Exclude) %>%
+  summarise(meancov = mean(CoV),
+            medcov = median(CoV))
+
+sumcovex = sumcovex %>%
+  mutate(Exclude = paste('Exclude:', Exclude))
+
+meancovexplot = ggplot(sumcovex, aes(x = age, y = meancov)) +
+  geom_boxplot(width = 0.4, outlier.shape = NA, fill = 'gray70') +
+  geom_jitter(width = 0.1, size = 0.3) +
+  facet_wrap(.~Exclude, scales='free_y', ncol=4) +
+  stat_cor(aes(x = Age), method = 'spearman', cor.coef.name = 'rho', size = 6/pntnorm) +
+  xlab(NULL) + ylab('Mean CoV') +
+  theme(axis.text.x = element_text(angle=90))
+
+medcovexplot = ggplot(sumcovex,aes(x = age, y = medcov)) +
+  geom_boxplot(width = 0.4, outlier.shape = NA, fill = 'gray70') +
+  geom_jitter(width = 0.1, size = 0.3) +
+  #facet_grid(.~Exclude) +
+  facet_wrap(.~Exclude, scales='free_y', ncol=4) +
+  stat_cor(aes(x = Age), method = 'spearman', cor.coef.name = 'rho',  size = 6/pntnorm) +
+  xlab(NULL) + ylab('Median CoV') +
+  theme(axis.text.x = element_text(angle=90))
+
+covexplot = ggarrange(meancovexplot, medcovexplot, nrow=2, ncol=1, labels=c('a.','b.'), 
+                      font.label = list(size=8) )
+covexplot
+
+plotsave(ggobj = covexplot, prefix = './results/GTEx/CoV_exc_each',width = 12, height = 12)
+
 
 ### CoV by sex:
 # summarise CoV across genes by taking the mean or median of CoVs per gene
@@ -614,7 +661,6 @@ sexplots = ggarrange(covsex, pairwiseplotsex, nrow=2, heights = c(0.8,1) )
 sexplots
 
 plotsave(ggobj = sexplots, prefix = './results/GTEx/sexplots', width = 16, height = 14)
-plotsave(ggobj = sexplots, prefix = './results/figure_supplements/fs2/FS16', width = 16, height = 14)
 
 # Calculate CoV change with age per each gene
 covcorsex = expvals %>%

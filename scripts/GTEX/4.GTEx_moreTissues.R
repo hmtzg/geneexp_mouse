@@ -1,9 +1,9 @@
-#library(Rvislib)
 library(tidyverse)
 library(ggpubr)
 library(ggforce)
-#theme_set(theme_rvis(base_size = 6, legend.pos = 'right'))
 pntnorm <- (1/0.352777778)
+theme_set(theme_pubr(base_size = 6, legend = 'top') +
+            theme(legend.key.size = unit(2,'pt')))
 sexcolors <- setNames(c('#ffc9b5', '#8fb8de'), c('Female', 'Male'))
 tissuecol = c(`Adipose Tissue` = '#B2BFC2',
               `Blood` = '#A3392E',
@@ -69,12 +69,25 @@ indids = reshape2::melt(indids) %>%
 rownames(indids) = indids$id
 indids$id = NULL
 
-pheatmap::pheatmap(t(indids), cellwidth = 2,cellheight = 10, cutree_rows = 3, show_colnames = F, color = c('gray99','lightblue'),legend = F,filename = './results/GTEx/alltissues/sample_tissue_heatmap.png')
+pheatmap::pheatmap(t(indids), cellwidth = 2,cellheight = 10, cutree_rows = 3, show_colnames = F,
+                   color = c('gray99','lightblue'),legend = F,
+                   filename = './results/GTEx/alltissues/sample_tissue_heatmap.png')
 
-pheatmap::pheatmap(t(indids), cellwidth = 2,cellheight = 10, cutree_rows = 3, show_colnames = F, color = c('gray99','lightblue'),legend = F,filename = './results/GTEx/alltissues/sample_tissue_heatmap.pdf')
+pheatmap::pheatmap(t(indids), cellwidth = 2,cellheight = 10, cutree_rows = 3, show_colnames = F,
+                   color = c('gray99','lightblue'),legend = F,
+                   filename = './results/GTEx/alltissues/sample_tissue_heatmap.pdf')
+
+pheatmap::pheatmap(t(indids), cellwidth = 2,cellheight = 10, cutree_rows = 3, show_colnames = F,
+                   color = c('gray99','lightblue'),legend = F,
+                   filename = './results/figure_supplements/fs2/FS13.png')
+
+pheatmap::pheatmap(t(indids), cellwidth = 2,cellheight = 10, cutree_rows = 3, show_colnames = F,
+                   color = c('gray99','lightblue'),legend = F,
+                   filename = './results/figure_supplements/fs2/FS13.pdf')
+
 tislist = names(which(cutree(hclust(dist(t(indids))), 3)==1))
-fn = paste('./data/processed/GTEx/expression/tpm/',sapply(strsplit(gsub(' ','',tislist),'[(]'),function(x)x[[1]]),'.rds',sep='')
-
+fn = paste('./data/processed/GTEx/expression/tpm/',
+           sapply(strsplit(gsub(' ','',tislist),'[(]'),function(x)x[[1]]),'.rds',sep='')
 
 expvals = lapply(fn, function(fnx){readRDS(fnx)})
 names(expvals) = tislist
@@ -90,11 +103,13 @@ attr = attr %>%
   filter(sample_id %in% samplelist)
 table(attr$exc) # no duplication
 
-genelist = unique(unlist(lapply(expvals,function(expx){sapply(strsplit(as.character(rownames(expx)),'[.]'),function(x)x[1])})))
+genelist = unique(unlist(lapply(expvals,function(expx){
+  sapply(strsplit(as.character(rownames(expx)),'[.]'),function(x)x[1])})))
 martx = biomaRt::useMart('ensembl','hsapiens_gene_ensembl')
-biotype = biomaRt::getBM(attributes = c('ensembl_gene_id', 'gene_biotype'), filters = 'ensembl_gene_id', values = genelist, mart = martx)
+biotype = biomaRt::getBM(attributes = c('ensembl_gene_id', 'gene_biotype'), filters = 'ensembl_gene_id',
+                         values = genelist, mart = martx)
 codinggenes = unique(filter(biotype,gene_biotype == 'protein_coding')$ensembl_gene_id)
-
+saveRDS(codinggenes, file='./results/GTEx/alltissues/codinggenes.rds')
 incids = setdiff(unique((sapply(expvals, colnames) %>% 
                            reshape2::melt() %>%
                            set_names(c('sample_id','Tissue')) %>%
@@ -104,7 +119,8 @@ incids = setdiff(unique((sapply(expvals, colnames) %>%
                            mutate(inc = n==length(expvals)) %>%
                            filter(inc))$id),NA) # compile the list of individuals with samples in all 4 tissues
 
-inc_sampleIDs = unique((attr %>% filter(id %in% incids))$sample_id) # get the sample ids for the individuals to be included
+inc_sampleIDs = unique((attr %>% filter(id %in% incids))$sample_id) 
+# get the sample ids for the individuals to be included
 
 expvals = lapply(expvals, function(expx){
   rownames(expx) = sapply(strsplit(as.character(rownames(expx)),'[.]'),function(x)x[1]) # remove gene version
@@ -120,18 +136,17 @@ sample2id = setNames(attr$id, attr$sample_id)
 expx = expvals[[4]]
 duplicated(unname(sample2id[colnames(expx)]))
 
-
 genelist = Reduce('intersect',lapply(expvals,rownames))
 expvals = Reduce('cbind',lapply(expvals,function(x)x[genelist,]))
-expvals = expvals [ ! (rowMeans(expvals==0)>0.25), ] # exclude the genes if expression value is 0 in more than  25% of the samples
+expvals = expvals [ ! (rowMeans(expvals==0)>0.25), ] 
+# exclude the genes if expression value is 0 in more than  25% of the samples
 dim(expvals)
-#16305 - 350 (35 samples)
+#16305 - 350 (35 samples) -> 16290 350
 
 #normalization
 exp_l2 = log2(expvals+1)
 exp_l2_qn = preprocessCore::normalize.quantiles(exp_l2)
 dimnames(exp_l2_qn) = dimnames(exp_l2)
-
 
 pcx = prcomp(t(exp_l2_qn),scale=T)
 pca_data = data.frame(pcx$x[,1:4], sample_id = rownames(pcx$x)) %>%
@@ -144,16 +159,22 @@ pc1_2 = pca_data %>%
   geom_point(alpha = 0.8) +
   scale_color_manual(values = tissuecol) +
   scale_size_discrete(range = c(0.2,1.5)) +
-  xlab(paste('PC 1 (',pcimp[1],'%)',sep=''))+
-  ylab(paste('PC 2 (',pcimp[2],'%)',sep=''))
+  xlab(paste('PC 1 (',pcimp[1],'%)',sep='')) +
+  ylab(paste('PC 2 (',pcimp[2],'%)',sep='')) +
+  theme(legend.spacing.x = unit(0.1,'cm'),
+        legend.key.size = unit(0.1,'cm'),
+        legend.background = element_rect(color='gray70'))
 
 pc3_4 = pca_data %>%
   ggplot(aes( x = PC3, y= PC4 , color = Tissue, size = age)) +
   geom_point(alpha = 0.8) +
   scale_color_manual(values = tissuecol) +
   scale_size_discrete(range = c(0.2,1.5)) +
-  xlab(paste('PC 3 (',pcimp[3],'%)',sep=''))+
-  ylab(paste('PC 4 (',pcimp[4],'%)',sep=''))
+  xlab(paste('PC 3 (',pcimp[3],'%)',sep='')) +
+  ylab(paste('PC 4 (',pcimp[4],'%)',sep='')) +
+  theme(legend.spacing.x = unit(0.1,'cm'),
+        legend.key.size = unit(0.1,'cm'),
+        legend.background = element_rect(color='gray70'))
 
 pc1_age = pca_data %>%
   ggplot(aes(x = Age, y = PC1, color = Tissue)) +
@@ -163,7 +184,8 @@ pc1_age = pca_data %>%
   stat_cor(method = 'spearman', cor.coef.name = 'rho', color = 'black', 
            size = 6/pntnorm, show.legend = F) +
   facet_grid(Tissue~., scales = 'free_y') +
-  ggtitle('PC1') +ylab(NULL)
+  ggtitle('PC1') + ylab(NULL) +
+  theme(strip.text = element_text(size=6))
 
 pc2_age = pca_data %>%
   ggplot(aes(x = Age, y = PC2, color = Tissue)) +
@@ -173,7 +195,8 @@ pc2_age = pca_data %>%
   stat_cor(method = 'spearman', cor.coef.name = 'rho', color = 'black', 
            size = 6/pntnorm, show.legend = F) +
   facet_grid(Tissue~., scales = 'free_y')+
-  ggtitle('PC2') +ylab(NULL)
+  ggtitle('PC2') + ylab(NULL)+
+  theme(strip.text = element_text(size=6))
 
 pc3_age = pca_data %>%
   ggplot(aes(x = Age, y = PC3, color = Tissue)) +
@@ -183,7 +206,8 @@ pc3_age = pca_data %>%
   stat_cor(method = 'spearman', cor.coef.name = 'rho', color = 'black', 
            size = 6/pntnorm, show.legend = F) +
   facet_grid(Tissue~., scales = 'free_y')+
-  ggtitle('PC3') +ylab(NULL)
+  ggtitle('PC3') +ylab(NULL) +
+  theme(strip.text = element_text(size=6))
 
 pc4_age = pca_data %>%
   ggplot(aes(x = Age, y = PC4, color = Tissue)) +
@@ -192,37 +216,51 @@ pc4_age = pca_data %>%
   geom_smooth(se = F, size = 0.3, show.legend = F, method = 'lm') +
   stat_cor(method = 'spearman', cor.coef.name = 'rho', color = 'black', 
            size = 6/pntnorm, show.legend = F) +
-  facet_grid(Tissue~., scales = 'free_y')+
-  ggtitle('PC4') +ylab(NULL)
+  facet_grid(Tissue~., scales = 'free_y') +
+  ggtitle('PC4') + ylab(NULL) +
+  theme(strip.text = element_text(size=6))
 
 idmap = setNames(attr$id, attr$sample_id)
 #calculate the Eucledian distance using all PCs because there is no clear relationship between PC and age
-meanEuc = reshape2::melt(as.matrix(dist(pcx$x))) %>%
-  mutate(id1 = idmap[as.character(Var1)],
-         id2 = idmap[as.character(Var2)]) %>%
-  filter(id1 == id2) %>%
-  filter(Var1!=Var2) %>%
-  group_by(id1) %>%
-  summarise(dist = mean(value)) %>%
-  ungroup() %>% rename(id = id1) %>%
-  left_join(attr)
+pwise_distMean = function(mat, id_col=1){
+  # mat: matrix or data frame with columns as coordinates to calculate distance, and one id column
+  # distance is calculated pairwise among rows of same ids
+  # id_col: index of the id column
+  
+  sapply(unique(mat[,id_col] ), function(x){
+    ind = mat[mat[,id_col]==x,]
+    mean(as.vector(dist(ind[, -id_col])))
+  })
+}
+
+meanEuc = reshape2::melt( as.data.frame(pcx$x) %>%
+                            mutate(id = idmap[rownames(pcx$x)]) %>%
+                            relocate(id) %>% 
+                            pwise_distMean(., id_col = 1) ) %>%
+  mutate(id = rownames(.)) %>% 
+  left_join(attr) %>%
+  distinct(id, value, age, sex) %>%
+  mutate(Age = c(25,35,45,55,65,75)[age]) %>%
+  mutate(sex = str_to_title(sex))
 
 eucdist = meanEuc %>%
-  mutate(Age = c(25,35,45,55,65,75)[age]) %>%
-  ggplot(aes(x = Age, y= dist)) +
+  ggplot(aes(x = Age, y= value)) +
   geom_point(aes(size = age)) +
   scale_size_discrete(range = c(0.2,1.5)) +
   geom_smooth(method = 'lm', se = F, color = 'darkred') +
   stat_cor(method = 'spearman', size = 6/pntnorm, cor.coef.name = 'rho') +
-  ylab('Mean Pairwise Euclidean Distance')
+  ylab('Mean Pairwise Euclidean Distance') +
+  theme(axis.title.y = element_text(size=5))
 
-pcaplots1 = ggarrange(pc1_2, pc3_4, eucdist, nrow = 1, ncol =3 , labels = c('a','b','c'), font.label = list(size = 8), widths = c(2,2,1.5), common.legend = T, legend = 'right')
-pcaplots2 = ggarrange(pc1_age, pc2_age, pc3_age,pc4_age, nrow = 1, ncol =4 , labels = c('d','e','f','g'), font.label = list(size = 8), legend = 'none')
+pcaplots1 = ggarrange(pc1_2, pc3_4, eucdist, nrow = 1, ncol =3 , labels = c('a.','b.','c.'),
+                      font.label = list(size = 8), widths = c(2,2,1.5), common.legend = T, legend = 'right')
+pcaplots2 = ggarrange(pc1_age, pc2_age, pc3_age,pc4_age, nrow = 1, ncol =4 , labels = c('d.','e.','f.','g.'),
+                      font.label = list(size = 8), legend = 'none')
 
 pca_plots = ggarrange(pcaplots1, pcaplots2, ncol=1,nrow=2, heights = c(1.5,6))
 
-
-plotsave(ggobj = pca_plots, prefix = './results/GTEx/alltissues/pca',width = 16, height = 26)
+plotsave(ggobj = pca_plots, prefix = './results/GTEx/alltissues/pca', width = 16, height = 26)
+plotsave(ggobj = pca_plots, prefix = './results/figure_supplements/fs2/FS10', width = 16, height = 20)
 
 #### Gene Expression Analysis ####
 
@@ -243,7 +281,7 @@ agecor = ungroup(agecor) %>%
 
 #### CoV analysis #### 
 
-#CoV calculation for each gene of each individual (takin sd and mean of 4 tissues)
+#CoV calculation for each gene of each individual (taking sd and mean of 10 tissues)
 expvals = expvals %>%
   group_by(GeneID, id) %>%
   summarise(CoV = sd(Expression)/mean(Expression)) %>%
@@ -264,26 +302,27 @@ meancovplot = ggplot(sumCov,aes(x = age, y = meancov)) +
   geom_jitter(width = 0.1, size = 0.3) +
   stat_cor(aes(x = Age), method = 'spearman', cor.coef.name = 'rho', size = 6/pntnorm) +
   xlab(NULL) + ylab('Mean CoV') +
-  theme_rvis(base_size = 6, x.text.angle = 90)
+  theme(axis.text.x = element_text(angle = 90))
 
 medcovplot = ggplot(sumCov,aes(x = age, y = medcov)) +
   geom_boxplot(width = 0.4, outlier.shape = NA, fill = 'gray70') +
   geom_jitter(width = 0.1, size = 0.3) +
   stat_cor(aes(x = Age), method = 'spearman', cor.coef.name = 'rho', size = 6/pntnorm) +
-  xlab(NULL) + ylab('Median CoV')+
-  theme_rvis(base_size = 6, x.text.angle = 90)
+  xlab(NULL) + ylab('Median CoV') +
+  theme(axis.text.x = element_text(angle = 90))
 
 
 # Calculate pairwise correlation coefficients between tissues
 pairwisedat = expvals %>%
   select(Tissue, Expression, GeneID, id, age, Age) %>%
   unique()
-pairwisedat = pairwisedat %>%
-  spread(key = Tissue, value = Expression) 
 xx = t(combn(unique(pairwisedat$Tissue),2))
 indvids = unique(pairwisedat$id)
 
-cors = lapply(indvids,function(ind){
+pairwisedat = pairwisedat %>%
+  spread(key = Tissue, value = Expression) 
+
+cors = lapply(indvids, function(ind){
   indexp = filter(pairwisedat, id == ind) %>% select(-c(1:4)) %>% as.data.frame()
   cor(as.matrix(indexp), method = 'spearman')
 })
@@ -293,7 +332,7 @@ names(cors) = indvids
 pairwisedat = reshape2::melt(cors) %>%
   set_names(c('tis1','tis2','Spearman Correlation Coefficient','id')) %>%
   filter(tis1!=tis2) %>%
-  left_join(unique(select(attr,id,age)))
+  left_join(unique( select(attr,id,age) ))
 
 pairwisedat2 = pairwisedat %>%
   mutate(Age = c(25,35,45,55,65,75)[age]) %>%
@@ -301,24 +340,29 @@ pairwisedat2 = pairwisedat %>%
   # head()
   summarise(corx = list(cor.test(`Spearman Correlation Coefficient`, Age, method = 'spearman'))) %>%
   ungroup() 
+
 meancordat = pairwisedat %>%
   mutate(Age = c(25,35,45,55,65,75)[age]) %>%
-  group_by(tis1,tis2) %>% 
+  group_by(tis1, tis2) %>% 
   summarise(meancor = mean(`Spearman Correlation Coefficient`)) %>%
   ungroup() 
-pairwisedat2$rho = sapply(pairwisedat2$corx,function(x)x$est)
+
+pairwisedat2$rho = sapply(pairwisedat2$corx, function(x) x$est)
 pairwisedat2$p = sapply(pairwisedat2$corx,function(x)x$p.val)
-pairwisedat2$adjusted_p = p.adjust(pairwisedat2$p, method = 'BY')
+pairwisedat2$adjusted_p = p.adjust(pairwisedat2$p, method = 'BH')
 table(pairwisedat2$adjusted_p<0.1)
+# none significant
+
 pairwiseplot = pairwisedat2 %>%
   unique() %>%
   full_join(select(meancordat, meancor, tis1, tis2)) %>%
-  ggplot(aes(x = tis1, y = tis2, color = rho, size = meancor)) +
+  ggplot(aes(x = tis1, y = tis2, color = rho, size=meancor)) +
   geom_point() +
-  scale_color_gradient2(low = varcol['Divergent'], mid = 'gray90', midpoint = 0, high = varcol['Convergent']) +
+  scale_color_gradient2(low = varcol['Divergent'], mid = 'gray90', midpoint = 0, high = varcol['Convergent'])+
   xlab(NULL) + ylab(NULL) +
   scale_size_continuous(range= c(0.5,5), guide = guide_legend('Mean\nSimilarity')) +
-  theme_rvis(base_size = 6, legend.pos = 'right', x.text.angle = 90)
+  theme(legend.position = 'right', axis.text.x = element_text(angle=90),
+        legend.key.size = unit(0.2,'cm'))
 
 # pairwiseplot = pairwisedat  %>%
 #   mutate(Age = c(25,35,45,55,65,75)[age]) %>%
@@ -330,11 +374,13 @@ pairwiseplot = pairwisedat2 %>%
 #   ylab('Spearman Correlation Coefficient') + xlab(NULL) +
 #   theme_rvis(base_size = 6, x.text.angle = 90) 
 
-p1 = ggarrange(meancovplot, medcovplot, ncol = 1, nrow = 2, labels = c('a','b'), font.label = list(size = 8))
-covresplot = ggarrange(p1, pairwiseplot, ncol =2, nrow = 1, labels = c(NA,'c'), font.label = list(size = 8), widths = c(1,3))
+p1 = ggarrange(meancovplot, medcovplot, ncol = 1, nrow = 2, labels = c('a.','b.'), font.label = list(size = 8))
+covresplot = ggarrange(p1, pairwiseplot, ncol =2, nrow = 1, labels = c(NA,'c.'), font.label = list(size = 8), 
+                       widths = c(1,3))
   
 plotsave(ggobj = covresplot, prefix = './results/GTEx/alltissues/CoV',width = 16, height = 10)
-  
+
+plotsave(ggobj = covresplot, prefix = './results/figure_supplements/fs2/FS11',width = 16, height = 10)
   
 # Calculate CoV change with age per each gene
 covcor = expvals %>%
@@ -351,7 +397,7 @@ covcor %>%
   filter(adjusted_p<0.1)
 # GeneID             rho          p adjusted_p
 # <fct>            <dbl>      <dbl>      <dbl>
-#   1 ENSG00000214102 -0.685 0.00000554     0.0451
+# 1 ENSG00000214102 -0.685 0.00000554     0.0451
 # 2 ENSG00000183621 -0.657 0.0000180      0.0976
 # 3 ENSG00000156968 -0.697 0.00000337     0.0451
 table(covcor$rho<0)
@@ -366,7 +412,7 @@ mostsignifplot = expvals %>%
   geom_smooth(method = 'lm' , se= F, aes(x = as.numeric(age)-2), size = 0.5) +
   scale_color_manual(values = tissuecol)+
   ggtitle('WEE2') + xlab('Age') +
-  theme_rvis(base_size = 6, legend.pos = c(1,1), just.par = c(1,1)) +
+  #theme_rvis(base_size = 6, legend.pos = c(1,1), just.par = c(1,1)) +
   theme(plot.title = element_text(face = 'italic')) 
   
 plotsave(ggobj = mostsignifplot, prefix = './results/GTEx/alltissues/signif',width = 8, height = 8)

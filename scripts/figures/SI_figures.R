@@ -359,7 +359,6 @@ aging_raw_pc1234 = ggarrange(
   ncol=2, widths = c(1, 0.5), labels = c(NA,'f.'), font.label = list(size=8))
 
 figs3 = ggarrange(dev_raw_pc1234, aging_raw_pc1234, ncol = 2, common.legend = T)
-figs3
 
 ggsave('./results/figure_supplements/f1s/FS3.pdf', figs3, units = 'cm', width = 16, height = 12,
        useDingbats = F)
@@ -704,7 +703,7 @@ cov_median = ggplot(cov_sum, aes(x = age, y= medianCoV)) +
                                       (round(filter(cov_sumch, period=='Development')$cor,2))))) +
   annotate('text', x=2, y=0.3475, hjust=0, size = szx/pntnorm,
            label = parse(text = paste0('p ==' ,(round(filter(cov_sumch, period=='Development')$cor.p,2)))))
-cov_median
+
 ggsave('./results/figure_supplements/fs2/FS1.pdf', cov_median, units = 'cm', width = 8, height = 8, 
        useDingbats = F)
 ggsave('./results/figure_supplements/fs2/FS1.png', cov_median, units = 'cm', width = 8, height = 8)
@@ -810,8 +809,8 @@ szx = 8
 mcorsplot = meancors %>%
   ggplot(aes(x=uage,y=rho)) +
   facet_wrap(~method, strip.position = 'left',
-             labeller = as_labeller(c(mean = 'Mean P.wise Expr. rho',
-                                      median = 'Median P.wise Expr. rho'))) +
+             labeller = as_labeller(c(mean = 'Mean pairwise expr. rho',
+                                      median = 'Median pairwise expr. rho'))) +
   geom_point(size=1.5, color="steelblue", alpha=0.9) +
   geom_smooth(se=T,color = 'midnightblue', fill='lightblue') +
   scale_x_continuous(trans = 'log2') +
@@ -861,8 +860,8 @@ annotscm = meansccors %>%
 mcorsplotsc = meansccors %>%
   ggplot(aes(x=uage,y=rho)) +
   facet_wrap(~method, strip.position = 'left',
-             labeller = as_labeller(c(mean = 'Mean  Scaled P.wise Expr. rho',
-                                      median = 'Median Scaled P.wise Expr. rho'))) +
+             labeller = as_labeller(c(mean = 'Mean scaled p.wise expr. rho',
+                                      median = 'Median scaled p.wise expr. rho'))) +
   geom_point(size=1.5, color="steelblue", alpha=0.9) +
   geom_smooth(se=T,color = 'midnightblue', fill='lightblue') +
   scale_x_continuous(trans = 'log2') +
@@ -881,72 +880,73 @@ mcorsplotsc = meansccors %>%
   geom_text(data = filter(annotscm, stat == 'p.val' & period =='ageing'),
             mapping = aes(x = 270, y = .7, label = paste('p==', value)), parse = T, size=szx/pntnorm) +
   theme(strip.background = element_blank(),
-        strip.placement = 'outside',strip.text = element_text(size = 8)) 
+        strip.placement = 'outside',
+        strip.text = element_text(size = 8)) 
 
 # ggsave('./results/figure_supplements/fs2/FS6b.pdf', mcorsplotsc, units = 'cm', width = 10, height = 6,
 #        useDingbats =F)
 # ggsave('./results/figure_supplements/fs2/FS6b.png', mcorsplotsc, units = 'cm', width = 10, height = 6)
 
-figure_S14  = ggarrange(mcorsplot, mcorsplotsc, nrow = 2, labels = c('a.', 'b.'),
+figure_S6  = ggarrange(mcorsplot, mcorsplotsc, nrow = 2, labels = c('a.', 'b.'),
                         font.label = list(size=8))
 
-ggsave('./results/figure_supplements/fs2/FS6.pdf', figure_S14, units = 'cm', width = 15, height = 12, 
+ggsave('./results/figure_supplements/fs2/FS6.pdf', figure_S6, units = 'cm', width = 15, height = 12, 
        useDingbats =F)
-ggsave('./results/figure_supplements/fs2/FS6.png', figure_S14, units = 'cm', width = 15, height = 12)
+ggsave('./results/figure_supplements/fs2/FS6.png', figure_S6, units = 'cm', width = 15, height = 12)
 
 
 ############ F2
 ############
 ############ Figure S7, CoV and pairwise correlation analysis of Jonker dataset: ----------
-############ (plot in ?? script)
+############ (plot in jonker/2.analysis.R script)
 
 ############ F2
 ############
 ############ Figure S8, PCA of  GTEx dataset covering cortex, liver, lung, and muscle tissues: ----------
-############ (plot in ?? script)
+############ (plot in GTEX/3.GTEX_analysis.R script)
 
 
 ############ F2
 ############
 ############ Figure S9, CoV and pairwise correlation analysis of GTEx dataset covering cortex, liver,
 ############ lung, and muscle tissues: ----------
-############ (plot in ?? script)
+############ (plot in GTEX/3.GTEX_analysis.R script)
 
 ############ F2
 ############
 ############ Figure S10, PCA of GTEx dataset with ten tissues: ----------
-############ (plot in ?? script)
+############ (plot in GTEx/4.GTEx_moreTissues.R script)
 
 
 ############ F2
 ############
 ############ Figure S11, CoV and pairwise correlation analysis of GTEx dataset with ten tissues: ----------
-############ (plot in ?? script)
+############ (plot in GTEx/4.GTEx_moreTissues.R script)
 
 ############ F2
 ############
 ############ Figure S12, Permutation test result for the proportion of  DiCo genes: ----------
-############ (plot in ?? script)
+############ (plot in 07.DiCo.R script)
 
 ############ F2
 ############
 ############ Figure S13, Clustering of tissues by the presence of samples from the same individuals: --------
-############ (plot in ?? script)
+############ (plot in GTEx/4.GTEx_moreTissues.R script)
 
 ############ F2
 ############
 ############ Figure S14, Reproducing Figure 2 results with VST normalisation: --------
-############ (plot in ?? script)
+############ (plot in htseq_blinded/figure2.R script)
 
 ############ F2
 ############
 ############ Figure S15, Effect of heteroscedasticity to DiCo pattern: --------
-############ (plot in ?? script)
+############ (plot in 14.hettest.R script)
 
 ############ F2
 ############
 ############ Figure S16, Sex effect on CoV analysis using GTEx: --------
-############ (plot in ?? script)
+############ (plot in GTEX/3.GTEX_analysis.R script)
 
 
 ######################## Figure 3 supplement figures ########################
@@ -962,7 +962,7 @@ ggsave('./results/figure_supplements/fs2/FS6.png', figure_S14, units = 'cm', wid
 ############ F4
 ############
 ############ Figure S1, Significant expression change patterns in DiCo enriched categories: --------
-############ (plot in ?? script)
+############ (plot in 13.dc_enrichplot.R script)
 
 
 ######################## Figure 5 supplement figures ########################

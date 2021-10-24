@@ -1,4 +1,3 @@
-getwd()
 library(tidyverse)
 library(car)
 library(ggpubr)
@@ -186,11 +185,18 @@ ggsave('./results/SI_figures/heteroscedasticity/chisq_density.png', hetcorplot3,
        width = 12)
 
 hetplot = ggarrange(hetcorplot2, hetcorplot3, nrow=2, common.legend = T, labels = c('a.','b.'), 
-                    vjust = c(0.1,0.1), legend='top', font.label = list(size=6))
+                    vjust = c(0.1,0.1), legend='top', font.label = list(size=8))
+
 ggsave('./results/SI_figures/heteroscedasticity/hetplot.pdf', hetplot, units='cm', height = 14,
        width = 16, useDingbats=F)
 ggsave('./results/SI_figures/heteroscedasticity/hetplot.png', hetplot, units='cm', height = 14,
        width = 16, bg='white')
+
+ggsave('./results/figure_supplements/fs2/FS15.pdf', hetplot, units='cm', height = 14,
+       width = 16, useDingbats=F)
+ggsave('./results/figure_supplements/fs2/FS15.png', hetplot, units='cm', height = 14,
+       width = 16, bg='white')
+
 
 # correlation between abs. residual and chiSquare value methods: 
 hetcor %>%

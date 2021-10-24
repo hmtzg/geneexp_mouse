@@ -226,10 +226,10 @@ ggsave('./results/htseq/blinded/figure2/Figure_2e.png',panel_e, units = 'cm', wi
 
 figure_2 = ggarrange(
   ggarrange(panel_a, panel_b, panel_c, ncol=3, labels = c('a.','b.','c.'), align='h',
-            widths = c(1, 1, 0.8), font.label = list(size=10), legend = F ),
+            widths = c(1, 1, 0.8), font.label = list(size=8), legend = F ),
   ggarrange(panel_d, panel_e, legend.grob = leg, legend = 'right',
             ncol= 3,labels = c('d.','e.',NA), widths = c(2, 1, 0.2), aling='hv',
-            font.label = list(size=10)),
+            font.label = list(size=8)),
   heights = c(1,0.8),nrow= 2)
 figure_2
 
@@ -237,5 +237,8 @@ ggsave("results/htseq/blinded/figure2/Figure_2.pdf", figure_2, units='cm', width
        useDingbats=F)
 ggsave("results/htseq/blinded/figure2/Figure_2.png", figure_2, units='cm', width = 16, height = 9.5)
 
+ggsave("results/figure_supplements/fs2/FS14.pdf", figure_2, units='cm', width = 16, height = 9.5, 
+       useDingbats=F)
+ggsave("results/figure_supplements/fs2/FS14.png", figure_2, units='cm', width = 16, height = 9.5)
 
 

@@ -189,45 +189,15 @@ expch %>%
   inner_join(reprg) %>% head
 
 #GO:0009611 : repsonse to wounding
-gx = reprg %>% filter(ID%in%'GO:0009611') %>% pull(gene_id)
-
-expch %>%
-  filter(gene_id%in%gx) %>%
-  group_by(Period, tissue) %>%
-  mutate(mrho = median(`Expression Change`)) %>%
-  ggplot(aes(fill=Period, y=mrho, x=tissue)) +
-  geom_bar(stat='identity', position= position_dodge()) +
-  geom_point( aes(x=tissue, y=`Expression Change`), inherit.aes = F )
-
-expch %>%
-  inner_join(reprg) %>% 
-  group_by(Period, ID, tissue, Description, repNames, n) %>%
-  summarise(mrho = mean(`Expression Change`),
-            medrho = median(`Expression Change`),
-            iqr = IQR(`Expression Change`) ) %>%
-  ggplot(aes(fill=Period, y=iqr, x=reorder(repNames, n) ) ) +
-  #geom_point(aes(y=`Expression Change`)) +
-  geom_bar(stat='identity', position=position_dodge()) +
-  facet_wrap(~tissue, ncol=4) +
-  scale_fill_manual(values=brewer.pal(3,"Set1")[c(2,1)]) +
-  coord_flip() +
-  geom_hline(yintercept = 0, size=0.3, linetype='solid', color='gray30') +
-  geom_vline(xintercept = seq(1.5,25, by=1), linetype = 'dashed', size = 0.2, color = 'gray') +
-  theme(legend.position = 'top',
-        axis.text.x = element_text(size=4, vjust=2), 
-        axis.ticks.length.x = unit(0,'pt'),
-        axis.text.y = element_text(size=5),
-        panel.border = element_blank(),
-        axis.line.y = element_blank(),
-        axis.line.x = element_blank(),
-        plot.title = element_text(vjust = -0.5),
-        legend.background = element_rect(color='black', size=0.1),
-        legend.key.size = unit(3, 'pt'),
-        axis.title.x = element_text(size=6)) +
-  xlab('') +
-  ylab(bquote('Mean Expression Change ('*rho*')'))
-enricplot
-
+# gx = reprg %>% filter(ID%in%'GO:0009611') %>% pull(gene_id)
+# 
+# expch %>%
+#   filter(gene_id%in%gx) %>%
+#   group_by(Period, tissue) %>%
+#   mutate(mrho = median(`Expression Change`)) %>%
+#   ggplot(aes(fill=Period, y=mrho, x=tissue)) +
+#   geom_bar(stat='identity', position= position_dodge()) +
+#   geom_point( aes(x=tissue, y=`Expression Change`), inherit.aes = F )
 
 enricplot_ogr = expch %>%
   inner_join(reprg2) %>%
@@ -256,62 +226,63 @@ enricplot_ogr = expch %>%
   ylab(bquote('Mean Expression Change ('*rho*')'))
 enricplot_ogr
 
-ggsave('./results/figure4/dicoGO_ogr.pdf',enricplot_ogr, units='cm', width = 16, height = 12, useDingbats=F)
-ggsave('./results/figure4/dicoGO_ogr.png',enricplot_ogr, units='cm', width = 16, height = 12)  
+ggsave('./results/figure_supplements/fs4/FS1.pdf', enricplot_ogr, units='cm', width = 16, height = 12,
+       useDingbats=F)
+ggsave('./results/figure_supplements/fs4/FS2.png', enricplot_ogr, units='cm', width = 16, height = 12)  
 # 
 
 ##
-enricplot2 = expch %>%
-  inner_join(reprg) %>%
-  group_by(Period, ID, tissue, Description, repNames, n) %>%
-  summarise(mrho = mean(`Expression Change`),
-            medrho = median(`Expression Change`)) %>% 
-  ggplot(aes(fill=Period, y=medrho, x=reorder(repNames, n))) +
-  geom_bar(stat='identity', position=position_dodge()) +
-  facet_wrap(~tissue, ncol=4) +
-  scale_fill_manual(values=brewer.pal(3,"Set1")[c(2,1)]) +
-  coord_flip() +
-  geom_hline(yintercept = 0, size=0.3, linetype='solid', color='gray30')+
-  geom_vline(xintercept = seq(1.5,25, by=1), linetype = 'dashed', size = 0.2, color = 'gray') +
-  theme(legend.position = 'top',
-        axis.text.x = element_text(size=4, vjust=2), 
-        axis.ticks.length.x = unit(0,'pt'),
-        axis.text.y = element_text(size=5),
-        panel.border = element_blank(),
-        axis.line.y = element_blank(),
-        axis.line.x = element_blank(),
-        plot.title = element_text(vjust = -0.5),
-        legend.background = element_rect(color='black', size=0.1),
-        legend.key.size = unit(3, 'pt'),
-        axis.title.x = element_text(size=6)) +
-  xlab('') +
-  ylab(bquote('Median Expression Change ('*rho*')'))
-enricplot2
+# enricplot2 = expch %>%
+#   inner_join(reprg) %>%
+#   group_by(Period, ID, tissue, Description, repNames, n) %>%
+#   summarise(mrho = mean(`Expression Change`),
+#             medrho = median(`Expression Change`)) %>% 
+#   ggplot(aes(fill=Period, y=medrho, x=reorder(repNames, n))) +
+#   geom_bar(stat='identity', position=position_dodge()) +
+#   facet_wrap(~tissue, ncol=4) +
+#   scale_fill_manual(values=brewer.pal(3,"Set1")[c(2,1)]) +
+#   coord_flip() +
+#   geom_hline(yintercept = 0, size=0.3, linetype='solid', color='gray30')+
+#   geom_vline(xintercept = seq(1.5,25, by=1), linetype = 'dashed', size = 0.2, color = 'gray') +
+#   theme(legend.position = 'top',
+#         axis.text.x = element_text(size=4, vjust=2), 
+#         axis.ticks.length.x = unit(0,'pt'),
+#         axis.text.y = element_text(size=5),
+#         panel.border = element_blank(),
+#         axis.line.y = element_blank(),
+#         axis.line.x = element_blank(),
+#         plot.title = element_text(vjust = -0.5),
+#         legend.background = element_rect(color='black', size=0.1),
+#         legend.key.size = unit(3, 'pt'),
+#         axis.title.x = element_text(size=6)) +
+#   xlab('') +
+#   ylab(bquote('Median Expression Change ('*rho*')'))
+# enricplot2
 ##
 
 # ggsave('./results/figure4/dicoGOmed.pdf',enricplot2, units='cm', width = 16, height = 8, useDingbats=F)
 # ggsave('./results/figure4/dicoGOmed.png',enricplot2, units='cm', width = 16, height = 8)  
 
-enrichpfdr = expch %>%
-  inner_join(reprg) %>%
-  filter(FDR<0.1) %>% 
-  group_by(Period, ID, tissue, Description, repNames, n) %>%
-  summarise(nfdr = n(),
-            mrho = mean(`Expression Change`),
-            medrho = median(`Expression Change`)) %>% 
-  ggplot(aes(fill=Period, y=mrho, x=reorder(repNames, nfdr) ) ) +
-  geom_bar(stat='identity', position=position_dodge() ) +
-  facet_wrap(~tissue, ncol=4) +
-  scale_fill_manual(values=brewer.pal(3,"Set1")[c(2,1)] ) +
-  coord_flip() +
-  geom_hline(yintercept = 0, size=0.3, linetype='solid', color='gray30')+
-  theme(legend.position = 'top',
-        axis.text.x = element_text(size=4), 
-        axis.text.y = element_text(size=5),
-        axis.title.x = element_text(size=6)) +
-  xlab('') +
-  ylab(bquote('Mean Expression Change ('*rho*')'))
-enrichpfdr
-ggsave('./results/figure4/dicoGOfdr.pdf',enrichpfdr, units='cm', width = 16, height = 8, useDingbats=F)
-ggsave('./results/figure4/dicoGOfdr.png',enrichpfdr, units='cm', width = 16, height = 8)  
-
+# enrichpfdr = expch %>%
+#   inner_join(reprg) %>%
+#   filter(FDR<0.1) %>% 
+#   group_by(Period, ID, tissue, Description, repNames, n) %>%
+#   summarise(nfdr = n(),
+#             mrho = mean(`Expression Change`),
+#             medrho = median(`Expression Change`)) %>% 
+#   ggplot(aes(fill=Period, y=mrho, x=reorder(repNames, nfdr) ) ) +
+#   geom_bar(stat='identity', position=position_dodge() ) +
+#   facet_wrap(~tissue, ncol=4) +
+#   scale_fill_manual(values=brewer.pal(3,"Set1")[c(2,1)] ) +
+#   coord_flip() +
+#   geom_hline(yintercept = 0, size=0.3, linetype='solid', color='gray30')+
+#   theme(legend.position = 'top',
+#         axis.text.x = element_text(size=4), 
+#         axis.text.y = element_text(size=5),
+#         axis.title.x = element_text(size=6)) +
+#   xlab('') +
+#   ylab(bquote('Mean Expression Change ('*rho*')'))
+# enrichpfdr
+# ggsave('./results/figure4/dicoGOfdr.pdf',enrichpfdr, units='cm', width = 16, height = 8, useDingbats=F)
+# ggsave('./results/figure4/dicoGOfdr.png',enrichpfdr, units='cm', width = 16, height = 8)  
+# 

@@ -89,8 +89,12 @@ pc_age_cors %>%
   filter(PC=='PC4' & `Scale period` == 'all' & type =='raw') %>%
   group_by(`age period`) %>%
   summarise(range(rho))
-
-#write.xlsx(pc_age_cors, './results/SI_tables/TableS1.xlsx')
+# `age period` `range(rho)`
+# <chr>               <dbl>
+# 1 Aging              0.0240
+# 2 Aging              0.882 
+# 3 Dev               -0.991 
+# 4 Dev               -0.631 
 
 #################################
 ################################# does PC1,2,3 separate samples according to tissues? check with Anova
@@ -162,6 +166,7 @@ pwise_distMean = function(mat, id_col=1){
     mean(as.vector(dist(ind[, -id_col])))
   })
 }
+
 dist_data = pca_data %>%
   filter(PC %in% c('PC1', 'PC2','PC3', 'PC4'), period == 'all', type =='raw') %>%
   select(-period, -type, -varExp) %>% 
@@ -169,9 +174,13 @@ dist_data = pca_data %>%
   mutate(ind_id = as.character(ind_id)) %>%
   spread(key=PC, value=value) %>%
   select(-sample_id,-tissue)
+
+## calculate pairwise distance among tissues per individual:
 mdist = pwise_distMean(dist_data)
+
 mdist = data.frame(ind_id= names(mdist), mdist = mdist, row.names = NULL) %>%
   left_join(unique(select(sample_info, ind_id, age)), by = 'ind_id')
+
 saveRDS(mdist, './data/htseq/no_blind/mean_euclidean_dist.rds')
 
 # spearman test between age and mean pairwise distance in dev. and ageing:
@@ -180,8 +189,10 @@ mdist %>%
   group_by(period) %>%
   summarise(rho = cor(mdist,age, m='s'),
             p = cor.test(mdist,age, m='s')$p.val)
-# dev: 0.8, 0.008 -> rho = 0.991, p=0.00001
-# ageing: -0.16, 0.66 -> rho = -0.597, p =0.089
+# period    rho         p
+# <chr>   <dbl>     <dbl>
+# 1 ageing -0.597 0.0899   
+# 2 dev     0.991 0.0000146
 
 #### dev only pairwise dist:
 dist_data_dev = pca_data %>%
@@ -191,6 +202,7 @@ dist_data_dev = pca_data %>%
   mutate(ind_id = as.character(ind_id)) %>%
   spread(key=PC, value=value) %>%
   select(-sample_id,-tissue)
+
 ## calculate pairwise distance among tissues per individual:
 mdist_dev = pwise_distMean(dist_data_dev)
 
@@ -200,7 +212,8 @@ mdist_dev = data.frame(ind_id= names(mdist_dev), mdist = mdist_dev, row.names = 
 mdist_dev %>%
   summarise(rho = cor(mdist,age, m='s'),
             p = cor.test(mdist,age, m='s')$p.val)
-# rho = 0.99, p = 1.4e-5
+# rho            p
+# 1 0.9910312 1.456125e-05
 
 #### ageing only pairwise dist:
 dist_dat_aging = pca_data %>%
@@ -219,5 +232,6 @@ mdist_aging = data.frame(ind_id= names(mdist_aging), mdist = mdist_aging, row.na
 mdist_aging %>%
   summarise(rho = cor(mdist,age, m='s'),
             p = cor.test(mdist,age, m='s')$p.val)
-# rho= -0.50, p=0.16
+# rho         p
+# 1 -0.5042195 0.1663127
 
