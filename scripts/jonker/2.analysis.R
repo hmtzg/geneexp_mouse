@@ -272,6 +272,9 @@ ggsave('./results/figure_supplements/fs2/FS7.pdf', pwisecorplot, units='cm', wid
        useDingbats=F)
 ggsave('./results/figure_supplements/fs2/FS7.png', pwisecorplot, units='cm', width = 16, height = 11)
 
+saveRDS(cov_dat_sum,'results/source_data/f2/fs7_mean_median.rds')
+saveRDS(pexpcors,'results/source_data/f2/fs7_pexpcors.rds')
+
 ## mean pairwise corrs:
 meancors = pexpcors %>% 
   group_by(ind_id, Age) %>%

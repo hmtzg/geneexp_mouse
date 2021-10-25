@@ -88,6 +88,8 @@ ggsave('./results/figure_supplements/fs2/FS2.png', dc_clusterX, units='cm', widt
 ########## save clusters
 saveRDS(kmX, './data/processed/raw/dc_km_clusters.rds')
 
+saveRDS(dccovkmX,'results/source_data/f2/fs2.rds')
+
 #####################
 ##################### gora enrichment of dc cluster genes:
 ##################### 
@@ -169,6 +171,7 @@ ggsave('./results/figure_supplements/fs2/FS3.pdf', exp_clusters, units='cm', wid
        useDingbats=F)
 ggsave('./results/figure_supplements/fs2/FS3.png', exp_clusters, units='cm', width = 15, height = 18)
 
+saveRDS(expcl,'results/source_data/f2/fs3.rds')
 
 ##### save expression clusters of dc genes:
 

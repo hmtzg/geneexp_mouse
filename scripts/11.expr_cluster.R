@@ -245,6 +245,10 @@ ggsave('./results/figure_supplements/f1s/FS15.pdf', expcl_Muscle, units='cm', wi
        useDingbat=F)
 ggsave('./results/figure_supplements/f1s/FS15.png', expcl_Muscle, units='cm', width = 10, height = 10)
 
+saveRDS(xxct,'results/source_data/f1/fs12.rds')
+saveRDS(xxln,'results/source_data/f1/fs13.rds')
+saveRDS(xxlv,'results/source_data/f1/fs14.rds')
+saveRDS(xxms,'results/source_data/f1/fs15.rds')
 
 ########### gora of expression clusters :
 bg  = setNames(rep(0,length(kmT$Cortex$cluster)), nm = names(kmT$Cortex$cluster))

@@ -1,5 +1,3 @@
-#library(clusterProfiler)
-#library(enrichplot)
 library(tidyverse)
 library(ggpubr)
 library(RColorBrewer)
@@ -23,6 +21,7 @@ allgo = getgo(genes,"mm9","ensGene")
 allgo = allgo[!sapply(allgo,is.null)] #  4741 DiCo genes present in gos
 allgo = reshape2::melt(allgo) %>%
   set_names(c('ID','gene'))
+#
 
 signifGO_genes = left_join(signifGO,allgo)
 gogenemat = signifGO_genes %>%
@@ -199,6 +198,11 @@ expch %>%
 #   geom_bar(stat='identity', position= position_dodge()) +
 #   geom_point( aes(x=tissue, y=`Expression Change`), inherit.aes = F )
 
+enricplot_ogr_dat = expch %>%
+  inner_join(reprg2) %>%
+  group_by(Period, ID, tissue, Description, repNames, n) %>%
+  summarise(mrho = mean(`Expression Change`),
+            medrho = median(`Expression Change`))
 enricplot_ogr = expch %>%
   inner_join(reprg2) %>%
   group_by(Period, ID, tissue, Description, repNames, n) %>%
@@ -226,63 +230,9 @@ enricplot_ogr = expch %>%
   ylab(bquote('Mean Expression Change ('*rho*')'))
 enricplot_ogr
 
+saveRDS(enricplot_ogr_dat, 'results/source_data/f4/fs1.rds')
+
 ggsave('./results/figure_supplements/fs4/FS1.pdf', enricplot_ogr, units='cm', width = 16, height = 12,
        useDingbats=F)
-ggsave('./results/figure_supplements/fs4/FS2.png', enricplot_ogr, units='cm', width = 16, height = 12)  
-# 
-
-##
-# enricplot2 = expch %>%
-#   inner_join(reprg) %>%
-#   group_by(Period, ID, tissue, Description, repNames, n) %>%
-#   summarise(mrho = mean(`Expression Change`),
-#             medrho = median(`Expression Change`)) %>% 
-#   ggplot(aes(fill=Period, y=medrho, x=reorder(repNames, n))) +
-#   geom_bar(stat='identity', position=position_dodge()) +
-#   facet_wrap(~tissue, ncol=4) +
-#   scale_fill_manual(values=brewer.pal(3,"Set1")[c(2,1)]) +
-#   coord_flip() +
-#   geom_hline(yintercept = 0, size=0.3, linetype='solid', color='gray30')+
-#   geom_vline(xintercept = seq(1.5,25, by=1), linetype = 'dashed', size = 0.2, color = 'gray') +
-#   theme(legend.position = 'top',
-#         axis.text.x = element_text(size=4, vjust=2), 
-#         axis.ticks.length.x = unit(0,'pt'),
-#         axis.text.y = element_text(size=5),
-#         panel.border = element_blank(),
-#         axis.line.y = element_blank(),
-#         axis.line.x = element_blank(),
-#         plot.title = element_text(vjust = -0.5),
-#         legend.background = element_rect(color='black', size=0.1),
-#         legend.key.size = unit(3, 'pt'),
-#         axis.title.x = element_text(size=6)) +
-#   xlab('') +
-#   ylab(bquote('Median Expression Change ('*rho*')'))
-# enricplot2
-##
-
-# ggsave('./results/figure4/dicoGOmed.pdf',enricplot2, units='cm', width = 16, height = 8, useDingbats=F)
-# ggsave('./results/figure4/dicoGOmed.png',enricplot2, units='cm', width = 16, height = 8)  
-
-# enrichpfdr = expch %>%
-#   inner_join(reprg) %>%
-#   filter(FDR<0.1) %>% 
-#   group_by(Period, ID, tissue, Description, repNames, n) %>%
-#   summarise(nfdr = n(),
-#             mrho = mean(`Expression Change`),
-#             medrho = median(`Expression Change`)) %>% 
-#   ggplot(aes(fill=Period, y=mrho, x=reorder(repNames, nfdr) ) ) +
-#   geom_bar(stat='identity', position=position_dodge() ) +
-#   facet_wrap(~tissue, ncol=4) +
-#   scale_fill_manual(values=brewer.pal(3,"Set1")[c(2,1)] ) +
-#   coord_flip() +
-#   geom_hline(yintercept = 0, size=0.3, linetype='solid', color='gray30')+
-#   theme(legend.position = 'top',
-#         axis.text.x = element_text(size=4), 
-#         axis.text.y = element_text(size=5),
-#         axis.title.x = element_text(size=6)) +
-#   xlab('') +
-#   ylab(bquote('Mean Expression Change ('*rho*')'))
-# enrichpfdr
-# ggsave('./results/figure4/dicoGOfdr.pdf',enrichpfdr, units='cm', width = 16, height = 8, useDingbats=F)
-# ggsave('./results/figure4/dicoGOfdr.png',enrichpfdr, units='cm', width = 16, height = 8)  
+ggsave('./results/figure_supplements/fs4/FS1.png', enricplot_ogr, units='cm', width = 16, height = 12)  
 # 

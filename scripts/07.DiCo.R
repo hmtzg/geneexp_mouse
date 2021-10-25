@@ -296,6 +296,7 @@ dico_efpp = round(median(DiCodist) / obs_dico,3)
 saveRDS(data.frame(Perms= names(DiCodist), rho = DiCodist, row.names=NULL),
         './data/processed/tidy/DiCo_sig_perm.rds')
 
+dico_prop_permdat = data.frame(Perms= names(DiCodist), rho = DiCodist, row.names=NULL)
 dico_prop_perm = data.frame(Perms= names(DiCodist), rho = DiCodist, row.names=NULL) %>% 
   ggplot(aes(x=rho)) +
   geom_histogram(bins=40) +
@@ -310,6 +311,8 @@ dico_prop_perm = data.frame(Perms= names(DiCodist), rho = DiCodist, row.names=NU
 ggsave('./results/figure_supplements/fs2/FS12.pdf',dico_prop_perm,units='cm', width=12, height=12, 
        useDingbats=F)
 ggsave('./results/figure_supplements/fs2/FS12.png',dico_prop_perm, units='cm', width=12, height=12)
+
+saveRDS(dico_prop_permdat, 'results/source_data/f2/fs12.rds')
 
 #############
 ############# DiCo with rho cutoff

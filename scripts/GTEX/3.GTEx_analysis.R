@@ -279,6 +279,9 @@ pca_plots = ggarrange(pcaplots1, pcaplots2, ncol=1,nrow=2, heights = c(2,2.5))
 plotsave(ggobj = pca_plots, prefix = './results/GTEx/pca', width = 16, height = 12)
 plotsave(ggobj = pca_plots, prefix = './results/figure_supplements/fs2/FS8', width = 16, height = 12)
 
+saveRDS(pca_data,'results/source_data/f2/fs8_pca.rds')
+saveRDS(meanEuc, 'results/source_data/f2/fs8_euc.rds')
+
 #### Gene Expression Analysis ####
 
 expvals = reshape2::melt(exp_l2_qn) %>%
@@ -360,6 +363,9 @@ covresplot = ggarrange(p1, pairwiseplot, ncol =2, nrow = 1, labels = c(NA,'c.'),
 
 plotsave(ggobj = covresplot, prefix = './results/GTEx/CoV',width = 16, height = 8)
 plotsave(ggobj = covresplot, prefix = './results/figure_supplements/fs2/FS9',width = 16, height = 8)
+
+saveRDS(sumCov,'results/source_data/f2/fs9_CoV_mean_med.rds')
+saveRDS(pairwisedat,'results/source_data/f2/fs9_pairwisecors.rds')
 
 ## mean pairwise exp cors:
 mpwise= pairwisedat %>% 
@@ -615,6 +621,9 @@ sexplots
 
 plotsave(ggobj = sexplots, prefix = './results/GTEx/sexplots', width = 16, height = 14)
 plotsave(ggobj = sexplots, prefix = './results/figure_supplements/fs2/FS16', width = 16, height = 14)
+
+saveRDS(sumCovS,'results/source_data/f2/fs16_cov_mean_med.rds')
+saveRDS(pairwisedatsex,'results/source_data/f2/fs16_pairwisecors.rds')
 
 # Calculate CoV change with age per each gene
 covcorsex = expvals %>%

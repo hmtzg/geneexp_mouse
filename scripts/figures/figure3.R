@@ -144,6 +144,8 @@ cort_p = ggarrange(cort_c1,cort_c2,ncol=2,nrow=1,widths = c(2,1))
 ggsave('./results/figure3/cort.pdf',cort_p,units = 'cm',height = 7.5,width = 9, useDingbats=F)
 ggsave('./results/figure3/cort.png',cort_p,units = 'cm',height = 7.5,width = 9)
 
+saveRDS(cortdat, 'results/source_data/f3/a.rds')
+
 ###################
 cortdat = specdat %>%
   filter(spec == 'Liver')
@@ -257,6 +259,8 @@ liver_c2 = ggarrange(liver_cort,liver_lung,liver_muscle,ncol=1,nrow=3)
 liver_p = ggarrange(liver_c1,liver_c2,ncol=2,nrow=1,widths = c(2,1))
 ggsave('./results/figure3/liver.pdf',liver_p,units = 'cm',height = 7.5,width = 9, useDingbats=F)
 ggsave('./results/figure3/liver.png',liver_p,units = 'cm',height = 7.5,width = 9)
+
+saveRDS(cortdat,'results/source_data/f3/b_liver.rds')
 
 ###################
 cortdat = specdat %>%
@@ -372,6 +376,8 @@ lung_p = ggarrange(lung_c1,lung_c2,ncol=2,nrow=1,widths = c(2,1))
 ggsave('./results/figure3/lung.pdf',lung_p,units = 'cm',height = 7.5,width = 9, useDingbats=F)
 ggsave('./results/figure3/lung.png',lung_p,units = 'cm',height = 7.5,width = 9)
 
+saveRDS(cortdat, 'results/source_data/f3/c_lung.rds')
+
 ###################
 cortdat = specdat %>%
   filter(spec == 'Muscle')
@@ -486,6 +492,8 @@ muscle_c2 = ggarrange(muscle_cort,muscle_liver,muscle_lung,ncol=1,nrow=3)
 muscle_p = ggarrange(muscle_c1,muscle_c2,ncol=2,nrow=1,widths = c(2,1))
 ggsave('./results/figure3/muscle.pdf',muscle_p,units = 'cm',height = 7.5,width = 9, useDingbats=F)
 ggsave('./results/figure3/muscle.png',muscle_p,units = 'cm',height = 7.5,width = 9)
+
+saveRDS(cortdat, 'results/source_data/f3/d_muscle.rds')
 
 all_p_rev = ggarrange(cort_p,liver_p,lung_p,muscle_p,ncol=2,nrow=2,labels = c('a.','b.','c.','d.'),
                       font.label = list(size = 10))

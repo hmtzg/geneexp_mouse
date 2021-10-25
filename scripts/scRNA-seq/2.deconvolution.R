@@ -263,7 +263,7 @@ perm_result_dev = nondc_perms2 %>%
 perm_result_dev %>% filter(pval<0.05)
 # tissue `cell type`                              pval    FPR
 # <chr>  <fct>                                   <dbl>  <dbl>
-#   1 Cortex interneuron                          0.0254    0.635
+# 1 Cortex interneuron                          0.0254    0.596
 # 2 Liver  endothelial cell of hepatic sinusoid 0.000300 -5.17 
 # 3 Lung   club cell of bronchiole              0.026     0.667
 # 4 Muscle endothelial cell                     0        -1.37 
@@ -357,6 +357,7 @@ ord1 = coeffs %>%
 #   filter(tissue=='Cortex' & pval < 0.15) %>% 
 #   select(-pval, -FPR) %>%
 #   mutate(y_pos = 1)
+
 fill1 = perm_result2 %>% 
   filter(tissue=='Cortex') %>% 
   mutate(`cell type` = factor(`cell type`, levels = ord1)) %>%
@@ -365,6 +366,11 @@ fill1 = perm_result2 %>%
   mutate(texcol =  ifelse(pval < 0.05, 'darkred', 'gray30') ) %>%
   select(-FPR) 
 
+p1dat = perm_dat %>%
+  mutate(period = factor(period, levels = c('Development','Ageing') ) )  %>%
+  filter(tissue=='Cortex') %>%
+  mutate(`cell type` = factor(`cell type`, levels = ord1)) %>%
+  mutate(cols = paste(`cell type`, period, sep='_') ) 
 p1 = perm_dat %>%
   mutate(period = factor(period, levels = c('Development','Ageing') ) )  %>%
   filter(tissue=='Cortex') %>%
@@ -393,9 +399,13 @@ p1 = perm_dat %>%
   theme_bw()
 p1
 
-ggsave('./results/SI_figures/Figure_S26.pdf', p1, units = 'cm', width = 16, height = 18, useDingbats = F)
-ggsave('./results/SI_figures/Figure_S26.png', p1, units = 'cm', width = 16, height = 18)
+saveRDS(p1dat,'results/source_data/f5/fs2.rds')
+# ggsave('./results/SI_figures/Figure_S26.pdf', p1, units = 'cm', width = 16, height = 18, useDingbats = F)
+# ggsave('./results/SI_figures/Figure_S26.png', p1, units = 'cm', width = 16, height = 18)
 
+ggsave('./results/figure_supplements/fs5/FS2.pdf', p1, units = 'cm', width = 16, height = 18,
+       useDingbats = F)
+ggsave('./results/figure_supplements/fs5/FS2.png', p1, units = 'cm', width = 16, height = 18)
 
 #####
 ### liver
@@ -413,6 +423,11 @@ fill2 = perm_result2 %>%
   mutate(texcol =  ifelse(pval < 0.05, 'darkred', 'gray30') ) %>%
   select(-FPR) 
 
+p2dat = perm_dat %>%
+  mutate(period = factor(period, levels = c('Development','Ageing') ) )  %>%
+  filter(tissue=='Liver') %>%
+  mutate(`cell type` = factor(`cell type`, levels = ord2)) %>%
+  mutate(cols = paste(`cell type`, period, sep='_') ) 
 p2 = perm_dat %>%
   mutate(period = factor(period, levels = c('Development','Ageing') ) )  %>%
   filter(tissue=='Liver') %>%
@@ -441,9 +456,13 @@ p2 = perm_dat %>%
   theme_bw()
 p2
 
-ggsave('./results/SI_figures/Figure_S27.pdf', p2, units = 'cm', width = 16, height = 18, useDingbats = F)
-ggsave('./results/SI_figures/Figure_S27.png', p2, units = 'cm', width = 16, height = 18)
+saveRDS(p2dat,'results/source_data/f5/fs3.rds')
+# ggsave('./results/SI_figures/Figure_S27.pdf', p2, units = 'cm', width = 16, height = 18, useDingbats = F)
+# ggsave('./results/SI_figures/Figure_S27.png', p2, units = 'cm', width = 16, height = 18)
 
+ggsave('./results/figure_supplements/fs5/FS3.pdf', p2, units = 'cm', width = 16, height = 18, 
+       useDingbats = F)
+ggsave('./results/figure_supplements/fs5/FS3.png', p2, units = 'cm', width = 16, height = 18)
 
 #####
 ### lung
@@ -461,6 +480,11 @@ fill3 = perm_result2 %>%
   mutate(texcol =  ifelse(pval < 0.05, 'darkred', 'gray30') ) %>%
   select(-FPR) 
 
+p3dat = perm_dat %>%
+  mutate(period = factor(period, levels = c('Development','Ageing') ) )  %>%
+  filter(tissue=='Lung') %>%
+  mutate(`cell type` = factor(`cell type`, levels = ord3)) %>%
+  mutate(cols = paste(`cell type`, period, sep='_') ) 
 p3 = perm_dat %>%
   mutate(period = factor(period, levels = c('Development','Ageing') ) )  %>%
   filter(tissue=='Lung') %>%
@@ -489,9 +513,12 @@ p3 = perm_dat %>%
   theme_bw()
 p3
 
-ggsave('./results/SI_figures/Figure_S28.pdf', p3, units = 'cm', width = 16, height = 18, useDingbats = F)
-ggsave('./results/SI_figures/Figure_S28.png', p3, units = 'cm', width = 16, height = 18)
-
+saveRDS(p3dat,'results/source_data/f5/fs4.rds')
+# ggsave('./results/SI_figures/Figure_S28.pdf', p3, units = 'cm', width = 16, height = 18, useDingbats = F)
+# ggsave('./results/SI_figures/Figure_S28.png', p3, units = 'cm', width = 16, height = 18)
+ggsave('./results/figure_supplements/fs5/FS4.pdf', p3, units = 'cm', width = 16, height = 18, 
+       useDingbats = F)
+ggsave('./results/figure_supplements/fs5/FS4.png', p3, units = 'cm', width = 16, height = 18)
 
 #####
 ### muscle
@@ -509,6 +536,11 @@ fill4 = perm_result2 %>%
   mutate(texcol =  ifelse(pval < 0.05, 'darkred', 'gray30') ) %>%
   select(-FPR) 
 
+p4dat = perm_dat %>%
+  mutate(period = factor(period, levels = c('Development','Ageing') ) )  %>%
+  filter(tissue=='Muscle') %>%
+  mutate(`cell type` = factor(`cell type`, levels = ord4)) %>%
+  mutate(cols = paste(`cell type`, period, sep='_') )
 p4 = perm_dat %>%
   mutate(period = factor(period, levels = c('Development','Ageing') ) )  %>%
   filter(tissue=='Muscle') %>%
@@ -537,13 +569,20 @@ p4 = perm_dat %>%
   theme_bw()
 p4
 
-ggsave('./results/SI_figures/Figure_S29.pdf', p4, units = 'cm', width = 16, height = 18, useDingbats = F)
-ggsave('./results/SI_figures/Figure_S29.png', p4, units = 'cm', width = 16, height = 18)
+saveRDS(p4dat,'results/source_data/f5/fs5.rds')
+
+# ggsave('./results/SI_figures/Figure_S29.pdf', p4, units = 'cm', width = 16, height = 18, useDingbats = F)
+# ggsave('./results/SI_figures/Figure_S29.png', p4, units = 'cm', width = 16, height = 18)
+
+ggsave('./results/figure_supplements/fs5/FS5.pdf', p4, units = 'cm', width = 16, height = 18, 
+       useDingbats = F)
+ggsave('./results/figure_supplements/fs5/FS5.png', p4, units = 'cm', width = 16, height = 18)
 
 # perm_plot = ggarrange(p1,p2,p3,p4, ncol=2, nrow=2, common.legend = F, font.label = list(size=8), align = 'h')
 # perm_plot
 # 
-# ggsave('./results/SI_figures/Figure_S26.pdf', perm_plot, units = 'cm', width = 16, height = 18, useDingbats = F)
+ # ggsave('./results/SI_figures/Figure_S26.pdf', perm_plot, units = 'cm', width = 16, height = 18, 
+ #        useDingbats = F)
 # ggsave('./results/SI_figures/Figure_S26.png', perm_plot, units = 'cm', width = 16, height = 18)
 
 ##########
@@ -552,7 +591,4 @@ ggsave('./results/SI_figures/Figure_S29.png', p4, units = 'cm', width = 16, heig
 #################### 
 ####################
 ####################
-
-
-
 

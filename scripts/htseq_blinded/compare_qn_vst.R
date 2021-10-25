@@ -60,10 +60,12 @@ select(-p, -FDR) %>%
 #        useDingbats=F)
 # ggsave('./results/htseq/blinded/expch_cors_qn_vs_vst.png', expch_cors, units='cm', height = 5, width = 8)
 
-expchcorplot = expch %>%
+expchcorplotdat = expch %>%
   select(-p, -FDR) %>% 
   inner_join(select(expch_qn, -p, -FDR) ) %>%
-  mutate(period = factor(period, levels = c('Development', 'Ageing'))) %>%
+  mutate(period = factor(period, levels = c('Development', 'Ageing')))
+
+expchcorplot = expchcorplotdat %>%
   ggplot(aes(x = `Exp. Ch. (QN)`, y=`Expression Change`)) +
   facet_grid(period~tissue) +
   geom_point(size = 0.4, alpha=0.4, color= 'lightblue') +
@@ -80,6 +82,11 @@ ggsave('./results/htseq/blinded/expch_cors_plt.pdf', expchcorplot, units='cm', h
        useDingbats=F)
 ggsave('./results/htseq/blinded/expch_cors_plt.png', expchcorplot, units='cm', height = 12, width = 16)
 
+ggsave('./results/figure_supplements/f1s/FS11.pdf', expchcorplot, units='cm', height = 12, width = 16,
+       useDingbats=F)
+ggsave('./results/figure_supplements/f1s/FS11.png', expchcorplot, units='cm', height = 12, width = 16)
+
+saveRDS(expchcorplotdat, 'results/source_data/f1/fs11.rds')
 
 expch_cor %>% arrange(period)
 # tissue period        cor

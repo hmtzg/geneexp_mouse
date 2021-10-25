@@ -119,6 +119,10 @@ pb3 = get_legend(pb3)
 pab = ggarrange(ggarrange(pa1,pa2,ncol=2,common.legend=TRUE, widths = c(1, 1.8), legend="none"),
                 ggarrange(pb1,pb2,pb3 ,ncol=3, widths=c(1.3,1.3,0.7)), nrow=2, heights=c(1.5,1),
                 common.legend=F, labels = c('a.','b.'), font.label = list(size=8))
+
+saveRDS(pca_dat %>% left_join(sample_info),
+        file='./results/source_data/f1/pca.rds')
+
 ggsave("results/figure1/fig1ab.pdf", pab, units = 'cm',width = 19, height = 10, useDingbats = F)
 ggsave("results/figure1/fig1ab.png", pab, units = 'cm',width = 20, height = 10)
 
@@ -141,6 +145,8 @@ cors = expdf %>%
   cor(method="s", use="complete.obs")
 
 saveRDS(cors, './data/processed/raw/pwise_expch_cors.rds')
+saveRDS(cors,'./results/source_data/f1/cors.rds')
+
 diag(cors) = 0
 
 #annotations
@@ -203,6 +209,8 @@ pd = expr_ch %>%
 ggsave('./results/figure1/fig1d.pdf', pd, units='cm', height = 8, width = 16, useDingbats=F)
 ggsave('./results/figure1/fig1d.png', pd, units='cm', height = 8, width = 16)
 
+saveRDS(expr_ch, file='./results/source_data/f1/expr_ch.rds')
+
 ### panel e ####
 pe = expr_ch %>%
   drop_na() %>%
@@ -252,4 +260,4 @@ pf = revgenes %>%
 ggsave('./results/figure1/fig1f.pdf', pf, units='cm', height = 10, width = 8, useDingbats=F)
 ggsave('./results/figure1/fig1f.png', pf, units='cm', height = 10, width = 8)
 
-
+saveRDS(revgenes, file='./results/source_data/f1/revgenes.rds')

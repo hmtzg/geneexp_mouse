@@ -79,6 +79,7 @@ panel_a
 ggsave('./results/figure2/Figure_2a.pdf',panel_a, units = 'cm', width = 8, height = 8, useDingbats = F)
 ggsave('./results/figure2/Figure_2a.png',panel_a, units = 'cm', width = 8, height = 8)
 
+saveRDS(cov_dat_sum, 'results/source_data/f2/cov_dat_sum.rds')
 
 # pabel_b:  CoV change of top gene showing divergence-convergence pattern
 top_divcon_cov_dat = cov_ch %>%
@@ -129,6 +130,7 @@ ggsave('./results/figure2/Figure_2b.pdf',panel_b, units = 'cm', width = 8, heigh
        useDingbats = F)
 ggsave('./results/figure2/Figure_2b.png',panel_b, units = 'cm', width = 8, height = 8)
 
+saveRDS(top_divcon_cov_dat,'results/source_data/f2/top_divcon_cov_dat.rds')
 
 # panel c.
 panel_c = ggplot(top_divcon_gene_dat, aes(x =age, y= expression, color = tissue)) +
@@ -154,6 +156,8 @@ leg = get_legend(panel_c)
 ggsave('./results/figure2/Figure_2c.pdf', panel_c, units = 'cm', width = 8, height = 8, useDingbats = F)
 ggsave('./results/figure2/Figure_2c.png', panel_c, units = 'cm', width = 8, height = 8)
 
+saveRDS(top_divcon_gene_dat,'results/source_data/f2/top_divcon_gene_dat.rds')
+
 ## Conv/Div proportions and ratio:
 cd_props = cov_ch %>% 
   filter(FDR < 0.1) %>%
@@ -178,6 +182,8 @@ panel_d = cd_props %>%
 panel_d
 ggsave('./results/figure2/Figure_2d.pdf',panel_d, units = 'cm', width = 8, height = 8, useDingbats = F)
 ggsave('./results/figure2/Figure_2d.png',panel_d, units = 'cm', width = 8, height = 8)
+
+saveRDS(cd_props,'results/source_data/f2/cd_props.rds')
 
 # panel e:
 pseudorange = cbind( round(range(log2(cd_ratio_pseudo$dev[-1]), na.rm=T),2),
@@ -211,6 +217,7 @@ panel_e
 ggsave('./results/figure2/Figure_2e.pdf',panel_e, units = 'cm', width = 8, height = 8, useDingbats = F)
 ggsave('./results/figure2/Figure_2e.png',panel_e, units = 'cm', width = 8, height = 8)
 
+saveRDS(cd_ratio,'results/source_data/f2/cd_ratio.rds')
 # figure 2
 # blank= grid.rect(gp=gpar(col='white'))
 # figure_2 = ggarrange(

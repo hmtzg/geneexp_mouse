@@ -109,6 +109,11 @@ annothet = hetcorDi %>%
 # 4 Muscle 0.0496
 
 # density plots of heterogeneity changes for dico vs didi genes:
+
+hetcorplot2dat = hetcorDi %>% 
+  rename('Pattern' = type) %>%
+  mutate(Pattern = factor(Pattern, levels=c('DiCo', 'DiDi') ))
+  
 hetcorplot2 = hetcorDi %>% 
   rename('Pattern' = type) %>%
   mutate(Pattern = factor(Pattern, levels=c('DiCo', 'DiDi') )) %>%
@@ -164,6 +169,9 @@ annothet2 = het2Di %>%
 # 4 Muscle 0.0423 0.0292
 
 # density plots of heterogeneity changes for dico vs didi genes with ncvTest:
+hetcorplot3dat = het2Di %>% 
+  rename('Pattern' = type)
+
 hetcorplot3 = het2Di %>% 
   rename('Pattern' = type) %>%
   ggplot(aes(x= chi, fill=Pattern, linetype=Pattern, size=Pattern )) +
@@ -197,6 +205,8 @@ ggsave('./results/figure_supplements/fs2/FS15.pdf', hetplot, units='cm', height 
 ggsave('./results/figure_supplements/fs2/FS15.png', hetplot, units='cm', height = 14,
        width = 16, bg='white')
 
+saveRDS(hetcorplot2dat,'results/source_data/f2/fs15_het.rds')
+saveRDS(hetcorplot3dat, 'results/source_data/f2/fs15_ncvtest.rds')
 
 # correlation between abs. residual and chiSquare value methods: 
 hetcor %>%

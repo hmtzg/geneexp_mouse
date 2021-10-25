@@ -1,4 +1,3 @@
-#### Setup ####
 library(tidyverse)
 library(ggpubr)
 library(ggforce)
@@ -95,6 +94,7 @@ musclebeta = as.data.frame(musclebeta) %>% set_names(c('beta','beta.p')) %>%
 
 exp_beta = rbind(cortbeta,lungbeta,liverbeta,musclebeta)
 
+saveRDS(exp_beta,'results/figure4/exp_beta.rds')
 #### Loss of tissue specific expression ####
 
 expdat = exp_beta %>%
@@ -151,6 +151,8 @@ dccontplot = dc_fisher %>%
   ggtitle(fidctitle  )  
   #ggtitle(paste('DiCo Genes - OR=',round(1/fidc$estimate,2),scales::pvalue(fidc$p.value, add_p = T))) 
 
+saveRDS(dc_fisher,'results/source_data/f4/b.rds')
+
 all_fisher = expdat %>%
   # filter(DC) %>%
   filter(tissue == max_exp_ch) %>%
@@ -182,6 +184,8 @@ allcontplot = all_fisher %>%
         legend.spacing.x = unit(2.5, 'pt')) +
   ggtitle(fiall.title)  
   #ggtitle(paste('All Genes - OR=',round(1/fiall$estimate,2),scales::pvalue(fiall$p.value, add_p = T)))
+
+saveRDS(all_fisher,'results/source_data/f4/a.rds')
 
 p1 = ggarrange(allcontplot, dccontplot, common.legend = T, legend = 'top', labels = c('a.','b.'), 
                font.label = list(size = 8))
@@ -224,7 +228,10 @@ gr1plot = ggplot(gr1dat, aes(x = age, y = expression, color = tissue)) +
         panel.border = element_rect(color='black', fil=NA)) +
   xlab('Age (in log2 scale)') + ylab('Gene Expression')
 
+saveRDS(gr1dat, 'results/source_data/f4/c.rds')
+
 i=1
+gr2dat = expdat %>% filter(gene_id == GR2[i])
 gr2plot = expdat %>%
   filter(gene_id == GR2[i]) %>%
   ggplot(aes(x = age, y = expression, color = tissue)) +
@@ -240,7 +247,10 @@ gr2plot = expdat %>%
         panel.border = element_rect(color='black', fil=NA)) +
   xlab('Age (in log2 scale)') + ylab('Gene Expression')
 
+saveRDS(gr2dat, 'results/source_data/f4/d.rds')
+
 i=2
+gr3dat = expdat %>% filter(gene_id == GR3[i])
 gr3plot = expdat %>%
   filter(gene_id == GR3[i]) %>%
   ggplot(aes(x = age, y = expression, color = tissue)) +
@@ -256,7 +266,10 @@ gr3plot = expdat %>%
         panel.border = element_rect(color='black', fil=NA)) +
   xlab('Age (in log2 scale)') + ylab('Gene Expression')
 
+saveRDS(gr3dat, 'results/source_data/f4/e.rds')
+
 i=1
+gr4dat = expdat %>% filter(gene_id == GR4[i])
 gr4plot = expdat %>%
   filter(gene_id == GR4[i]) %>%
   ggplot(aes(x = age, y = expression, color = tissue)) +
@@ -272,6 +285,8 @@ gr4plot = expdat %>%
         panel.border = element_rect(color='black', fil=NA)) +
   xlab('Age (in log2 scale)') + ylab('Gene Expression') 
 
+saveRDS(gr4dat, 'results/source_data/f4/f.rds')
+
 p2 = ggarrange(gr1plot, gr2plot, gr3plot,gr4plot,font.label = list(size = 8), 
                labels = c('c.','d.','e.','f.'), ncol = 4, nrow = 1, common.legend = T, legend = 'top')
 fig4af = ggarrange(p1, p2, ncol = 1 , nrow = 2, heights = c(1,1))
@@ -285,6 +300,11 @@ expch = readRDS('./data/processed/tidy/expression_change.rds') %>%
 
 reprg = readRDS('./results/figure4/gorepresentatives.rds')
 
+enricplotdat = expch %>%
+  inner_join(reprg) %>%
+  group_by(Period, ID, tissue, Description, repNames, n) %>%
+  summarise(mrho = mean(`Expression Change`),
+            medrho = median(`Expression Change`))
 enricplot = expch %>%
   inner_join(reprg) %>%
   group_by(Period, ID, tissue, Description, repNames, n) %>%
@@ -311,38 +331,11 @@ enricplot = expch %>%
   xlab('') +
   ylab(bquote('Mean Expression Change ('*rho*')'))
 enricplot
+
+saveRDS(enricplotdat,'results/source_data/f4/g.rds')
+
 ggsave('./results/figure4/dicoGO.pdf',enricplot, units='cm', width = 16, height = 8, useDingbats=F)
 ggsave('./results/figure4/dicoGO.png',enricplot, units='cm', width = 16, height = 8)  
-
-# enricplot2 = expch %>%
-#   inner_join(reprg) %>%
-#   group_by(Period, ID, tissue, Description, repNames, n) %>%
-#   summarise(mrho = mean(`Expression Change`),
-#             medrho = median(`Expression Change`)) %>% 
-#   ggplot(aes(fill=Period, y=medrho, x=reorder(repNames, n))) +
-#   geom_bar(stat='identity', position=position_dodge()) +
-#   facet_wrap(~tissue, ncol=4) +
-#   scale_fill_manual(values=brewer.pal(3,"Set1")[c(2,1)]) +
-#   coord_flip() +
-#   geom_hline(yintercept = 0, size=0.3, linetype='solid', color='gray30')+
-#   geom_vline(xintercept = seq(1.5,25, by=1), linetype = 'dashed', size = 0.2, color = 'gray') +
-#   theme(legend.position = 'top',
-#         axis.text.x = element_text(size=4, vjust=2), 
-#         axis.ticks.length.x = unit(0,'pt'),
-#         axis.text.y = element_text(size=5),
-#         panel.border = element_blank(),
-#         axis.line.y = element_blank(),
-#         axis.line.x = element_blank(),
-#         plot.title = element_text(vjust = -0.5),
-#         legend.background = element_rect(color='black', size=0.1),
-#         legend.key.size = unit(3, 'pt'),
-#         axis.title.x = element_text(size=6)) +
-#   xlab('') +
-#   ylab(bquote('Median Expression Change ('*rho*')'))
-# enricplot2
-# ggsave('./results/figure4/dicoGOmed.pdf',enricplot2, units='cm', width = 16, height = 8, useDingbats=F)
-# ggsave('./results/figure4/dicoGOmed.png',enricplot2, units='cm', width = 16, height = 8)  
-
 
 fig4  = ggarrange(fig4af, enricplot, nrow =2, labels=c(NA, 'g.'), font.label = list(size = 8))
 fig4
@@ -384,29 +377,3 @@ plotsave(fig4,'./results/figure4/figure4', fig4, units='cm', width = 16, height 
 # enrichpfdr
 # ggsave('./results/figure4/dicoGOfdr.pdf',enrichpfdr, units='cm', width = 16, height = 12, useDingbats=F)
 # ggsave('./results/figure4/dicoGOfdr.png',enrichpfdr, units='cm', width = 16, height = 12)  
-
-# enricplot2 = expch %>%
-#   inner_join(reprgenes) %>%
-#   group_by(Period, GOID, tissue, Representative) %>%
-#   summarise(n=n(),
-#             mrho = mean(`Expression Change`),
-#             medrho = median(`Expression Change`)) %>% 
-#   ggplot(aes(fill=Period, y=medrho, x=Representative)) +
-#   geom_bar(stat='identity', position=position_dodge()) +
-#   facet_wrap(~tissue, ncol=4) +
-#   scale_fill_manual(values=brewer.pal(3,"Set1")[c(2,1)]) +
-#   coord_flip() +
-#   geom_hline(yintercept = 0, size=0.3, linetype='solid', color='gray30')+
-#   geom_vline(xintercept = seq(1.5,17, by=1), linetype = 'dashed', size = 0.3, color = 'gray') +
-#   geom_text(aes(label=n), color='gray20', position=position_dodge(width = .9),
-#             angle=0, hjust=1, vjust=0.5, size=1.5 ) +
-#   theme(legend.position = 'top',
-#         axis.text.x = element_text(size=4), 
-#         axis.text.y = element_text(size=5),
-#         axis.title.x = element_text(size=6)) +
-#   xlab('') +
-#   ylab(bquote('Median Expression Change ('*rho*')'))
-# enricplot2
-# 
-# ggsave('./results/figure4/dicoGO2.pdf',enricplot2, units='cm', width = 16, height = 8, useDingbats=F)
-# ggsave('./results/figure4/dicoGO2.png',enricplot2, units='cm', width = 16, height = 8)  

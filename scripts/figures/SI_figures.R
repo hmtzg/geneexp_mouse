@@ -412,6 +412,9 @@ ggsave('./results/figure_supplements/f1s/FS4.pdf', plot_overlaps, width = 16, he
        useDingbats = F)
 ggsave('./results/figure_supplements/f1s/FS4.png', plot_overlaps, width = 16, height = 15, units='cm' )  
 
+saveRDS(perm_overlaps %>% left_join(obs_overlap),
+        file='results/source_data/f1/fs4.rds')
+
 ############ F1
 ############
 ############ Figure S5, # of sig. overlap across tissues, dev-ageing magnitude comparison ------------
@@ -424,7 +427,7 @@ star = data.frame(direction = rep(c('down','up'),3),
                                  levels=c('Development','Ageing')),
                   n= c(3,3,4,4,2,2))
 
-siggenes_overlap = expr_ch %>%
+siggenes_overlapdat = expr_ch %>%
   filter(FDR < 0.1) %>% 
   mutate(direction = `Expression Change` > 0) %>%
   mutate(direction = ifelse( direction == TRUE, 'up', 'down')) %>%
@@ -436,7 +439,9 @@ siggenes_overlap = expr_ch %>%
   group_by(n, period, direction) %>%
   summarise(count = n()) %>%
   ungroup() %>%
-  slice(-c(1:4)) %>%
+  slice(-c(1:4))
+
+siggenes_overlap = siggenes_overlapdat %>%
   ggplot(aes(x = n, y = count, fill = direction)) +
   facet_wrap(~period) +
   geom_bar(stat='identity', position = 'dodge') +
@@ -575,6 +580,8 @@ fig_s6_b = perm_overlaps_fdr %>%
 fig_s6 = ggarrange(fig_s6_a,fig_s6_b, ncol = 2, widths = c(1, 0.5), labels = c('a.','b.'),
                    font.label = list(size=8))
 
+saveRDS(perm_overlaps_fdr,'results/source_data/f1/fs6.rds')
+
 ggsave('./results/figure_supplements/f1s/FS6.pdf', fig_s6 , width = 18, height = 10, units='cm',
        useDingbats = F )
 ggsave('./results/figure_supplements/f1s/FS6.png', fig_s6 , width = 18, height = 10, units='cm' )  
@@ -708,6 +715,7 @@ ggsave('./results/figure_supplements/fs2/FS1.pdf', cov_median, units = 'cm', wid
        useDingbats = F)
 ggsave('./results/figure_supplements/fs2/FS1.png', cov_median, units = 'cm', width = 8, height = 8)
 
+saveRDS(cov_sum,'results/source_data/f2/fs1.rds')
 
 ############ F2
 ############
@@ -750,6 +758,7 @@ ggsave("results/figure_supplements/fs2/FS4.pdf", cd_count_p, units='cm', width =
        useDingbats=F)
 ggsave("results/figure_supplements/fs2/FS4.png", cd_count_p, units='cm', width = 8, height = 7)
 
+saveRDS(cd_count,'results/source_data/f2/fs4.rds')
 ############ F2
 ############
 ############ Figure S5, Pairwise tissue expression correlations: ----------
@@ -786,6 +795,7 @@ ggsave('./results/figure_supplements/fs2/FS5.pdf', pwisecors, units = 'cm', widt
        useDingbats =F)
 ggsave('./results/figure_supplements/fs2/FS5.png', pwisecors, units = 'cm', width = 10, height = 10)
 
+saveRDS(pexpcors,'results/source_data/f2/fs5.rds')
 
 ############ F2
 ############
@@ -894,6 +904,8 @@ ggsave('./results/figure_supplements/fs2/FS6.pdf', figure_S6, units = 'cm', widt
        useDingbats =F)
 ggsave('./results/figure_supplements/fs2/FS6.png', figure_S6, units = 'cm', width = 15, height = 12)
 
+saveRDS(meancors,'results/source_data/f2/fs6a.rds')
+saveRDS(meansccors,'results/source_data/f2/fs6b.rds')
 
 ############ F2
 ############
@@ -1064,34 +1076,40 @@ ggsave('./results/figure_supplements/fs5/FS1.pdf', fig_s22, units = 'cm', width 
        useDingbats = F)
 ggsave('./results/figure_supplements/fs5/FS1.png', fig_s22, units = 'cm', width = 16, height = 14)
 
+saveRDS(deconv, 'results/source_data/f5/fs1.rds')
+
 ############ F5
 ############
 ############ Figure S2, Permutation-based comparison between DiCo- and non-Dico- related cell 
 ############ type proportion changes with age in the cortex: --------
-############ (plot in ?? script)
+############ (plot in scRNA-seq/2.deconvolution.R script)
 
 ############ F5
 ############
 ############ Figure S3, Permutation-based comparison between DiCo- and non-Dico- related cell 
 ############ type proportion changes with age in the liver: --------
-############ (plot in ?? script)
+############ (plot in scRNA-seq/2.deconvolution.R script)
 
 ############ F5
 ############
 ############ Figure S4, Permutation-based comparison between DiCo- and non-Dico- related cell 
 ############ type proportion changes with age in the lung: --------
-############ (plot in ?? script)
+############ (plot in scRNA-seq/2.deconvolution.R script)
 
 ############ F5
 ############
 ############ Figure S5, Permutation-based comparison between DiCo- and non-Dico- related cell 
 ############ type proportion changes with age in the muscle: --------
-############ (plot in ?? script)
+############ (plot in scRNA-seq/2.deconvolution.R script)
 
 ############ F5
 ############
 ############ Figure S6, Intra-tissue CoV changes between cell types using Tabula Muris Senis dataset: ------
 ############ 
+
+intracovdat = intra_ts_cov %>%
+  mutate(`age group` = factor(`age group`, levels = c('m3', 'm18', 'm24')) ) %>%
+  mutate(age = as.numeric( gsub('[a-z]','',`age group`) ) )
 
 intracov = intra_ts_cov %>%
   mutate(`age group` = factor(`age group`, levels = c('m3', 'm18', 'm24')) ) %>%
@@ -1116,7 +1134,8 @@ intracov1 = intracov +
                color=adjustcolor('gray10',alpha.f = 0.8))
 
 intracov1
-ggsave('./results/figure_supplements/fs5/FS6.pdf', intracov1, units = 'cm', width = 12, height = 8, 
+ggsave('./results/figure_supplements/fs5/FS6.pdf', intracov, units = 'cm', width = 12, height = 8, 
        useDingbats =F)
-ggsave('./results/figure_supplements/fs5/FS6.png', intracov1, units = 'cm', width = 12, height = 8)
+ggsave('./results/figure_supplements/fs5/FS6.png', intracov, units = 'cm', width = 12, height = 8)
 
+saveRDS(intracovdat,'results/source_data/f5/fs6.rds')

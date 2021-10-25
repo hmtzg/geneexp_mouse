@@ -135,6 +135,8 @@ pb3 = get_legend(pb3)
 
 #pb = ggarrange(pb1, pb2, pb3, ncol =3, widths = c(0.7, 0.7, 0.4))
 
+saveRDS(pca_dat %>% left_join(sample_info), 'results/source_data/f1/fs10pca.rds')
+
 ### panel c - correlation heatmap #####
 expdf = expr_ch %>%
   select(gene_id, tissue, period, `Expression Change`) %>%
@@ -154,6 +156,7 @@ cors = expdf %>%
   cor(method="s", use="pairwise.complete.obs")
 
 saveRDS(cors, './data/htseq/blinded/pwise_expch_cors.rds')
+saveRDS(cors, 'results/source_data/f1/fs10cor.rds')
 
 #####
 periodcode = c(Development = "#FE6100", Ageing ="#648FFF")
@@ -243,7 +246,6 @@ pd = expr_ch %>%
 pd
 ggsave('./results/htseq/blinded/figure1/fig1d.pdf', pd, units='cm', height = 9, width = 14, useDingbats=F)
 ggsave('./results/htseq/blinded/figure1/fig1d.png', pd, units='cm', height = 9, width = 14)
-
 ### panel e ####
 pe = expr_ch %>%
   drop_na() %>%
@@ -272,6 +274,8 @@ pe = expr_ch %>%
 pe
 ggsave('./results/htseq/blinded/figure1/fig1e.pdf', pe, units='cm', height = 8, width = 14, useDingbats=F)
 ggsave('./results/htseq/blinded/figure1/fig1e.png', pe, units='cm', height = 8, width = 14)
+
+saveRDS(expr_ch, 'results/source_data/f1/fs10expr_ch.rds')
 
 ###  panel f ####
 # rev props:
@@ -309,6 +313,8 @@ pf = revgenes %>%
 
 ggsave('./results/htseq/blinded/figure1/fig1f.pdf', pf, units='cm', height = 10, width = 8, useDingbats=F)
 ggsave('./results/htseq/blinded/figure1/fig1f.png', pf, units='cm', height = 10, width = 8)
+
+saveRDS(revgenes, 'results/source_data/f1/fs10revgenes.rds')
 
 pdeleg = get_legend(pd)
 

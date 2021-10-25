@@ -40,6 +40,8 @@ annt = coeffs  %>%
 #names(tscol) = unique(paste(top_celltype$tissue,top_celltype$`cell type`, sep=':\n'))
 
 ########### panel a
+panel_a_dat = coeffs %>%
+  right_join(top_celltype, by=c('tissue','cell type', 'Geneset'))
 panel_a = coeffs %>%
   right_join(top_celltype, by=c('tissue','cell type', 'Geneset')) %>%
   #mutate(v1 = paste(tissue,`cell type`,sep=':\n')) %>% 
@@ -63,12 +65,13 @@ panel_a = coeffs %>%
         legend.key.size = unit(8,'pt'),
         strip.text = element_text(size=8, margin=margin(b=0.5, l=0.5))) +
   geom_text(data=annt,
-            mapping = aes(x=c(5,NA,7,NA,14,NA,10,NA), y=rep(c(1.35,4,1.6,1.8), each=2), label = `cell type`), size= 2 ) 
+            mapping = aes(x=c(5,NA,7,NA,14,NA,10,NA), y=rep(c(1.35,4,1.6,1.8), each=2), label = `cell type`), 
+            size= 2 ) 
 panel_a
 ggsave('./results/figure5/Figure_5a.pdf', panel_a, units='cm', height=7, width = 10, useDingbats=F)
 ggsave('./results/figure5/Figure_5a.png', panel_a, units='cm', height=7, width = 10)
 
-
+saveRDS(panel_a_dat,'results/source_data/f5/a.rds')
 ########################
 ######################## plot max and min cors change with age
 ########################
@@ -103,7 +106,7 @@ maxminch = maxcors %>% left_join(mincors, by = c('1st tissue','1st cell type')) 
   mutate(`1st tissue`= str_to_title(`1st tissue`)) %>%
   reshape2::melt() %>% 
   set_names(c('1st tissue','1st cell type', 'minx','Correlation') ) %>%
-  mutate(minx = factor(ifelse(minx=='rho ch.x','Maximum','Minumum'), levels = c('Minumum','Maximum'))) %>%
+  mutate(minx = factor(ifelse(minx=='rho ch.x','Maximum','Minimum'), levels = c('Minimum','Maximum'))) %>%
   mutate(var = 'Tissue Similarity Change')
 saveRDS(maxminch, './data/other_datasets/scRNA-seq/processed/max_min_cors_ch.rds')
 
@@ -130,6 +133,7 @@ panel_b2
 ggsave('./results/figure5/Figure_5b2.pdf', panel_b2, units='cm', height=7, width = 7, useDingbats=F)
 ggsave('./results/figure5/Figure_5b2.png', panel_b2, units='cm', height=7, width = 7)
 
+saveRDS(maxminch,'results/source_data/f5/b2.rds')
 ########### panel b1
 celltype_cors = celltype_cors %>%
   mutate(`1st tissue` = str_to_title(`1st tissue`))
@@ -186,12 +190,14 @@ panel_b1 = maxmin_density %>%
         strip.text = element_text(size=8, margin=margin(l=1,b=1,t=1)))
 panel_b1
 
+saveRDS(maxmin_density,'results/source_data/f5/b1.rds')
+
 ggsave('./results/figure5/Figure_5b1.pdf', panel_b1, units='cm', height=7, width = 7, useDingbats=F)
 ggsave('./results/figure5/Figure_5b1.png', panel_b1, units='cm', height=7, width = 7)
 
 panel_b = ggarrange(panel_b1, panel_b2, nrow=2, heights = c(0.6,1), align = 'v')
 panel_b
-figure_5 = ggarrange(panel_a, panel_b, ncol=2, labels = c('a.','b.'), font.label = list(size=12))
+figure_5 = ggarrange(panel_a, panel_b, ncol=2, labels = c('a.','b.'), font.label = list(size=8))
 
 ggsave('./results/figure5/Figure5.pdf', figure_5, units='cm', height=10, width = 15, useDingbats=F)
 ggsave('./results/figure5/Figure5.png', figure_5, units='cm', height=10, width = 15)

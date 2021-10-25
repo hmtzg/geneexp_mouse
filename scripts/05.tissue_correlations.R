@@ -147,6 +147,7 @@ pwise_cor_perm_test =
   relocate(`Tissue A`, `Tissue B`, Period, rho, `permutation p-value`, eFPP)
 rownames(pwise_cor_perm_test) = NULL
 saveRDS(pwise_cor_perm_test,'./data/processed/tidy/pwise_expch_cor_perm_test.rds')
+saveRDS(pwise_cor_perm_test,'results/source_data/f1/f1pwise_expch_cor_perm_test.rds')
 write.xlsx(pwise_cor_perm_test, file='./results/SI_tables/TableS3.xlsx', row.names=T)
 
 ########################################

@@ -85,6 +85,8 @@ pheatmap::pheatmap(t(indids), cellwidth = 2,cellheight = 10, cutree_rows = 3, sh
                    color = c('gray99','lightblue'),legend = F,
                    filename = './results/figure_supplements/fs2/FS13.pdf')
 
+saveRDS(indids, 'results/source_data/f2/fs13.rds')
+
 tislist = names(which(cutree(hclust(dist(t(indids))), 3)==1))
 fn = paste('./data/processed/GTEx/expression/tpm/',
            sapply(strsplit(gsub(' ','',tislist),'[(]'),function(x)x[[1]]),'.rds',sep='')
@@ -262,6 +264,9 @@ pca_plots = ggarrange(pcaplots1, pcaplots2, ncol=1,nrow=2, heights = c(1.5,6))
 plotsave(ggobj = pca_plots, prefix = './results/GTEx/alltissues/pca', width = 16, height = 26)
 plotsave(ggobj = pca_plots, prefix = './results/figure_supplements/fs2/FS10', width = 16, height = 20)
 
+saveRDS(pca_data,'results/source_data/f2/fs10_pca.rds')
+saveRDS(meanEuc,'results/source_data/f2/fs10_euc.rds')
+
 #### Gene Expression Analysis ####
 
 expvals = reshape2::melt(exp_l2_qn) %>%
@@ -353,6 +358,10 @@ pairwisedat2$adjusted_p = p.adjust(pairwisedat2$p, method = 'BH')
 table(pairwisedat2$adjusted_p<0.1)
 # none significant
 
+pairwiseplotdat = pairwisedat2 %>%
+  unique() %>%
+  full_join(select(meancordat, meancor, tis1, tis2))
+
 pairwiseplot = pairwisedat2 %>%
   unique() %>%
   full_join(select(meancordat, meancor, tis1, tis2)) %>%
@@ -382,6 +391,9 @@ plotsave(ggobj = covresplot, prefix = './results/GTEx/alltissues/CoV',width = 16
 
 plotsave(ggobj = covresplot, prefix = './results/figure_supplements/fs2/FS11',width = 16, height = 10)
   
+saveRDS(sumCov,'results/source_data/f2/fs11_cov_mean_med.rds')
+saveRDS(pairwiseplotdat, 'results/source_data/f2/fs11_pairwisecors.rds')
+
 # Calculate CoV change with age per each gene
 covcor = expvals %>%
   select(GeneID, Age, CoV, id) %>%

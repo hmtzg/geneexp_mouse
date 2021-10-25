@@ -135,9 +135,12 @@ rev_test  = reshape2::melt(rev_test) %>%
   mutate(Reversal = factor(Reversal, levels= c('UpDown', 'DownUp')) )
   
 sizex = 2.5
-rev_each_plot = reshape2::melt(rev.tissue) %>% 
+
+rev_each_plotdat = reshape2::melt(rev.tissue) %>% 
   set_names(c('value', 'tissue', 'Reversal')) %>% 
-  mutate(Reversal = factor(Reversal, levels= c('UpDown', 'DownUp')) ) %>%
+  mutate(Reversal = factor(Reversal, levels= c('UpDown', 'DownUp')) )
+
+rev_each_plot = rev_each_plotdat %>%
   ggplot(aes(x = value)) +
   facet_grid(tissue~Reversal, scales = 'free_x') +
   geom_histogram() +
@@ -159,6 +162,8 @@ rev_each_plot = reshape2::melt(rev.tissue) %>%
 ggsave('./results/figure_supplements/f1s/FS8.pdf', rev_each_plot, width = 16, height = 15, units='cm', 
        useDingbats = F )
 ggsave('./results/figure_supplements/f1s/FS8.png', rev_each_plot, width = 16, height = 15, units='cm' )  
+
+saveRDS(rev_each_plotdat, 'results/source_data/f1/fs8.rds')
 
 ########################################
 ######################################## Test significance of shared reversal genes among tissues
@@ -213,9 +218,11 @@ shared_rev_perm_test = reshape2::melt(data.frame( UpDown = UDdist, DownUp = DUdi
   set_names(c('Reversal','Proportion'))
 saveRDS(shared_rev_perm_test, './data/processed/tidy/shared_rev_perm_test.rds')
 
-rev_shared_plot = reshape2::melt(data.frame( UpDown = UDdist, DownUp = DUdist)) %>%
+rev_shared_plotdat = reshape2::melt(data.frame( UpDown = UDdist, DownUp = DUdist)) %>%
   set_names(c('Reversal','value')) %>%
-  mutate(Reversal = factor(Reversal, levels = c('UpDown', 'DownUp'))) %>%
+  mutate(Reversal = factor(Reversal, levels = c('UpDown', 'DownUp')))
+
+rev_shared_plot = rev_shared_plotdat %>%
   ggplot(aes(x = value)) +
   facet_grid(~Reversal, scales = 'free_x') +
   geom_histogram() +
@@ -236,6 +243,7 @@ ggsave('./results/figure_supplements/f1s/FS9.pdf', rev_shared_plot, width = 12, 
        useDingbats = F )
 ggsave('./results/figure_supplements/f1s/FS9.png', rev_shared_plot, width = 12, height = 8, units='cm' )  
 
+saveRDS(rev_shared_plotdat, 'results/source_data/f1/fs9.rds')
 
 ########################################
 ######################################## GORA enrichment of shared reversal genes across tissues

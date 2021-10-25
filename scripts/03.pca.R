@@ -78,6 +78,7 @@ pc_age_cors = pca_data %>%
   summarise(rho = cor.test(age,value,m='s')$est,
             p = cor.test(age,value,m='s')$p.val)
 
+saveRDS(pc_age_cors, file='./results/source_data/f1/pc_age_cors.rds')
 write.xlsx(pc_age_cors, './results/SI_tables/TableS1.xlsx')
 
 ## PC4 - age cors (alldata - raw - dev): (fig 1b)
@@ -198,6 +199,7 @@ mdist = data.frame(ind_id= names(mdist), mdist = mdist, row.names = NULL) %>%
   left_join(unique(select(sample_info, ind_id, age)), by = 'ind_id')
 
 saveRDS(mdist, './data/processed/tidy/mean_euclidean_dist.rds')
+saveRDS(mdist, './results/source_data/f1/mdist.rds')
 
 # spearman test between age and mean pairwise distance in dev. and ageing:
 mdist %>%
@@ -243,6 +245,7 @@ mdist_dev = data.frame(ind_id= names(mdist_dev), mdist = mdist_dev, row.names = 
   left_join(unique(select(sample_info, ind_id, age)), by = 'ind_id')
 
 saveRDS(mdist_dev, './data/processed/tidy/mean_euclidean_dist_dev.rds')
+saveRDS(mdist_dev, './results/source_data/f1/mdist_dev.rds')
 
 mdist_dev %>%
   summarise(rho = cor(mdist,age, m='s'),
@@ -265,6 +268,7 @@ mdist_aging = data.frame(ind_id= names(mdist_aging), mdist = mdist_aging, row.na
   left_join(unique(select(sample_info, ind_id, age)), by = 'ind_id')
 
 saveRDS(mdist_aging, './data/processed/tidy/mean_euclidean_dist_aging.rds')
+saveRDS(mdist_aging, './results/source_data/f1/mdist_aging.rds')
 
 mdist_aging %>%
   summarise(rho = cor(mdist,age, m='s'),
