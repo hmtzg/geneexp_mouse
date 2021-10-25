@@ -112,4 +112,5 @@ tissue_down_go = unlist(tissue_down_go, recursive = F)
 table_sX = c(list('age_related_change' = age_related_genes), Upgenes = tissue_up_go, 
              Downgenes = tissue_down_go)
 
-write.xlsx(table_sX, file='./results/SI_tables/TableS2.xlsx', row.names=F)
+write.xlsx(table_sX,
+           file='./results/supplementary_files/Supplementary_File_1.xlsx', row.names=F)

@@ -64,7 +64,8 @@ saveRDS(downdown.go, './data/processed/raw/downdown_gora_each_tissue.rds')
 reversal_go_each_tissue = list(UpDown = updown.go, DownUp = downup.go)
 table_sX = unlist(reversal_go_each_tissue, recursive = F)
 
-write.xlsx(table_sX, file='./results/SI_tables/TableS5.xlsx', row.names=F)
+#write.xlsx(table_sX, file='./results/SI_tables/TableS5.xlsx', row.names=F)
+write.xlsx(table_sX, file='./results/supplementary_files/Supplementary_File_3.xlsx', row.names=F)
 
 ########################################
 ######################################## Test significance of reversal genes in each tissue separately

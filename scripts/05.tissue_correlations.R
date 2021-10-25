@@ -148,7 +148,7 @@ pwise_cor_perm_test =
 rownames(pwise_cor_perm_test) = NULL
 saveRDS(pwise_cor_perm_test,'./data/processed/tidy/pwise_expch_cor_perm_test.rds')
 saveRDS(pwise_cor_perm_test,'results/source_data/f1/f1pwise_expch_cor_perm_test.rds')
-write.xlsx(pwise_cor_perm_test, file='./results/SI_tables/TableS3.xlsx', row.names=T)
+#write.xlsx(pwise_cor_perm_test, file='./results/SI_tables/TableS3.xlsx', row.names=T)
 
 ########################################
 ######################################## Permutation test for shared up/down genes (no significance cutoff )
@@ -323,11 +323,14 @@ shared_genes_go = sapply(unique(sig_genes$period), function(p){
   }, simplify = F, USE.NAMES = T)
 }, simplify = F, USE.NAMES = T)
 
-#names(shared_genes_go) = c('Development', 'Ageing')
+saveRDS(shared_genes_go,
+        'data/processed/raw/shared_expch_gora.rds')
 names(shared_genes_go) =  unique(sig_genes$period)
+
 table_sX = unlist(shared_genes_go, recursive = F)
 
-write.xlsx(table_sX, file='./results/SI_tables/TableS4.xlsx', row.names=F)
+write.xlsx(table_sX, 
+           file='./results/supplementary_files/Supplementary_File_2.xlsx', row.names=F)
 
 
 ####################
