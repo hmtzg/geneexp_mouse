@@ -5,17 +5,20 @@ dat1 = readRDS('./data/processed/tidy/CoV_change.rds') %>%
   rename('BH' = FDR) %>% relocate(gene_id)
 
 # mouse our data, background is development divergent genes
+# dat1 = dat1 %>%
+#   filter(period=='development' & CoV_change > 0 ) %>%
+#   select(gene_id) %>%
+#   left_join(dat1, by ='gene_id') %>%
+#   filter(period=='aging')
 dat1 = dat1 %>%
-  filter(period=='development' & CoV_change > 0 ) %>%
-  select(gene_id) %>%
-  left_join(dat1, by ='gene_id') %>%
   filter(period=='aging')
-bg = as.character(dat1$gene_id)
+#bg = as.character(dat1$gene_id)
 
 # jonker data:
 dat2 = readRDS('./data/other_datasets/jonker/processed/covch.rds') %>% as.data.frame() %>%
   #rownames_to_column(var = 'gene_id') %>%
-  set_names(c('gene_id','CoV_change','pval', 'BH')) %>% tibble() %>%
+  set_names(c('gene_id','CoV_change','pval', 'BH')) #%>% 
+  tibble() %>%
   filter(gene_id%in%bg)
 
 # GTEx:
@@ -39,9 +42,8 @@ colnames(ensmap)[1]='gene_id'
 dat3 = dat3 %>% right_join(ensmap)
 dat3backup = dat3
 
-dat3 = dat3 %>%
-  filter(ENS_mm%in%bg)
-
+# dat3 = dat3 %>%
+#   filter(ENS_mm%in%bg)
 
 ##########
 ########## Number of genes overlap:
@@ -50,7 +52,7 @@ dat3 = dat3 %>%
 ## our data and GTEx:
 ovrlp13 = dat1 %>% select(-pval, -BH, -period) %>%
   inner_join(rename(select(dat3, -pval, -BH, -gene_id ), 'gene_id'=ENS_mm), by='gene_id'  ) %>%
-  filter(gene_id%in%bg) %>%
+  #filter(gene_id%in%bg) %>%
   filter( CoV_change.x!=0 & CoV_change.y!=0 ) %>%
   summarise(tb = table(sign(CoV_change.x), sign(CoV_change.y)))
 ovrlp13
@@ -65,7 +67,7 @@ fisher.test(ovrlp13)
 ## our data and Jonker:
 ovrlp12 = dat1 %>% select(-pval, -BH, -period) %>%
   inner_join(select(dat2, -pval, -BH), by='gene_id'  ) %>%
-  filter(gene_id%in%bg) %>%
+  #filter(gene_id%in%bg) %>%
   filter( CoV_change.x!=0 & CoV_change.y!=0 ) %>%
   summarise(tb = table(sign(CoV_change.x), sign(CoV_change.y)))
 ovrlp12
@@ -74,13 +76,13 @@ ovrlp12
 # 1      2607   1856
 # 2      2042   1804
 fisher.test(ovrlp12)
-# OR = 1.230 
+# OR = 1.24 
 # p = 1.21e-6
 
 ## Jonker and GTEx:
 ovrlp23 = dat2 %>% select(-pval, -BH) %>%
   inner_join(rename(select(dat3, -pval, -BH, -gene_id), 'gene_id'=ENS_mm), by='gene_id'  ) %>%
-  filter(gene_id%in%bg) %>%
+  #filter(gene_id%in%bg) %>%
   filter( CoV_change.x!=0 & CoV_change.y!=0 ) %>%
   summarise(tb = table(sign(CoV_change.x), sign(CoV_change.y)))
 ovrlp23
@@ -198,6 +200,7 @@ dc_gse = gseGO(geneList = sort(divgenes, decreasing = T), OrgDb = org.Mm.eg.db, 
 dc_gse@result[1:5,1:10]
 sum(dc_gse@result$qvalues<0.1)
 saveRDS(dc_gse, file = './results/SI_figures/dataset_overlap/mm_co_gse.rds')
+dc_gsesig = dc_gse@result[dc_gse@result$qvalues<0.1,1:10]
 
 jonker_gse = readRDS('./data/other_datasets/jonker/dico_gse.rds')
 jonker_gse@result[1:5,1:10]
@@ -252,7 +255,29 @@ select(mm_gse@result[,1:10], ID, NES, Description) %>%
   geom_smooth(method = 'lm') + 
   stat_cor(method = 'spearman', cor.coef.name = 'rho', label.x.npc = 'middle')
 
+########
+########
+########
+########
 #### with our data analysed the same way as jonker and gtex:
+gseoverlap = dc_gsesig %>% select(ID, NES, Description) %>%
+  inner_join(select(jonkersig, ID, NES), by='ID') %>% 
+  set_names(c('ID','NES.Musm','Description','NES.Jonker'))
+# 79 categories common
+library(openxlsx)
+write.xlsx(gseoverlap, 'results/supplementary_files/Supplementary_File_6.xlsx')
+
+gseoverlap %>% 
+  filter(NES.Musm<0, NES.Jonker<0) %>% head
+## 66 are convergent in both datasets
+
+dc_gsesig %>% select(ID, NES) %>%
+  inner_join(select(jonkersig, ID, NES), by='ID') %>% # 79 categories common
+  summarise(rho = cor.test(NES.x, NES.y, m='s')$est,
+            p = cor.test(NES.x, NES.y, m='s')$p.val)
+# rho            p
+# 1 0.4213934 0.0001099736
+
 dplyr::select(dc_gse@result[,1:10], ID, NES, Description) %>%
   inner_join( dplyr::select(jonker_gse@result[,1:10], ID, NES), by='ID' ) %>%
   summarise(rho = cor.test(NES.x, NES.y, m='s')$est,
@@ -265,5 +290,5 @@ dplyr::select(dc_gse@result[,1:10], ID, NES, Description) %>%
             p = cor.test(NES.x, NES.y, m='s')$p.val)
 # rho = 0.088, = 6.7e-9
 
-save(list=ls(), file='./data/Co_overlap_among_datasets.rdata')
+save(list=ls(), file= './data/Co_overlap_among_datasets.rdata')
 

@@ -362,6 +362,12 @@ pairwiseplotdat = pairwisedat2 %>%
   unique() %>%
   full_join(select(meancordat, meancor, tis1, tis2))
 
+pairwisedat2 %>%
+  mutate(tis1= as.character(tis1),
+         tis2=as.character(tis2)) %>%
+  filter( !duplicated(paste0(pmax(tis1,tis2),pmin(tis1,tis2) ) ) ) %>%
+  pull(rho) %>% sign() %>% table()
+
 pairwiseplot = pairwisedat2 %>%
   unique() %>%
   full_join(select(meancordat, meancor, tis1, tis2)) %>%

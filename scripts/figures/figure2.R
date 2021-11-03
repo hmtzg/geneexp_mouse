@@ -169,6 +169,9 @@ cd_props = cov_ch %>%
          period = str_to_title(period),
          period = factor(period, levels=c("Development", "Ageing")))
 
+cd_props[2,3]/ (cd_props[1,3] + cd_props[2,3])
+cd_props[3,3]/ (cd_props[3,3] + cd_props[4,3])
+
 # panel d:
 panel_d = cd_props %>%
   ggplot(aes(x=change, y=n, fill=change)) +

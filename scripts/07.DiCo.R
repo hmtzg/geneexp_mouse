@@ -10,20 +10,6 @@ age = readRDS('./data/processed/raw/ages.rds')
 samp_tissue = readRDS('./data/processed/raw/tissue_ids.rds')
 colnames(expr) = ind_id
 
-############################## calculate cov without cortex (3 tissues):
-
-# exp2 = expr[, !samp_tissue == "Cortex"]
-# genecov2 = sapply(unique(colnames(exp2)), function(x){
-#   sapply(rownames(exp2),function(y){
-#     sd(exp2[y, colnames(exp2) == x]) / mean(exp2[y, colnames(exp2) == x])
-#   })
-# })
-# 
-# genecovtidy2 = reshape2::melt(genecov2) %>%
-#   set_names('gene_id','ind_id','CoV')
-# 
-# saveRDS(genecovtidy2, file="./data/processed/tidy/CoV_wo_cortex.rds")
-
 #################### remove one individual from other tissues that lacks expression in cortex
 
 expr = expr[, !colnames(expr) =='465']
@@ -31,26 +17,6 @@ names(age) = ind_id
 samp_tissue = samp_tissue[!names(age)=="465"]
 age = age[!names(age)=="465"]
 ageu = age[unique(names(age))]
-
-############################## calculate cov without each tissue (3 tissues, using 15 individuals):
-# ts = unique(samp_tissue)
-# cov3ts = lapply(ts, function(i){
-#   print(paste('Calculating CoV without:',i))
-#   cov3tsX = sapply(unique(colnames(expr)), function(x){
-#     expX = expr[, !samp_tissue%in%i]
-#     sapply(rownames(expX), function(y){
-#       sd(expX[y, colnames(expX)==x]) / mean( expX[y, colnames(expX) == x] )
-#     })
-#   })
-#   cov3tsX
-# })
-# names(cov3ts) = paste0('wo_', ts)
-# cov3tstidy  = reshape2::melt(cov3ts) %>% 
-#   set_names(c('gene_id', 'ind_id', 'CoV', 'Excluded')) %>%
-#   mutate(ind_id = as.character(ind_id)) %>%
-#   left_join(data.frame(age=ageu, ind_id=names(ageu))) %>%
-#   mutate(period = ifelse(age<90,'Development', 'Ageing') )
-# saveRDS(cov3tstidy, file='./data/processed/tidy/CoV_wo_eachtissue.rds')
 
 #################### calculate CoV among 4 tissues for each individual
 
@@ -89,27 +55,6 @@ covch = rbind(covch_dev, covch_aging)
 
 saveRDS(covch, './data/processed/tidy/CoV_change.rds')
 
-#################### CoV-age correlations for 3 tissues;
-# covch3ts = cov3tstidy %>%
-#   group_by(period, Excluded, gene_id) %>%
-#   summarise(rho  = cor.test(CoV, age, m='s')$est,
-#             pval = cor.test(CoV, age, m='s')$p.val)
-# covch3ts = covch3ts %>%
-#   group_by(period) %>%
-#   mutate(BH = p.adjust(pval, method = 'BH'))
-# saveRDS(covch3ts, './data/processed/tidy/CoV_change_wo_eachtissue.rds')
-# covch3ts %>%
-#   mutate(type = ifelse(rho>0,'di','co')) %>%
-#   group_by(Excluded, period, type) %>%
-#   summarise(count = length(gene_id)) %>%
-#   ggplot(aes(x=Excluded, y=count, fill=period)) +
-#   geom_bar(stat='identity', position = 'dodge')
-# covch3ts %>%
-#   mutate(type = ifelse(rho>0,'di','co')) %>%
-#   filter(BH<0.1) %>%
-#   group_by(Excluded, period, type) %>%
-#   summarise(count = length(gene_id))
-  
 #######################
 #######################
 ####################### test conv/div ratio with jacknife: (not dc but cd ratio is calculated)

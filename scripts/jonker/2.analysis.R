@@ -44,82 +44,82 @@ pcdat = pca_data %>%
   left_join(sample_info, by='sample_id')
 
 #####
-pc12 = pcdat %>%
-  ggplot(aes(x=PC1,y=PC2, size=Age, color=Tissue)) +
-  geom_point(alpha = 0.5) +
-  scale_color_manual(values = Tissuecol) +
-  scale_size_continuous(range = c(0.5,2), trans= 'log2') +
-  xlab(paste('PC1 (', round(varpc[1,2]*100),'%)',sep='')) +
-  ylab(paste('PC2 (', round(varpc[2,2]*100),'%)',sep='')) 
-
-pc34 = pcdat %>% 
-  ggplot(aes(x=PC3,y=PC4, size=Age, color=Tissue)) +
-  geom_point(alpha = 0.5) +
-  scale_color_manual(values = Tissuecol) +
-  scale_size_continuous(range = c(0.5,2), trans= 'log2') +
-  #coord_fixed(ratio = varpc[4,2]/varpc[3,2], clip = 'off') +
-  xlab(paste('PC3 (', round(varpc[3,2]*100),'%)',sep='')) +
-  ylab(paste('PC4 (', round(varpc[4,2]*100),'%)',sep='')) 
-
-pc1age = pcdat %>%
-  ggplot(aes(x = Age, y = PC1, color = Tissue)) +
-  geom_smooth(alpha = 0.1, se=F, show.legend = F, method='lm') +
-  geom_point(size = 0.5) +
-  facet_grid(Tissue~., scales='free_y') +
-  scale_color_manual(values = Tissuecol) +
-  guides(color = F) +
-  xlab('Age') +
-  ylab(NULL) +
-  stat_cor(method = 'spearman', cor.coef.name = 'rho', color = 'black', 
-           size = 6/pntnorm, show.legend = F) +
-  ggtitle('PC1') 
-
-pc2age = pcdat %>%
-  ggplot(aes(x = Age, y = PC2, color = Tissue)) +
-  geom_smooth(alpha = 0.1, se=F, show.legend = F, method='lm') +
-  geom_point(size = 0.5) +
-  facet_grid(Tissue~., scales='free_y') +
-  scale_color_manual(values = Tissuecol) +
-  guides(color = F) +
-  xlab('Age') +
-  ylab(NULL) +
-  stat_cor(method = 'spearman', cor.coef.name = 'rho', color = 'black', 
-           size = 6/pntnorm, show.legend = F) +
-  ggtitle('PC2') 
-
-pc3age = pcdat %>%
-  ggplot(aes(x = Age, y = PC3, color = Tissue)) +
-  geom_smooth(alpha = 0.1, se=F, show.legend = F, method='lm') +
-  geom_point(size = 0.5) +
-  facet_grid(Tissue~., scales='free_y') +
-  scale_color_manual(values = Tissuecol) +
-  guides(color = F) +
-  xlab('Age') +
-  ylab(NULL) +
-  stat_cor(method = 'spearman', cor.coef.name = 'rho', color = 'black', 
-           size = 6/pntnorm, show.legend = F) +
-  ggtitle('PC3') 
-
-pc4age = pcdat %>%
-  ggplot(aes(x = Age, y = PC4, color = Tissue)) +
-  geom_smooth(alpha = 0.1, se=F, show.legend = F, method='lm') +
-  geom_point(size = 0.5) +
-  facet_grid(Tissue~., scales='free_y') +
-  scale_color_manual(values = Tissuecol) +
-  guides(color = F) +
-  xlab('Age') +
-  ylab(NULL) +
-  stat_cor(method = 'spearman', cor.coef.name = 'rho', color = 'black', 
-           size = 6/pntnorm, show.legend = F) +
-  ggtitle('PC4') 
-
-pc1234 = ggarrange(pc12, pc34, common.legend = T, legend = 'right', labels=c('a.','b.'), 
-                   font.label = list(size=8), widths = c(1,1))
-
-pcages = ggarrange(pc1age,pc2age,pc3age,pc4age, nrow=1, ncol=4, labels=c('c.','d.','e.','f.'),
-                   font.label = list(size=8), legend='none')
-
-pcaplots = ggarrange(pc1234, pcages, ncol=1, nrow=2, heights = c(1,1))
+# pc12 = pcdat %>%
+#   ggplot(aes(x=PC1,y=PC2, size=Age, color=Tissue)) +
+#   geom_point(alpha = 0.5) +
+#   scale_color_manual(values = Tissuecol) +
+#   scale_size_continuous(range = c(0.5,2), trans= 'log2') +
+#   xlab(paste('PC1 (', round(varpc[1,2]*100),'%)',sep='')) +
+#   ylab(paste('PC2 (', round(varpc[2,2]*100),'%)',sep='')) 
+# 
+# pc34 = pcdat %>% 
+#   ggplot(aes(x=PC3,y=PC4, size=Age, color=Tissue)) +
+#   geom_point(alpha = 0.5) +
+#   scale_color_manual(values = Tissuecol) +
+#   scale_size_continuous(range = c(0.5,2), trans= 'log2') +
+#   #coord_fixed(ratio = varpc[4,2]/varpc[3,2], clip = 'off') +
+#   xlab(paste('PC3 (', round(varpc[3,2]*100),'%)',sep='')) +
+#   ylab(paste('PC4 (', round(varpc[4,2]*100),'%)',sep='')) 
+# 
+# pc1age = pcdat %>%
+#   ggplot(aes(x = Age, y = PC1, color = Tissue)) +
+#   geom_smooth(alpha = 0.1, se=F, show.legend = F, method='lm') +
+#   geom_point(size = 0.5) +
+#   facet_grid(Tissue~., scales='free_y') +
+#   scale_color_manual(values = Tissuecol) +
+#   guides(color = F) +
+#   xlab('Age') +
+#   ylab(NULL) +
+#   stat_cor(method = 'spearman', cor.coef.name = 'rho', color = 'black', 
+#            size = 6/pntnorm, show.legend = F) +
+#   ggtitle('PC1') 
+# 
+# pc2age = pcdat %>%
+#   ggplot(aes(x = Age, y = PC2, color = Tissue)) +
+#   geom_smooth(alpha = 0.1, se=F, show.legend = F, method='lm') +
+#   geom_point(size = 0.5) +
+#   facet_grid(Tissue~., scales='free_y') +
+#   scale_color_manual(values = Tissuecol) +
+#   guides(color = F) +
+#   xlab('Age') +
+#   ylab(NULL) +
+#   stat_cor(method = 'spearman', cor.coef.name = 'rho', color = 'black', 
+#            size = 6/pntnorm, show.legend = F) +
+#   ggtitle('PC2') 
+# 
+# pc3age = pcdat %>%
+#   ggplot(aes(x = Age, y = PC3, color = Tissue)) +
+#   geom_smooth(alpha = 0.1, se=F, show.legend = F, method='lm') +
+#   geom_point(size = 0.5) +
+#   facet_grid(Tissue~., scales='free_y') +
+#   scale_color_manual(values = Tissuecol) +
+#   guides(color = F) +
+#   xlab('Age') +
+#   ylab(NULL) +
+#   stat_cor(method = 'spearman', cor.coef.name = 'rho', color = 'black', 
+#            size = 6/pntnorm, show.legend = F) +
+#   ggtitle('PC3') 
+# 
+# pc4age = pcdat %>%
+#   ggplot(aes(x = Age, y = PC4, color = Tissue)) +
+#   geom_smooth(alpha = 0.1, se=F, show.legend = F, method='lm') +
+#   geom_point(size = 0.5) +
+#   facet_grid(Tissue~., scales='free_y') +
+#   scale_color_manual(values = Tissuecol) +
+#   guides(color = F) +
+#   xlab('Age') +
+#   ylab(NULL) +
+#   stat_cor(method = 'spearman', cor.coef.name = 'rho', color = 'black', 
+#            size = 6/pntnorm, show.legend = F) +
+#   ggtitle('PC4') 
+# 
+# pc1234 = ggarrange(pc12, pc34, common.legend = T, legend = 'right', labels=c('a.','b.'), 
+#                    font.label = list(size=8), widths = c(1,1))
+# 
+# pcages = ggarrange(pc1age,pc2age,pc3age,pc4age, nrow=1, ncol=4, labels=c('c.','d.','e.','f.'),
+#                    font.label = list(size=8), legend='none')
+# 
+# pcaplots = ggarrange(pc1234, pcages, ncol=1, nrow=2, heights = c(1,1))
 
 #ggsave('./results/other_datasets/jonker/pca.pdf', pcaplots, units='cm', width = 16, height = 12, useDingbats=F)
 #ggsave('./results/other_datasets/jonker/pca.png', pcaplots, units='cm', width = 16, height = 12)
@@ -252,6 +252,10 @@ pexpcors = reshape2::melt(pcors) %>%
 
 saveRDS(pexpcors, './data/other_datasets/jonker/processed/pwise_exp_cors.rds')
 
+pexpcors %>% 
+  group_by(pair) %>%
+  summarise(corrho = cor.test(rho,Age, m='s')$est,
+            corp = cor.test(rho,Age, m='s')$p)
 #####
 p2 = ggplot(pexpcors) +
   aes(x = Age, y = rho) +

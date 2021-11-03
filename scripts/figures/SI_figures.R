@@ -384,6 +384,8 @@ obs_overlap = expr_ch %>%
   slice(-c(1:4)) %>%
   mutate(`N Tissue` = paste(`N Tissue`, c('Tissues')) )
 
+overlap_test = readRDS('./data/processed/raw/tissue_allgene_overlaps_perm_testresult.rds')
+
 overlap_test = perm_overlaps %>%
   left_join(obs_overlap) %>%
   group_by(direction, period, `N Tissue`) %>%
@@ -421,6 +423,8 @@ saveRDS(perm_overlaps %>% left_join(obs_overlap),
 ############
 
 # significant ones:
+perm_overlaps_fdr = readRDS('./data/processed/raw/tissue_siggene_fdr01_overlaps_perm_testresult.rds')
+
 star = data.frame(direction = rep(c('down','up'),3),
                   y_pos = c(461, 285, 139, 46, 34, 24),
                   period= factor(rep(c('Development','Ageing'),c(4,2)),
@@ -763,6 +767,13 @@ saveRDS(cd_count,'results/source_data/f2/fs4.rds')
 ############
 ############ Figure S5, Pairwise tissue expression correlations: ----------
 ############ 
+
+pexpcors %>%
+  mutate(period = ifelse(uage<90,'dev','aging') )  %>%
+  group_by(period, pair) %>%
+  summarise(corrho = cor.test(uage, rho, m='s')$est,
+            corp = cor.test(uage, rho, m='s')$p.val)
+  
 
 annottext = pexpcors %>%
   mutate(period = ifelse(uage < 90,'development','aging')) %>%

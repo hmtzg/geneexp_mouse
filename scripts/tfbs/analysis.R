@@ -143,6 +143,7 @@ tfMm2 = as.data.frame(tfMm2)
 tfMm2 %>% arrange(OR)
 tfMm2 %>% filter(BH < 0.1)  # non significant
 
+saveRDS(tfMm2,'./results/source_data/f4/tf.rds')
 #####################
 #####################
 gtexcov = readRDS('./results/GTEx/covcor.rds') %>%
@@ -248,28 +249,28 @@ ggsave('./results/tfbs/tf_N.png', tfplot, units='cm', height = 10, width = 8)
 # ggsave('./results/tfbs/tf_corplot.pdf',tfcorplot, units='cm', height = 10, width = 10, useDingbats=F)
 # ggsave('./results/tfbs/tf_corplot.png',tfcorplot, units='cm', height = 10, width = 10)
 
-# permutation test:
-xDiCo = bgsum$n[bgsum$pattern=='DiCo']
-nDiCo = length(xDiCo)
-xDiDi = bgsum$n[bgsum$pattern=='DiDi']
-nDiDi = length(xDiDi)
-pop = c(xDiCo, xDiDi)
-obs = c('xDiCo' = mean(xDiCo), 'xDiDi' = mean(xDiDi) )
-obstat = cohens_d(xDiCo, xDiDi)
-#obstat = mean(xDiCo)-mean(xDiDi)
-perms = sapply(1:1000, function(x){
-  px = sample(pop)
-  pDiCo = px[1:nDiCo]
-  pDiDi = px[(nDiCo+1): length(pop)]
-  pstat = cohens_d(pDiCo, pDiDi)
-  #pstat = mean(pDiCo) - mean(pDiDi)
-  return(pstat)
-})
-hist(perms)
-mean(perms >= obstat)
-# p = 0.426
-mean(perms) / obstat
-# fpr= -0.021
+# # permutation test:
+# xDiCo = bgsum$n[bgsum$pattern=='DiCo']
+# nDiCo = length(xDiCo)
+# xDiDi = bgsum$n[bgsum$pattern=='DiDi']
+# nDiDi = length(xDiDi)
+# pop = c(xDiCo, xDiDi)
+# obs = c('xDiCo' = mean(xDiCo), 'xDiDi' = mean(xDiDi) )
+# obstat = cohens_d(xDiCo, xDiDi)
+# #obstat = mean(xDiCo)-mean(xDiDi)
+# perms = sapply(1:1000, function(x){
+#   px = sample(pop)
+#   pDiCo = px[1:nDiCo]
+#   pDiDi = px[(nDiCo+1): length(pop)]
+#   pstat = cohens_d(pDiCo, pDiDi)
+#   #pstat = mean(pDiCo) - mean(pDiDi)
+#   return(pstat)
+# })
+# hist(perms)
+# mean(perms >= obstat)
+# # p = 0.426
+# mean(perms) / obstat
+# # fpr= -0.021
 
 save(list=ls(),
      file='./results/tfbs/analysis.rdata')

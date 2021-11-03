@@ -89,6 +89,7 @@ miRtestMmresult = as.data.frame(miRtestMmresult)
 miRtestMmresult %>% arrange(OR)
 miRtestMmresult %>% filter(BH < 0.1)  # non significant
 
+saveRDS(miRtestMmresult,'results/source_data/f4/mirna.rds')
 ##################### 
 ##################### GTEX 
 ##################### 
@@ -202,31 +203,31 @@ bgsum = bgN %>%
 
 tapply(bgsum$n,bgsum$pattern, mean)
 
-mirNplot = bgsum %>%
-  mutate(n=n+1) %>%
-  ggplot(aes(x=pattern, y=n)) +
-  #geom_boxplot(outlier.color = 'gray30',outlier.size = 0.4) +
-  geom_violin(draw_quantiles = c(0.25, 0.5, 0.75)) +
-  scale_y_continuous(trans='log2') +
-  xlab('') +
-  ylab('Number of miRNAs (log2 scale)')
-mirNplot
-
-ggsave('./results/mirna/miRNA_N.pdf',mirNplot, units='cm', height = 10, width = 8, useDingbats=F)
-ggsave('./results/mirna/miRNA_N.png',mirNplot, units='cm', height = 10, width = 8)
-
-mircorplot = bgsum %>%
-  left_join(ddgenes) %>%
-  ggplot(aes(y=DiCoRank, x=n, color=pattern)) +
-  geom_point(size=0.6, alpha=0.4, show.legend = T) +
-  geom_smooth(method='lm') +
-  scale_x_continuous(trans='log2') +
-  geom_hline(yintercept=0, linetype=2, col='gray40') +
-  xlab('Number of miRNA targets (log2 scale)') +
-  stat_cor(method='spearman', cor.coef.name = 'rho', show.legend = F)
-mircorplot
-ggsave('./results/mirna/miRNA_corplot.pdf', mircorplot, units='cm', height = 10, width = 10, useDingbats=F)
-ggsave('./results/mirna/miRNA_corplot.png', mircorplot, units='cm', height = 10, width = 10)
+# mirNplot = bgsum %>%
+#   mutate(n=n+1) %>%
+#   ggplot(aes(x=pattern, y=n)) +
+#   #geom_boxplot(outlier.color = 'gray30',outlier.size = 0.4) +
+#   geom_violin(draw_quantiles = c(0.25, 0.5, 0.75)) +
+#   scale_y_continuous(trans='log2') +
+#   xlab('') +
+#   ylab('Number of miRNAs (log2 scale)')
+# mirNplot
+# 
+# ggsave('./results/mirna/miRNA_N.pdf',mirNplot, units='cm', height = 10, width = 8, useDingbats=F)
+# ggsave('./results/mirna/miRNA_N.png',mirNplot, units='cm', height = 10, width = 8)
+# 
+# mircorplot = bgsum %>%
+#   left_join(ddgenes) %>%
+#   ggplot(aes(y=DiCoRank, x=n, color=pattern)) +
+#   geom_point(size=0.6, alpha=0.4, show.legend = T) +
+#   geom_smooth(method='lm') +
+#   scale_x_continuous(trans='log2') +
+#   geom_hline(yintercept=0, linetype=2, col='gray40') +
+#   xlab('Number of miRNA targets (log2 scale)') +
+#   stat_cor(method='spearman', cor.coef.name = 'rho', show.legend = F)
+# mircorplot
+# ggsave('./results/mirna/miRNA_corplot.pdf', mircorplot, units='cm', height = 10, width = 10, useDingbats=F)
+# ggsave('./results/mirna/miRNA_corplot.png', mircorplot, units='cm', height = 10, width = 10)
 
 # permutation test:
 bgN %>%

@@ -85,6 +85,9 @@ pc_age_cors  = pca_data %>%
   summarise(rho = cor.test(age,value,m='s')$est,
             p = cor.test(age,value,m='s')$p.val)
 
+saveRDS(pc_age_cors, file='./results/source_data/f1/fs10_pc_age_cors.rds')
+
+## PC4 - age cors: (fig 1-fs10)
 pc_age_cors %>%
   filter(PC=='PC4' & `Scale period` == 'all' & type =='raw') %>%
   group_by(`age period`) %>%

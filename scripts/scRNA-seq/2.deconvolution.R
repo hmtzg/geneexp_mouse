@@ -51,6 +51,7 @@ for(i in 1:4){
 #################### deconvolution with all genes ####################
 ####################
 #################### range = [12492, 12849]
+range(sapply(bulk_expr,nrow))
 
 coeffs = sapply(names(bulk_expr), function(a){
   coeffs.tsX = sapply(colnames(bulk_expr[[a]]), function(x){
@@ -100,6 +101,8 @@ coeffs_dc = sapply(names(bulk_expr_dc), function(a){
   rownames(coeffs.tsX) = colnames(sc_expr_dc[[a]])
   return(coeffs.tsX)
 })
+
+range(sapply(bulk_expr_dc, nrow))
 # reorder rows by the cell type proportions:
 coeffs_dc = lapply(coeffs_dc, function(x) x[order(rowMeans(x),decreasing = T),] )
 saveRDS(coeffs_dc, './data/other_datasets/scRNA-seq/processed/deconvolution_dc_genes.rds')
@@ -141,6 +144,8 @@ coeffs_nondc = sapply(names(bulk_expr_nondc), function(a){
   rownames(coeffs.tsX) = colnames(sc_expr_nondc[[a]])
   return(coeffs.tsX)
 })
+
+range(sapply(bulk_expr_nondc, nrow))
 # reorder rows by the cell type proportions:
 coeffs_nondc = lapply(coeffs_nondc, function(x) x[order(rowMeans(x),decreasing = T),] )
 saveRDS(coeffs_nondc, './data/other_datasets/scRNA-seq/processed/deconvolution_nondc_genes.rds')

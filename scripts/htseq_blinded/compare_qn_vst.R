@@ -32,7 +32,7 @@ expch %>%
 select(-p, -FDR) %>% 
   inner_join(select(expch_qn, -p, -FDR) ) %>%
   group_by(period, tissue) %>%
-  summarise(n = length(gene_id))
+  summarise(n = length(gene_id)) 
 # period      tissue     n
 # <chr>       <chr>  <int>
 # 1 Ageing      Cortex 14705
@@ -43,6 +43,14 @@ select(-p, -FDR) %>%
 # 6 Development Liver  14705
 # 7 Development Lung   14710
 # 8 Development Muscle 14710
+
+# same but give range:
+expch %>%
+  select(-p, -FDR) %>% 
+  inner_join(select(expch_qn, -p, -FDR) ) %>%
+  group_by(period, tissue) %>%
+  summarise(n = length(gene_id)) %>%
+  summarise(range = range(n))
 
 # expch_cors = expch_cor %>% 
 #   mutate(period=factor(period, levels = c('Development', 'Ageing') )) %>%

@@ -88,6 +88,7 @@ pb2 = pca_dat %>%
   guides(color = F) +
   xlab('Age in days (in log2 scale)') + theme_bw(base_size = 6)
 
+# PC - age cors:
 pca_dat %>%
   select(-varExp) %>%
   filter(period == 'all', type == 'raw') %>%
@@ -107,7 +108,7 @@ pca_dat %>%
 # 6 Liver  dev    -0.991  0.0000146
 # 7 Lung   dev    -0.847  0.0162   
 # 8 Muscle dev    -0.577  0.175  
-  
+
 ## to get legend only:
 pb3 = pca_dat %>%
   select(-varExp) %>%

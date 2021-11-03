@@ -160,6 +160,7 @@ maxcorchange_dc = allmaxcors_dc %>%
   ungroup() %>%
   arrange(-`rho ch`)
 
+table(sign(maxcorchange_dc$`rho ch`))
 #####
 maxcors_table_sx_dc = maxcors_3m_dc %>% 
   left_join(maxcorchange_dc) %>%
@@ -192,6 +193,7 @@ mincorchange_dc = allmincors_dc %>%
   ungroup() %>%
   arrange(-`rho ch`)
 
+table(sign(mincorchange_dc$`rho ch`))
 #####
 mincors_table_sx_dc = mincors_3m_dc %>% 
   left_join(mincorchange_dc) %>%

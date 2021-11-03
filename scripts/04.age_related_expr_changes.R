@@ -54,6 +54,8 @@ age_related_genes = expch %>%
   filter( FDR < 0.1) %>%
   arrange(tissue, group_by=period)
 
+
+## number of sig genes in each tissue and period:
 age_related_genes %>%
   group_by(period, tissue) %>%
   summarise(n = n(), npercent = n()/ 15063 * 100)

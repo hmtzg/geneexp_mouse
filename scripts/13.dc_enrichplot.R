@@ -173,6 +173,10 @@ reprg2
 
 saveRDS(reprg2, file='./results/figure4/gorepresentatives2.rds')
 
+sort(sapply(names(repclus2), function(i){ median(jaccardsim[repclus2[[i]], i]) }))
+# out-group: 'GO:0072577'
+outg = repclus2[['GO:0072577']]
+
 ################
 ################
 ################
@@ -187,6 +191,14 @@ expch = readRDS('./data/processed/tidy/expression_change.rds') %>%
 expch %>%
   inner_join(reprg) %>% head
 
+
+enricplot_dat = expch %>%
+  inner_join(reprg) %>%
+  group_by(Period, ID, tissue, Description, repNames, n) %>%
+  summarise(mrho = mean(`Expression Change`),
+            medrho = median(`Expression Change`))
+
+range(enricplot_dat$n)
 #GO:0009611 : repsonse to wounding
 # gx = reprg %>% filter(ID%in%'GO:0009611') %>% pull(gene_id)
 # 
@@ -203,6 +215,9 @@ enricplot_ogr_dat = expch %>%
   group_by(Period, ID, tissue, Description, repNames, n) %>%
   summarise(mrho = mean(`Expression Change`),
             medrho = median(`Expression Change`))
+
+range(unique(enricplot_ogr_dat$n))
+
 enricplot_ogr = expch %>%
   inner_join(reprg2) %>%
   group_by(Period, ID, tissue, Description, repNames, n) %>%

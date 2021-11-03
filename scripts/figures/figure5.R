@@ -108,6 +108,10 @@ maxminch = maxcors %>% left_join(mincors, by = c('1st tissue','1st cell type')) 
   set_names(c('1st tissue','1st cell type', 'minx','Correlation') ) %>%
   mutate(minx = factor(ifelse(minx=='rho ch.x','Maximum','Minimum'), levels = c('Minimum','Maximum'))) %>%
   mutate(var = 'Tissue Similarity Change')
+
+maxminch %>% filter(minx=='Maximum') %>% pull(Correlation) %>% sign() %>% table()
+maxminch %>% filter(minx=='Minimum') %>% pull(Correlation) %>% sign() %>% table()
+
 saveRDS(maxminch, './data/other_datasets/scRNA-seq/processed/max_min_cors_ch.rds')
 
 panel_b2 = maxminch %>%

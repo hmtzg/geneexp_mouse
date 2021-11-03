@@ -63,12 +63,16 @@ pca_data = sapply(pca_data_all, function(x) summary(x)$imp[2,1:4]) %>%
 
 saveRDS(pca_data,'./data/processed/tidy/pca_data.rds')
 
-# pc_age_cors = pca_data %>% 
-#   left_join(select(sample_info,-ind_id,-log2age)) %>%
-#   group_by(period,type,PC, tissue) %>%
-#   summarise(rho = cor.test(age,value,m='s')$est,
-#             p = cor.test(age,value,m='s')$p.val)
-# write.xlsx(pc_age_cors, './data/Table_S0.xlsx')
+pca_data %>%
+  filter(period=='all', type=='raw') %>%
+  group_by(PC) %>%
+  summarise(varExp) %>% unique()
+# PC    varExp
+# <fct>  <dbl>
+# 1 PC1   0.310 
+# 2 PC2   0.201 
+# 3 PC3   0.166 
+# 4 PC4   0.0794
 
 pc_age_cors = pca_data %>%
   rename(`PCA period` = period) %>%
@@ -79,7 +83,6 @@ pc_age_cors = pca_data %>%
             p = cor.test(age,value,m='s')$p.val)
 
 saveRDS(pc_age_cors, file='./results/source_data/f1/pc_age_cors.rds')
-write.xlsx(pc_age_cors, './results/SI_tables/TableS1.xlsx')
 
 ## PC4 - age cors (alldata - raw - dev): (fig 1b)
 pc_age_cors %>%
@@ -92,7 +95,12 @@ pc_age_cors %>%
 # 3 all          raw   PC4   Lung   Dev          -0.883 0.00845  
 # 4 all          raw   PC4   Muscle Dev          -0.955 0.000806 
 
-## PC1 - age cors (alldata - scaled - dev): (fig 1 - fs2)
+## PC1 and PC2 - age cors (alldata - scaled - dev): (fig 1-fs2)
+pca_data %>%
+  filter(period=='all', type=='notissue') %>%
+  group_by(PC) %>%
+  summarise(varExp) %>% unique()
+
 pc_age_cors %>%
   filter(type=='notissue' & `PCA period` == 'all' & `age period` == 'Dev') %>%
   filter(PC=='PC1')
@@ -103,7 +111,6 @@ pc_age_cors %>%
 # 3 all          notissue PC1   Lung   Dev          0.883 0.00845  
 # 4 all          notissue PC1   Muscle Dev          0.955 0.000806 
 
-## PC2 - age cors (alldata - scaled - dev): (fig 1 - fs2)
 pc_age_cors %>%
   filter(type=='notissue' & `PCA period` == 'all' & `age period` == 'Dev') %>%
   filter(PC=='PC2')
@@ -114,7 +121,7 @@ pc_age_cors %>%
 # 3 all          notissue PC2   Lung   Dev          -0.901 0.00562  
 # 4 all          notissue PC2   Muscle Dev           0.306 0.504   
 
-## PC2 - age cors (devdata - raw): (fig 1 - fs3ab)
+## PC2 - age cors (devdata - raw): (fig 1 - fs3ac)
 pc_age_cors %>%
   filter(type=='raw' & `PCA period` == 'development') %>%
   filter(PC=='PC2')
@@ -125,7 +132,7 @@ pc_age_cors %>%
 # 3 development  raw   PC2   Lung   Dev          0.721 0.0676 
 # 4 development  raw   PC2   Muscle Dev          0.775 0.0408 
 
-## PC4 - age cors (devdata - raw): (fig 1 - fs3ab)
+## PC4 - age cors (devdata - raw): (fig 1 - fs3bc)
 pc_age_cors %>%
   filter(type=='raw' & `PCA period` == 'development') %>%
   filter(PC=='PC4')
@@ -136,7 +143,7 @@ pc_age_cors %>%
 # 3 development  raw   PC4   Lung   Dev          -0.883 0.00845  
 # 4 development  raw   PC4   Muscle Dev          -0.955 0.000806 
 
-## PC4 - age cors (agdata - raw): (fig 1 - fs3e)
+## PC4 - age cors (agdata - raw): (fig 1 - fs3ef)
 pc_age_cors %>%
   filter(type=='raw' & `PCA period` == 'aging') %>%
   filter(PC=='PC4')
@@ -173,6 +180,22 @@ for(i in unique(aov_dat$PC)){
           TukeyHSD(aov(value~tissue, data = aov_dat[aov_dat$PC==i,]))))
 }
 
+anovatest = aov_dat %>%
+  group_by(PC) %>%
+  summarise(anova = list(anova(aov(value~tissue)))) 
+
+anovatest = rbind(PC1 = rep(NA,4),
+      as.data.frame(anovatest$anova[[1]]),
+      PC2 = rep(NA,4),
+      as.data.frame(anovatest$anova[[2]]),
+      PC3 = rep(NA,4),
+      as.data.frame(anovatest$anova[[3]]),
+      PC4 = rep(NA,4),
+      as.data.frame(anovatest$anova[[4]]))
+anovatest = rownames_to_column(anovatest,var = '.')
+
+saveRDS(anovatest,'results/source_data/f1/pc14_anova.rds')
+
 ###### function to calculate mean pairwise distance among rows:
 pwise_distMean = function(mat, id_col=1){
   # mat: matrix or data frame with columns as coordinates to calculate distance, and one id column
@@ -201,7 +224,7 @@ mdist = data.frame(ind_id= names(mdist), mdist = mdist, row.names = NULL) %>%
 saveRDS(mdist, './data/processed/tidy/mean_euclidean_dist.rds')
 saveRDS(mdist, './results/source_data/f1/mdist.rds')
 
-# spearman test between age and mean pairwise distance in dev. and ageing:
+## Spearman test between age and mean pairwise distance in dev. and ageing: (fig 1-ab, no plot)
 mdist %>%
   mutate(period = ifelse(age <90, 'dev','ageing')) %>%
   group_by(period) %>%
@@ -212,24 +235,6 @@ mdist %>%
 # 1 ageing -0.866 0.00256  
 # 2 dev     0.991 0.0000146
 
-# mdistplot = mdist %>%
-#   mutate(period=ifelse(age<90,'development', 'aging')) %>%
-#   mutate(period = factor(period, levels=c('development', 'aging'))) %>%
-#   ggplot(aes(x=age, y=mdist)) +
-#   geom_point() +
-#   scale_x_continuous(trans='log2') +
-#   geom_smooth(method = 'loess', se=F, color='midnightblue') +
-#   geom_vline(xintercept = 90, linetype='dashed', color='gray20') +
-#   ggpubr::stat_cor(aes(group=period),method='spearman', cor.coef.name = 'rho',
-#                    label.x.npc = c(0.1, 0.65), label.y.npc = c(0.9, 0.4), size=3) +
-#   ylab('Mean Euclidean Distance') +
-#   xlab('Age in days (in log2 scale)') + theme_bw()
-# 
-# ggsave('./results/figure1/mdis.pdf', mdistplot, units = 'cm', width = 12, height = 8,
-#        useDingbats = F)
-# ggsave('./results/figure1/mdist.png', mdistplot, units = 'cm', width = 12, height = 8)
-
-######
 #### dev only pairwise dist:
 dist_dat_dev = pca_data %>%
   filter(PC %in% c('PC1','PC2','PC3', 'PC4'), period == 'development', type =='raw') %>%
@@ -247,6 +252,8 @@ mdist_dev = data.frame(ind_id= names(mdist_dev), mdist = mdist_dev, row.names = 
 saveRDS(mdist_dev, './data/processed/tidy/mean_euclidean_dist_dev.rds')
 saveRDS(mdist_dev, './results/source_data/f1/mdist_dev.rds')
 
+
+## Spearman test between age and mean pairwise distance in dev. and ageing: (fig 1-ab, no plot)
 mdist_dev %>%
   summarise(rho = cor(mdist,age, m='s'),
             p = cor.test(mdist,age, m='s')$p.val)

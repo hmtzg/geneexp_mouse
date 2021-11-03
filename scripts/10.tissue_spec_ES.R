@@ -99,7 +99,11 @@ table(mat) # FALSE: highest expression change occur in not specific tissue
 fisher.test(table(mat)[,c(2,1)])
 # OR: 2.564, pval < 1e10-16
 
+
+########
+########
 ######## actual result:
+########
 # for tissue-specific genes (>Q3) :
 ts.specQ3.genes = unlist(ts.specQ3)
 names(ts.specQ3.genes) = gsub('[0-9]','', names(ts.specQ3.genes))
@@ -110,18 +114,17 @@ table(mat)[,c(2,1)]
 fisher.test(table(mat)[,c(2,1)])
 # OR: 4.298, pval < 1e10-16
 
-exprch_tisspec = table(mat)[c(2,1),c(2,1)]
-colnames(exprch_tisspec) = c('Increase w/ age (+)', 'Decrease w/ age (-)' )
-rownames(exprch_tisspec) = c('Same tissue', 'Other tissue')
-exprch_tisspec
-fisher.test(exprch_tisspec[,c(2,1)])
-
+# exprch_tisspec = table(mat)[c(2,1),c(2,1)]
+# colnames(exprch_tisspec) = c('Increase w/ age (+)', 'Decrease w/ age (-)' )
+# rownames(exprch_tisspec) = c('Same tissue', 'Other tissue')
+# exprch_tisspec
+# fisher.test(exprch_tisspec[,c(2,1)])
 
 #### among div-conv genes:
 # mat.dc = mat[rownames(mat)%in%dcgenes,] # 1287 genes in total
 # table(mat.dc)[,c(2,1)]
 # fisher.test(table(mat.dc)[,c(2,1)])
-# # OR: 38.52, pval < 1e10-16
+# OR: 38.52, pval < 1e10-16
 
 
 ########
@@ -134,12 +137,16 @@ spec.dc.mat = data.frame(spec = rownames(exp)%in%ts.specQ3.genes ,
 fisher.test(table(spec.dc.mat)) # 
 # OR: 1.149, pval = 0.00051
 saveRDS(spec.dc.mat, file='./data/processed/raw/ts_spec_dc_enrichment.rds')
+spec.dc.mat.table = table(spec.dc.mat)
+spec.dc.mat.fisher = fisher.test(table(spec.dc.mat))
+saveRDS(list(table = spec.dc.mat, test=spec.dc.mat.table),
+        file='./results/source_data/f3/tsspec_dc_enrichment.rds')
 
 dc_vs_tisspec = table(spec.dc.mat)[c(2,1),c(2,1)]
 colnames(dc_vs_tisspec) = c('DC', ' Non-DC')
 rownames(dc_vs_tisspec) = c('Specific to a tissue', 'Not tissue-specific')
 dc_vs_tisspec
-write.xlsx(dc_vs_tisspec, file='results/SI_tables/TableS10.xlsx')
+#write.xlsx(dc_vs_tisspec, file='results/SI_tables/TableS10.xlsx')
 
 ##################
 ##################
@@ -246,8 +253,11 @@ eachtissue_OR
 eacttissue_table
 saveRDS(list(OR= eachtissue_OR, table= eacttissue_table),
         file='./data/processed/raw/tis_spec_rev_enrichment.rds')
+saveRDS(list(OR= eachtissue_OR, table= eacttissue_table),
+        file='./results/source_data/f3/tsspec_UD_enrichment.rds')
 #table_s9 = lapply(eacttissue_table, function(x) data.frame(rbind(x)))
-write.xlsx(eacttissue_table, 'results/SI_tables/TableS9.xlsx')
+#write.xlsx(eacttissue_table, 'results/SI_tables/TableS9.xlsx')
+
 
 ORs = sapply(eachtissue_OR,function(x) x) %>% reshape2::melt() %>%
   set_names(c('stat', 'tissue', 'value')) %>%
@@ -265,15 +275,9 @@ ggsave('./results/figure3/OR_tsspec_rev.pdf', units='cm', height = 10, width = 8
 ggsave('./results/figure3/OR_tsspec_rev.png', units='cm', height = 10, width = 8)
 #####   
 
-bg = ts.specQ3.genes
-cort_tst = data.frame(cort_sp = bg%in%ts.specQ3$Cortex,
-           cort_rev = bg%in%c(revg$Cortex$UpDown))
-table(cort_tst)
-fisher.test(table(cort_tst))
-
-
-
-
-
-
+# bg = ts.specQ3.genes
+# cort_tst = data.frame(cort_sp = bg%in%ts.specQ3$Cortex,
+#            cort_rev = bg%in%c(revg$Cortex$UpDown))
+# table(cort_tst)
+# fisher.test(table(cort_tst))
 

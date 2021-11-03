@@ -100,14 +100,15 @@ bg  = setNames(rep(0,length(kmX$cluster)), nm = names(kmX$cluster))
 dc_clusterX_gora = lapply(as.numeric(names(table(kmX$cluster))), function(i){
   geneset = bg
   geneset[kmX$cluster==i] = 1
-  gora = go_bp_enrich.test.Mm(genelist = geneset, selection = 1)
+  gora = go_bp_enrich.test.Mm(genelist = geneset, selection = 1, padj = 'BH')
   return(gora)
 })
 names(dc_clusterX_gora) = paste0('cl', names(clX))
 
 saveRDS(dc_clusterX_gora, './data/processed/raw/dc_km_clusters_gora.rds')
 
-write.xlsx(dc_clusterX_gora, './results/SI_tables/TableS7.xlsx')
+#write.xlsx(dc_clusterX_gora, './results/SI_tables/TableS7.xlsx')
+write.xlsx(dc_clusterX_gora, './results/supplementary_files/DiCo_cov_clusters_GORA.xlsx')
 
 ################
 ################  
@@ -175,27 +176,20 @@ saveRDS(expcl,'results/source_data/f2/fs3.rds')
 
 ##### save expression clusters of dc genes:
 
-# dcexpcl_genes  = reshape2::melt(kmexp$cluster) %>% 
-#   rownames_to_column(var = 'gene_id') %>%
-#   set_names(c('gene_id','exp_Cl')) %>% 
-#   left_join(data.frame(gene_id = names(kmX$cluster), DC_Cl = kmX$cluster, row.names=NULL ) ) %>% 
-#   left_join(covch)
-# 
-# write.xlsx(dcexpcl_genes, './data/Table_S11.xlsx')
-
 ########### gora of expression clusters :
 bg  = setNames(rep(0,length(kmexp$cluster)), nm = names(kmexp$cluster))
 dc_exp_clX_gora = lapply(as.numeric(names(table(kmexp$cluster))), function(i){
   geneset = bg
   geneset[kmexp$cluster==i] = 1
-  gora = go_bp_enrich.test.Mm(genelist = geneset, selection = 1)
+  gora = go_bp_enrich.test.Mm(genelist = geneset, selection = 1, padj = 'BH')
   return(gora)
 })
 names(dc_exp_clX_gora) = paste0('cl', names(cle))
 
 saveRDS(dc_exp_clX_gora, './data/processed/raw/dc_exp_km_clusters_gora.rds')
 
-write.xlsx(dc_exp_clX_gora, './results/SI_tables/TableS8.xlsx')
+#write.xlsx(dc_exp_clX_gora, './results/SI_tables/TableS8.xlsx')
+write.xlsx(dc_exp_clX_gora, './results/supplementary_files/DiCo_exp_clusters_GORA.xlsx')
 
 ######### save DC and exp cluster numbers of DC genes
 # kmX_dat = reshape2::melt(kmX$cluster) %>% 
@@ -221,7 +215,9 @@ DiCo_cl_genes = covch %>%
   relocate(gene_id, period, CoV_change, pval, FDR, CoV_Cl, Exp_Cl)
 
 saveRDS(DiCo_cl_genes, './data/processed/tidy/DiCo_cl_genes.rds')
-write.xlsx(DiCo_cl_genes, './results/SI_tables/TableS6.xlsx')
+
+#write.xlsx(DiCo_cl_genes, './results/SI_tables/TableS6.xlsx')
+write.xlsx(DiCo_cl_genes, './results/supplementary_files/DiCo_covch_CovExpClu.xlsx')
 
 ##############################
 

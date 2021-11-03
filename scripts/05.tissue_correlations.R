@@ -14,11 +14,15 @@ source('./scripts/functions.R')
 ########################################
 
 expr = readRDS('./data/processed/raw/expression.rds')
+expr_ch = readRDS('./data/processed/tidy/expression_change.rds')
 ind_id = readRDS('./data/processed/raw/individual_ids.rds')
 age = readRDS('./data/processed/raw/ages.rds')
 samp_tissue = readRDS('./data/processed/raw/tissue_ids.rds')
 colnames(expr) = ind_id
 names(age) = ind_id
+
+aging.perm = readRDS('./data/processed/raw/permutations_ageing.rds')
+dev.perm = readRDS('./data/processed/raw/permutations_dev.rds')
 ########################
 uage = age[16:31]
 dage = uage[uage<90]
@@ -62,9 +66,6 @@ saveRDS(pexpcors, './data/processed/tidy/pairwise_tissue_expression_cors.rds')
 ######################################## no sig. cutoff (test significance of fig 1c. for each pair)
 ########################################
 
-expr_ch = readRDS('./data/processed/tidy/expression_change.rds')
-aging.perm = readRDS('./data/processed/raw/permutations_ageing.rds')
-dev.perm = readRDS('./data/processed/raw/permutations_dev.rds')
 # calculate observed correlations:
 cors = expr_ch %>%
   select(-p, -FDR) %>%
@@ -83,9 +84,16 @@ names(dev.perm)
 # reorder cors as permutation tissue order:
 cors = cors[c(1,3,2,4,5,7,6,8),c(1,3,2,4,5,7,6,8)]
 
+# expression change correlations in dev and aging: (fig 1c)
 # compare development vs ageing:
-dcors = cors[1:4,1:4][lower.tri(cors[1:4,1:4])]
-acors = cors[5:8,5:8][lower.tri(cors[5:8,5:8])]
+dcors = cors[1:4,1:4]
+range(dcors[lower.tri(dcors)]) # 0.1704815 0.3925818
+dcors = dcors[lower.tri(dcors)]
+acors = cors[5:8,5:8]
+range(acors[lower.tri(acors)]) # 0.2271513 0.3266673
+acors = acors[lower.tri(acors)]
+
+# dev and aging comparison of tissue exp. change correlations: (fig 1c, no plot)
 wilcox.test(dcors, acors, paired = T)
 #V = 16, p-value = 0.3125
 
@@ -93,6 +101,7 @@ wilcox.test(dcors, acors, paired = T)
 chs = combn(4,2)
 corperm.dev = c()
 for(i in 1:6){
+  print(i)
   k = chs[,i]
   pair = sapply(1:1000,function(j){
     cor.test( dev.perm[[ k[1] ]][,j], dev.perm[[ k[2] ]][,j], m="s" )$est
@@ -104,6 +113,7 @@ saveRDS(corperm.dev, file = './data/processed/raw/pairwise_tissue_cors_perm_dev.
 
 corperm.aging = c()
 for(i in 1:6){
+  print(i)
   k = chs[,i]
   pair = sapply(1:1000,function(j){
     cor.test( aging.perm[[ k[1] ]][,j], aging.perm[[ k[2] ]][,j], m="s" )$est
@@ -148,7 +158,6 @@ pwise_cor_perm_test =
 rownames(pwise_cor_perm_test) = NULL
 saveRDS(pwise_cor_perm_test,'./data/processed/tidy/pwise_expch_cor_perm_test.rds')
 saveRDS(pwise_cor_perm_test,'results/source_data/f1/f1pwise_expch_cor_perm_test.rds')
-#write.xlsx(pwise_cor_perm_test, file='./results/SI_tables/TableS3.xlsx', row.names=T)
 
 ########################################
 ######################################## Permutation test for shared up/down genes (no significance cutoff )
@@ -174,6 +183,7 @@ obs_overlap = expr_ch %>%
 perm_overlaps = list()
 n_tissue = setNames(c(2,3,4), c('2 Tissues','3 Tissues','4 Tissues'))
 for(i in 1:ncol(dev.perm$cortex)){
+  print(i)
   permdevcor_i = sapply(dev.perm,function(x) x[,i])
   permagingcor_i = sapply(aging.perm,function(x)x[,i])
   pname = paste0('p',i)
@@ -198,6 +208,7 @@ overlap_test = perm_overlaps %>%
   summarise(Perm_p = mean(`N Overlap` >= unique(Obs)),
             eFPP =  round(median(`N Overlap`)/ unique(Obs),2)) %>%
   left_join(obs_overlap)
+saveRDS(overlap_test, './data/processed/raw/tissue_allgene_overlaps_perm_testresult.rds')
 
 ########################################
 ######################################## Permutation test for shared up/down significant genes (FDR<0.1)
@@ -272,8 +283,6 @@ for(n in 1:ncol(dev.perm$Cortex)){
 perm_overlaps_fdr = reshape2::melt(perm_overlaps_fdr) %>%
   set_names(c('N Tissue', 'N Overlap', 'direction', 'period', 'permutation'))
 
-saveRDS(perm_overlaps_fdr, './data/processed/raw/tissue_siggene_fdr01_overlaps_perm.rds')
-
 overlap_fdr_test = perm_overlaps_fdr %>%
   mutate(`N Tissue` = paste(`N Tissue`, c('Tissues')) ) %>% 
   right_join(obs_overlap_fdr, by = c('N Tissue', 'period', 'direction')) %>% 
@@ -283,6 +292,8 @@ overlap_fdr_test = perm_overlaps_fdr %>%
   ungroup() %>%
   mutate(Perm_p = ifelse(Perm_p == 0, '< 0.001', Perm_p)) %>%
   left_join(obs_overlap_fdr)
+
+saveRDS(overlap_fdr_test, './data/processed/raw/tissue_siggene_fdr01_overlaps_perm_testresult.rds')
 
 ####################
 #################### GO Over representation  Analysis with topGO package:
@@ -298,6 +309,14 @@ sig_genes = expr_ch %>%
          period = str_to_title(period),
          period = factor(period, levels = c('Development','Ageing'))) %>%
   dplyr::select(-p, -FDR, -`Expression Change`)
+
+## shared sig. genes:
+sig_genes %>%
+  group_by(direction, period, gene_id) %>%
+  summarise(ntissue = length(tissue)) %>%
+  group_by(direction, period, ntissue) %>%
+  summarise(nshared = n()) %>%
+  arrange(period)
 
 shared_genes_go = sapply(unique(sig_genes$period), function(p){
   sapply(unique(sig_genes$direction), function(d){

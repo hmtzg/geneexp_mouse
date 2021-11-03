@@ -25,6 +25,36 @@ revgenes = revg %>%
 
 saveRDS(revgenes,'./data/processed/tidy/revgenes.tissues.rds')
 
+## revprops:
+revgenes %>%
+  mutate(revness = ifelse(direction=='UpDown'| direction=='DownUp','rev','notrev')) %>%
+  group_by(revness, tissue) %>%
+  summarise(n = length(gene_id)) %>%
+  mutate(nprop  = n/15063*100)
+
+upcount = revgenes %>%
+  filter(direction=='UpUp' | direction=='UpDown') %>%
+  group_by(tissue) %>%
+  summarise(nup = length(gene_id) )
+  
+UDprops = revgenes %>%
+  filter(direction=='UpDown') %>%
+  group_by(tissue) %>%
+  summarise(UD = length(gene_id) ) %>%
+  left_join(upcount) %>%
+  mutate(UDprop = UD/nup*100)
+
+downcount = revgenes %>%
+  filter(direction=='DownDown' | direction=='DownUp') %>%
+  group_by(tissue) %>%
+  summarise(nup = length(gene_id) )
+
+DUprops = revgenes %>%
+  filter(direction=='DownUp') %>%
+  group_by(tissue) %>%
+  summarise(DU = length(gene_id) ) %>%
+  left_join(downcount) %>%
+  mutate(UDprop = DU/nup*100)
 
 ########################################
 ######################################## GORA for reversal in each tissue:
@@ -75,7 +105,7 @@ write.xlsx(table_sX, file='./results/supplementary_files/Supplementary_File_3.xl
 devcors = readRDS("./data/processed/raw/development_expression_change.rds")
 agingcors = readRDS("./data/processed/raw/ageing_expression_change.rds")
 aging.perm = readRDS("./data/processed/raw/permutations_ageing.rds")
-lapply(aging.perm,function(x) sum(is.na(x))) # 3 genes NA in cortex
+lapply(aging.perm,function(x) sum(is.na(x))) # 1 genes NA in cortex
 na.genes = names(which(is.na(aging.perm$cortex[,1])))
 aging.perm = lapply(aging.perm,function(x) x[!rownames(x)%in%na.genes,])
 devcors = lapply(devcors, function(x) x[!rownames(x)%in%na.genes,])
