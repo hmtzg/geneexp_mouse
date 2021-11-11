@@ -314,20 +314,21 @@ divgenes = covdiv$rho
 names(divgenes) = covdiv$gene_id
 
 library(clusterProfiler)
+require(org.Mm.eg.db)
 dc_gse = gseGO(geneList = sort(divgenes, decreasing = T), OrgDb = org.Mm.eg.db, ont = "BP", 
                pvalueCutoff = 1,
-               keyType = "ENSEMBL", nPerm = 1000, minGSSize = 10, maxGSSize = 500, pAdjustMethod = 'BY',
+               keyType = "ENSEMBL", nPerm = 1000, minGSSize = 10, maxGSSize = 500, pAdjustMethod = 'BH',
                verbose = F)
 dc_gse@result[1:5,1:10]
-sum(dc_gse@result$qvalues<0.1) # 708
+sum(dc_gse@result$p.adjust<0.1) # 705
 saveRDS(dc_gse, './data/other_datasets/jonker/dico_gse.rds')
 
-dc_gse_genelist =  strsplit(dc_gse@result[,11], split = '/')
-names(dc_gse_genelist) = dc_gse@result[,'ID']
-dc_gse_genelist =reshape2::melt(dc_gse_genelist) %>%
-  set_names(c('gene_id','GO_ID'))
-dc_gse_table = list(enrichment = dc_gse@result[,1:10],
-                    genelist = dc_gse_genelist)
+# dc_gse_genelist =  strsplit(dc_gse@result[,11], split = '/')
+# names(dc_gse_genelist) = dc_gse@result[,'ID']
+# dc_gse_genelist =reshape2::melt(dc_gse_genelist) %>%
+#   set_names(c('gene_id','GO_ID'))
+# dc_gse_table = list(enrichment = dc_gse@result[,1:10],
+#                     genelist = dc_gse_genelist)
 #write.xlsx(dc_gse_table, './results/Jonker/dico_gse_table.xlsx')
 
 save(list=ls(), file='./data/other_datasets/jonker/analysis.rdata')

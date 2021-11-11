@@ -1,6 +1,7 @@
 library(openxlsx)
 
 ## Figure 2
+coch = readRDS('data/processed/tidy/CoV_change.rds')
 cov_dat_sum = readRDS('results/source_data/f2/cov_dat_sum.rds')
 top_divcon_cov_dat = readRDS('results/source_data/f2/top_divcon_cov_dat.rds')
 top_divcon_gene_dat = readRDS('results/source_data/f2/top_divcon_gene_dat.rds')
@@ -101,7 +102,9 @@ write.xlsx(list(sdata0 = NULL,
                 sdata30 = fs15a,
                 sdata31 = fs15b,
                 sdata32 = fs16ab,
-                sdata33 = fs16cd), 
+                sdata33 = fs16cd,
+                sdata34 = coch
+                ), 
            file = './results/source_data/f2_source_data.xlsx' )
 
 

@@ -26,6 +26,11 @@ enricplotdat = readRDS('results/source_data/f4/g.rds')
 ## fs1
 enricplot_ogr_dat = readRDS('results/source_data/f4/fs1.rds')
 
+##
+mirtest = readRDS('results/source_data/f4/mirna.rds')
+
+tf = readRDS('./results/source_data/f4/tf.rds')
+
 write.xlsx(list(sdata0 = NULL,
                 sdata1 = all_fisher,
                 sdata2 = dc_fisher,
@@ -34,6 +39,9 @@ write.xlsx(list(sdata0 = NULL,
                 sdata5 = gr3dat,
                 sdata6 = gr4dat, 
                 sdata7 = enricplotdat,
-                sdata8 = enricplot_ogr_dat), 
+                sdata8 = enricplot_ogr_dat,
+                sdata9 = mirtest,
+                sdata10 = tf
+                ), 
            file = './results/source_data/f4_source_data.xlsx' )
 

@@ -1,3 +1,4 @@
+#MD
 library(tidyverse)
 library(ggpubr)
 library(ggforce)
@@ -695,17 +696,17 @@ colnames(ensmap)[2]='GeneID'
 covdiv = covcor %>%
   inner_join(ensmap)
 divgenes = covdiv$rho
-names(divgenes) = covdiv$GeneID
+names(divgenes) = covdiv$GeneID # 7929 genes
 
 library(clusterProfiler)
 #BiocManager::install('org.Hs.eg.db')
 library(org.Hs.eg.db)
-dc_gse = gseGO(geneList = sort(divgenes, decreasing = T), OrgDb = org.Hs.eg.db, ont = "BP", 
+dc_gse = gseGO(geneList = sort(divgenes, decreasing = T), OrgDb = org.Hs.eg.db::org.Hs.eg.db, ont = "BP", 
                pvalueCutoff = 1,
-               keyType = "ENSEMBL", nPerm = 1000, minGSSize = 10, maxGSSize = 500, pAdjustMethod = 'BY',
+               keyType = "ENSEMBL", nPerm = 1000, minGSSize = 10, maxGSSize = 500, pAdjustMethod = 'BH',
                verbose = F)
 dc_gse@result[1:5,1:10]
-sum(dc_gse@result$qvalues<0.1) # 0
+sum(dc_gse@result$p.adjust<0.1) # 0
 saveRDS(dc_gse, './results/GTEx/dico_gse.rds')
 
 
