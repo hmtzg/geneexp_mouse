@@ -265,6 +265,11 @@ pca_plots = ggarrange(pcaplots1, pcaplots2, ncol=1,nrow=2, heights = c(2,2.5))
 ggsave('./results/schaum/4tissue/pca.pdf', pca_plots , units = 'cm', width = 14, height = 10, useDingbats=F)
 ggsave('./results/schaum/4tissue/pca.png', pca_plots , units = 'cm', width = 14, height = 10, bg='white')
 
+ggsave('./results/figure_supplements/fs2/FS17.pdf', pca_plots , units = 'cm', width = 14, height = 10, 
+       useDingbats=F)
+ggsave('./results/figure_supplements/fs2/FS17.png', pca_plots , units = 'cm', width = 14, height = 10, 
+       bg='white')
+
 saveRDS(pca_dat, 'results/source_data/f2/fs17_pca.rds')
 saveRDS(mdist, 'results/source_data/f2/fs17_eucdist.rds')
 
@@ -423,6 +428,9 @@ covresplot = ggarrange(p1, pairwiseplot, ncol =2, nrow = 1, labels = c(NA,'c.'),
 
 ggsave('./results/schaum/4tissue/covchange.pdf', covresplot, units='cm', width = 16, height = 12, useDingbats=F)
 ggsave('./results/schaum/4tissue/covchnage.png', covresplot, units='cm', width = 16, height = 12, bg='white')
+
+ggsave('./results/figure_supplements/fs2/FS18.pdf', covresplot, units='cm', width = 16, height = 12, useDingbats=F)
+ggsave('./results/figure_supplements/fs2/FS18.png', covresplot, units='cm', width = 16, height = 12, bg='white')
 
 saveRDS(summaryCoV, 'results/source_data/f2/fs18_sumcov.rds')
 saveRDS(pairwisedat, 'results/source_data/f2/fs18_pwisecors.rds')

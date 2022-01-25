@@ -275,6 +275,11 @@ ggsave('./results/schaum/8tis/pca.pdf', pca_plots, units='cm', width = 16, heigh
 ggsave('./results/schaum/8tis/pca.png', pca_plots, units='cm', width = 16, height = 16,
        bg='white')
 
+ggsave('./results/figure_supplements/fs2/FS19.pdf', pca_plots, units='cm', width = 16, height = 16, 
+       useDingbats=F)
+ggsave('./results/figure_supplements/fs2/FS19.png', pca_plots, units='cm', width = 16, height = 16,
+       bg='white')
+
 saveRDS(pca_dat, 'results/source_data/f2/fs19_pca.rds')
 saveRDS(mdist, 'results/source_data/f2/fs19_eucdist.rds')
 
@@ -461,6 +466,9 @@ covresplot = ggarrange(p1, pairwiseplot, ncol =2, nrow = 1, labels = c(NA,'c.'),
 
 ggsave('results/schaum/8tis/CoV.pdf', covresplot, units='cm', width = 16, height = 12, useDingbats=F)
 ggsave('results/schaum/8tis/CoV.png', covresplot, units='cm', width = 16, height = 12)
+
+ggsave('results/figure_supplements/fs2/FS20.pdf', covresplot, units='cm', width = 16, height = 12, useDingbats=F)
+ggsave('results/figure_supplements/fs2/FS20.png', covresplot, units='cm', width = 16, height = 12)
 
 saveRDS(sumCoV, 'results/source_data/f2/fs20_sumcov.rds')
 saveRDS(pairwisecor_ch, 'results/source_data/f2/fs20_pwisecors.rds')

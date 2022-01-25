@@ -144,6 +144,10 @@ cooverlap
 ggsave('results/co_overlaps.pdf', cooverlap, units = 'cm', height = 7, width = 10, useDingbats=F)
 ggsave('results/co_overlaps.png', cooverlap, units = 'cm', height = 7, width = 10, bg='white')
 
+ggsave('results/figure_supplements/fs4/co_overlaps.pdf', cooverlap, units = 'cm', height = 7, width = 10, 
+       useDingbats=F)
+ggsave('results/figure_supplements/fs4/co_overlaps.png', cooverlap, units = 'cm', height = 7, width = 10, 
+       bg='white')
 
 #
 range(log2(pOR), na.rm=T)
@@ -159,6 +163,12 @@ pheatmap::pheatmap(log2(pOR), cluster_rows = F, cluster_cols = F, cellwidth = 25
                    color = mycol,  breaks = mybreak, show_rownames = T, show_colnames = T,
                    legend_breaks = c(-2, -1.25, 0, 1.25, 2), fontsize = 8, 
                    filename = 'results/co_overlaps2.pdf')
+
+pheatmap::pheatmap(log2(pOR), cluster_rows = F, cluster_cols = F, cellwidth = 25, cellheight = 25,
+                   color = mycol,  breaks = mybreak, show_rownames = T, show_colnames = T,
+                   legend_breaks = c(-2, -1.25, 0, 1.25, 2), fontsize = 8, 
+                   filename = 'results/figure_supplements/fs4/co_overlaps2.pdf')
+
 hmap = pheatmap::pheatmap(log2(pOR), cluster_rows = F, cluster_cols = F, cellwidth = 25, cellheight = 25,
                    color = mycol,  breaks = mybreak, show_rownames = T, show_colnames = T,
                    legend_breaks = c(-2, -1.25, 0, 1.25, 2), fontsize = 8, silent = T)
@@ -257,7 +267,8 @@ pheatmap::pheatmap(cors, cluster_rows = T, cluster_cols = T, cellwidth = 5, cell
                    cutree_rows = 3, cutree_cols = 3, legend_breaks = c(-0.5, -0.25, 0, 0.25, 0.5),
                    treeheight_col = 0, treeheight_row = 20,
                    fontsize = 6, width = 12/2.54, height = 8/2.54,
-                   filename = 'results/expch_cors.pdf')
+                   filename = 'results/figure_supplements/fs4/expch_cors.pdf')
+# filename = '
 pheatmap::pheatmap(cors, cluster_rows = T, cluster_cols = T, cellwidth = 5, cellheight = 5,
                    color = mycol2, gaps_row = c(10,15,19), gaps_col = c(10,15,19), breaks = mybreak2,
                    annotation_row = annots, annotation_col = annots, annotation_colors = annotcols,
@@ -265,7 +276,7 @@ pheatmap::pheatmap(cors, cluster_rows = T, cluster_cols = T, cellwidth = 5, cell
                    cutree_rows = 3, cutree_cols = 3, legend_breaks = c(-0.5, -0.25, 0, 0.25, 0.5),
                    treeheight_col = 0, treeheight_row = 20,
                    fontsize = 6, width = 12/2.54, height = 8/2.54,
-                   filename = 'results/expch_cors.png')
+                   filename = 'results/figure_supplements/fs4/expch_cors.png')
 
 saveRDS(cors, 'results/source_data/f4/fs2a.rds')
 
