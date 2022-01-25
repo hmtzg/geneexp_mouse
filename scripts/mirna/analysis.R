@@ -86,7 +86,7 @@ colnames(miRtestMmresult) = c('OR', 'pvalue')
 miRtestMmresult = cbind(miRtestMmresult, 'BH' = p.adjust(miRtestMmresult[,'pvalue'], method='BH') )
 miRtestMmresult = as.data.frame(miRtestMmresult)
 
-miRtestMmresult %>% arrange(OR)
+miRtestMmresult %>% arrange(OR) # 235
 miRtestMmresult %>% filter(BH < 0.1)  # non significant
 
 saveRDS(miRtestMmresult,'results/source_data/f4/mirna.rds')

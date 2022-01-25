@@ -66,8 +66,8 @@ summary(attr$exc)
 genelist = unique(unlist(lapply(expvals,function(expx){
   sapply(strsplit(as.character(rownames(expx)),'[.]'),function(x)x[1])
 })))
-#martx = biomaRt::useMart('ensembl','hsapiens_gene_ensembl')
-martx = biomaRt::useEnsembl('ensembl', 'hsapiens_gene_ensembl', mirror='asia')
+martx = biomaRt::useMart('ensembl','hsapiens_gene_ensembl')
+#martx = biomaRt::useEnsembl('ensembl', 'hsapiens_gene_ensembl', mirror='asia')
 biotype = biomaRt::getBM(attributes = c('ensembl_gene_id', 'gene_biotype'), filters = 'ensembl_gene_id', 
                          values = genelist, mart = martx)
 codinggenes = unique(filter(biotype,gene_biotype == 'protein_coding')$ensembl_gene_id)
@@ -212,8 +212,6 @@ pc4_age = pca_data %>%
 # 
 # plotsave(ggobj = pccors, prefix = './results/GTEx/pc_cors', width = 16, height = 12)
 
-
-
 #calculate the Eucledian distance using all PCs because there is no clear relationship between PC and age
 
 # has bug, repeating values:
@@ -260,6 +258,10 @@ eucdist = meanEuc %>%
   stat_cor(method = 'spearman', size = 6/pntnorm, cor.coef.name = 'rho') +
   ylab('Mean Pairwise Euclidean Distance')
 
+meanEuc %>% count(sex)
+## 11 female
+## 36 male
+
 ####
 # eucdist = meanEuc %>%
 #   mutate(Age = c(25,35,45,55,65,75)[age]) %>%
@@ -299,6 +301,7 @@ agecor = expvals %>%
 
 agecor = ungroup(agecor) %>%
   mutate(adjusted_p = p.adjust(p, method = 'fdr'))
+saveRDS(agecor, 'results/GTEx/agecor.rds')
 
 #### CoV analysis #### 
 
@@ -307,7 +310,7 @@ expvals = expvals %>%
   group_by(GeneID, id, sex) %>%
   summarise(CoV = sd(Expression)/mean(Expression)) %>%
   ungroup() %>%
-  right_join(expvals) 
+  right_join(expvals)
 
 # summarise CoV across genes by taking the mean or median of CoVs per gene
 sumCov = expvals %>%
@@ -409,7 +412,7 @@ covcor %>%
 table(covcor$rho<0)
 # FALSE  TRUE 
 # 6977  9220 
-#9220 convergent
+# 9220 convergent
 saveRDS(covcor, file='./results/GTEx/covcor.rds')
 
 ############
@@ -676,7 +679,6 @@ attr %>% group_by(sex, age) %>% summarise(n=length(sample_id))
 ##########
 ########## dico enrichment:
 ##########
-covcor
 
 ddc_genes = readRDS('./data/processed/raw/dev_divergent_genes_dc_rank.rds')
 ## convert human ENS to mouse:
@@ -709,6 +711,195 @@ dc_gse@result[1:5,1:10]
 sum(dc_gse@result$p.adjust<0.1) # 0
 saveRDS(dc_gse, './results/GTEx/dico_gse.rds')
 
+##### gse without di background:
+glist = covcor$rho
+names(glist) = covcor$GeneID
+dc_gse2 = gseGO(geneList = sort(glist, decreasing = T), OrgDb = org.Hs.eg.db::org.Hs.eg.db, ont = "BP", 
+               pvalueCutoff = 1,
+               keyType = "ENSEMBL", nPerm = 1000, minGSSize = 10, maxGSSize = 500, pAdjustMethod = 'BH',
+               verbose = F)
+dc_gse@result[1:5,1:10]
+sum(dc_gse@result$p.adjust<0.1) # 0
+saveRDS(dc_gse, './results/GTEx/co_gse.rds')
+
+###
+#### Effect size:
+source("scripts/functions.R")
+
+unique(expvals$Age)
+expvals %>% filter(Age==25) %>%
+  group_by(major_tissue) %>%
+  summarise(n=length(unique(id)) ) #  1 sample from each tissue
+expvals %>% filter(Age%in%c(25, 35)) %>%
+  group_by(major_tissue) %>%
+  summarise(n=length(unique(id)) ) #  4 sample from each tissue
+
+
+expp = expvals %>% 
+  filter(Age%in%c(25, 35)) %>%
+  dplyr::select(GeneID, Expression, id, major_tissue) %>%
+  mutate(Grp = paste(id, major_tissue, sep='-')) %>%
+  dplyr::select(-id, -major_tissue) %>%
+  spread(key='Grp', value='Expression') %>%
+  column_to_rownames(var = 'GeneID') %>%
+  as.matrix
+
+ts.ord = sapply(strsplit(colnames(expp),'-'),`[[`,3)
+
+ES = sapply(unique(ts.ord), function(y){
+  sapply(rownames(expp), function(x){
+    cohens_d(expp[x, ts.ord == y], expp[x, ts.ord != y] )
+  })
+})
+saveRDS(ES, file='data/other_datasets/GTEx/effectsize.rds')
+# get tissue with highest ES for each gene:
+ts.spec = colnames(ES)[apply(ES, 1, which.max)]
+names(ts.spec) = rownames(ES)
+
+# get tissue specific genes using >3Q of genes assigned to a tissue:
+ts.specQ3 = sapply(unique(ts.spec), function(x){
+  ts.genes = names(which(ts.spec==x))
+  cutoff = summary(ES[ts.genes,x])['3rd Qu.']
+  q3.genes = names(which(ES[ts.genes,x] > cutoff))
+  return(q3.genes)
+})
+saveRDS(ts.specQ3,'./data/other_datasets/GTEx/ts.specQ3.genes.rds')
+
+# get ES values for tissue specific genes:
+ts.spec.ES = sapply(names(ts.specQ3),function(x) {
+  ES[ts.specQ3[[x]],]
+}, simplify = F)
+
+ts.spec.ES2 = reshape2::melt(ts.spec.ES) %>% 
+  set_names(c('gene id', 'tissue', 'ES','spec'))
+
+saveRDS(ts.spec.ES2,'./data/other_datasets/GTEx/ts.spec.ES.rds')
+
+ts.specQ3.genes = unlist(ts.specQ3)
+names(ts.specQ3.genes) = gsub('[0-9]','', names(ts.specQ3.genes))
+sapply(ts.specQ3, length)
+##### in which tissue the highest expression change occurs for each gene:
+
+### use beta from linear regression:
+
+cortex = expvals %>%
+  filter(major_tissue=='Brain') %>%
+  select(GeneID, Expression, id) %>%
+  spread(key='id', value = 'Expression') %>%
+  column_to_rownames(var = 'GeneID') %>% as.matrix()
+lung = expvals %>%
+  filter(major_tissue=='Lung') %>%
+  select(GeneID, Expression, id) %>%
+  spread(key='id', value = 'Expression') %>%
+  column_to_rownames(var = 'GeneID') %>% as.matrix()
+liver = expvals %>%
+  filter(major_tissue=='Liver') %>%
+  select(GeneID, Expression, id) %>%
+  spread(key='id', value = 'Expression') %>%
+  column_to_rownames(var = 'GeneID') %>% as.matrix()
+muscle = expvals %>%
+  filter(major_tissue=='Muscle') %>%
+  select(GeneID, Expression, id) %>%
+  spread(key='id', value = 'Expression') %>%
+  column_to_rownames(var = 'GeneID') %>% as.matrix()
+
+cortage = attr %>% 
+  filter(id%in%colnames(cortex) & major_tissue=='Brain') %>% 
+  pull(age)
+cortage = log2(c(25,35,45,55,65,75)[cortage])
+lungage = attr %>% 
+  filter(id%in%colnames(lung) & major_tissue=='Lung') %>% 
+  pull(age)
+lungage = log2(c(25,35,45,55,65,75)[lungage])
+liverage = attr %>% 
+  filter(id%in%colnames(liver) & major_tissue=='Liver') %>% 
+  pull(age)
+liverage = log2(c(25,35,45,55,65,75)[liverage])
+muscleage = attr %>% 
+  filter(id%in%colnames(muscle) & major_tissue=='Muscle') %>% 
+  pull(age)
+muscleage = log2(c(25,35,45,55,65,75)[muscleage])
+
+cortbeta = t(apply(cortex,1,function(x){
+  summary(lm(x~cortage))$coef[2,c(1,4)]
+}))
+lungbeta = t(apply(lung,1,function(x){
+  summary(lm(x~lungage))$coef[2,c(1,4)]
+}))
+liverbeta = t(apply(liver,1,function(x){
+  summary(lm(x~liverage))$coef[2,c(1,4)]
+}))
+musclebeta = t(apply(muscle,1,function(x){
+  summary(lm(x~muscleage))$coef[2,c(1,4)]
+}))
+
+expbeta = cbind(cortbeta[,1], lungbeta[,1], liverbeta[,1], musclebeta[,1])
+colnames(expbeta) = c('Cortex', 'Lung', 'Liver', 'Muscle')
+
+ts.expr.ch = colnames(expbeta)[apply(expbeta, 1, function(x) which.max(abs(x)))]
+names(ts.expr.ch) = rownames(expbeta)
+
+# direction of expression change for those genes :
+ts.expr.ch.dir = sapply(1:length(ts.expr.ch), function(x){ sign(expbeta[x, ts.expr.ch[x]]) } )
+names(ts.expr.ch.dir) = names(ts.expr.ch)
+
+########
+######## Expr change in native tissue :
+########
+# for tissue-specific genes (>Q3) :
+mat = data.frame(sameness = names(ts.specQ3.genes) == ts.expr.ch[ts.specQ3.genes],
+                 exp_dir = ts.expr.ch.dir[ts.specQ3.genes] )
+table(mat)[,c(2,1)]
+fisher.test(table(mat)[,c(2,1)])
+# OR: 0.8552, p = 0.02 (eski)
+# OR: 1.628626, p =6.743e-12
+
+saveRDS(list(tbl = table(mat)[,c(2,1)],
+             fisher = fisher.test(table(mat)[,c(2,1)])),
+        file = 'data/other_datasets/GTEx/specloss_fisher.rds')
+
+### using only Co genes:
+## losing expr in native, gain in other tissues:
+cogenes = covcor %>% filter(rho<0) %>% pull(GeneID)
+
+specsub = ts.specQ3.genes[ts.specQ3.genes%in%cogenes]
+expchsub = ts.expr.ch[cogenes]
+expchdirsub = ts.expr.ch.dir[cogenes]
+matsub = data.frame(sameness = names(specsub) == expchsub[specsub],
+                    expdir = expchdirsub[specsub])
+table(matsub)[,c(2,1)]
+sum(table(matsub)[,c(2,1)]) # 2407 genes
+fisher.test(table(matsub)[,c(2,1)])
+fisher.test(table(matsub)[,c(2,1)])$p.val
+# OR = 7.20875, p = 7.04019e-87
+
+saveRDS(list(tbl = table(matsub)[,c(2,1)],
+             fisher = fisher.test(table(matsub)[,c(2,1)])),
+        file = 'data/other_datasets/GTEx/specloss_fisher_co.rds')
+
+covcor %>% 
+  filter(adjusted_p<0.1)
+# no sig genes
+
+## DiCo vs DiDi and tis spec vs non-tis spec:
+devdiv = readRDS('./data/processed/raw/dev_divergent_genes_dc_rank.rds')
+divg = names(devdiv)
+ensmap = readRDS('./results/GTEx/ensmap.rds')
+divg = ensmap[ensmap$ENS_mm%in%divg,1] # 7976
+
+convg = as.character(covcor %>% filter(rho < 0) %>% pull(GeneID))
+dicog = intersect(divg, convg) # 4681
+
+spec.pat.mat = data.frame(pat = divg%in%dicog,
+                          ts.spec = divg%in%ts.specQ3.genes)
+table(spec.pat.mat)
+fisher.test(table(spec.pat.mat ))
+fisher.test(table(spec.pat.mat ))$p.val
+# OR = 0.8956, p = 1.072e-8 (old)
+# OR: 1.107809, p = 0.05218
+
+saveRDS(list(table(spec.dc.mat),fisher.test(table(spec.dc.mat))),
+        file = 'data/other_datasets/GTEx/tisspec_dico_fisher.rds')
 
 save(list=ls(),file = './results/GTEx/data.RData')
 

@@ -140,7 +140,7 @@ colnames(tfMm2) = c('OR', 'pvalue')
 tfMm2 = cbind(tfMm2, 'BH' = p.adjust(tfMm2[,'pvalue'], method='BH'))
 tfMm2 = as.data.frame(tfMm2)
 
-tfMm2 %>% arrange(OR)
+tfMm2 %>% arrange(OR) # 158
 tfMm2 %>% filter(BH < 0.1)  # non significant
 
 saveRDS(tfMm2,'./results/source_data/f4/tf.rds')

@@ -219,6 +219,18 @@ dev.off()
 # dev.off()
 
 ### panel d  ####
+pd_dat = expr_ch %>%
+  filter(FDR<=0.1) %>%
+  group_by(tissue,period) %>%
+  summarise( up = sum(`Expression Change`>0,na.rm=T),
+             down = sum(`Expression Change`<0,na.rm=T)) %>%
+  gather(key= 'direction',value ='n',-tissue,-period) %>%
+  mutate(direction = str_to_title(direction), 
+         period = gsub("aging", "ageing", period),
+         period = str_to_title(period),
+         period = factor(period, levels = c('Development','Ageing'))) %>%
+  mutate(n = ifelse(n==0,NA,n))
+
 pd = expr_ch %>%
   filter(FDR<=0.1) %>%
   group_by(tissue,period) %>%
@@ -248,6 +260,20 @@ pd
 ggsave('./results/htseq/blinded/figure1/fig1d.pdf', pd, units='cm', height = 9, width = 14, useDingbats=F)
 ggsave('./results/htseq/blinded/figure1/fig1d.png', pd, units='cm', height = 9, width = 14)
 ### panel e ####
+pe_dat = expr_ch %>%
+  drop_na() %>%
+  filter(`Expression Change` !=0 ) %>% # drop expression - age rho = 0 values
+  mutate(direction = `Expression Change` > 0) %>%
+  mutate(direction = ifelse( direction == TRUE, 'Up', 'Down')) %>%
+  mutate(period = gsub("aging", "ageing", period),
+         period = str_to_title(period),
+         period = factor(period, levels = c('Development','Ageing'))) %>%
+  group_by(gene_id,period, direction) %>%
+  summarise(n = length(tissue)) %>%
+  group_by(n, period, direction) %>% 
+  summarise(count = n()) %>%
+  ungroup() %>%
+  slice(-c(1:4))
 pe = expr_ch %>%
   drop_na() %>%
   filter(`Expression Change` !=0 ) %>% # drop expression - age rho = 0 values
@@ -276,8 +302,9 @@ pe
 ggsave('./results/htseq/blinded/figure1/fig1e.pdf', pe, units='cm', height = 8, width = 14, useDingbats=F)
 ggsave('./results/htseq/blinded/figure1/fig1e.png', pe, units='cm', height = 8, width = 14)
 
-saveRDS(expr_ch, 'results/source_data/f1/fs10expr_ch.rds')
-
+#saveRDS(expr_ch, 'results/source_data/f1/fs10expr_ch.rds')
+saveRDS(pd_dat, 'results/source_data/f1/fs10d.rds')
+saveRDS(pe_dat, 'results/source_data/f1/fs10e.rds')
 ###  panel f ####
 # rev props:
 revgenes %>%
@@ -294,6 +321,12 @@ revgenes %>%
 # 3 Lung   0.517
 # 4 Muscle 0.563
 
+pf_dat = revgenes %>%
+  group_by(direction,tissue) %>%
+  summarise(n = length(gene_id)) %>%
+  group_by(tissue) %>%
+  mutate(direction = factor(direction,levels = c('UpDown','DownUp','UpUp','DownDown')),
+         tissue = str_to_title(tissue))
 pf = revgenes %>%
   group_by(direction,tissue) %>%
   summarise(n = length(gene_id)) %>%
@@ -316,6 +349,7 @@ ggsave('./results/htseq/blinded/figure1/fig1f.pdf', pf, units='cm', height = 10,
 ggsave('./results/htseq/blinded/figure1/fig1f.png', pf, units='cm', height = 10, width = 8)
 
 saveRDS(revgenes, 'results/source_data/f1/fs10revgenes.rds')
+saveRDS(pf_dat, 'results/source_data/f1/fs10f.rds')
 
 pdeleg = get_legend(pd)
 

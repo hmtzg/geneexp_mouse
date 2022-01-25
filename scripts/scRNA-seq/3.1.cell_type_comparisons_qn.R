@@ -14,6 +14,36 @@ for(x in names(ct.exp$m3) ){
   ct.exp$m24[[x]] = ct.exp$m24[[x]][sgenes, scelltype]
 }
 
+xg = Reduce(intersect, lapply(ct.exp$m3, rownames ))
+for(i in 1:3){
+  for(j in 1:4){
+    ct.exp[[i]][[j]] = ct.exp[[i]][[j]][rownames(ct.exp[[i]][[j]])%in%xg,] 
+  }
+}
+sapply(ct.exp, function(x)sapply(x,ncol))
+# order: names(ct.exp$m3)
+expr = cbind(do.call(cbind, ct.exp$m3 ),
+      do.call(cbind, ct.exp$m18 ),
+      do.call(cbind, ct.exp$m24 ))
+library(preprocessCore)
+exprqn = normalize.quantiles(expr)
+dimnames(exprqn) = dimnames(expr)
+
+ct.expqn = list('m3' = list('lung' = exprqn[,1:23],
+                            'liver'=exprqn[,24:33],
+                            'muscle'=exprqn[,34:39],
+                            'brain'=exprqn[,40:54]),
+                'm18' = list('lung' = exprqn[,1:23+54],
+                             'liver'=exprqn[,24:33+54],
+                             'muscle'=exprqn[,34:39+54],
+                             'brain'=exprqn[,40:54+54]),
+                'm24' = list('lung' = exprqn[,1:23+54*2],
+                             'liver'=exprqn[,24:33+54*2],
+                             'muscle'=exprqn[,34:39+54*2],
+                             'brain'=exprqn[,40:54]+54*2))
+sapply(ct.expqn, function(x)sapply(x,ncol))
+ct.exp = ct.expqn
+
 ### function to calculate pairwise cell type correlations among tissues :
 celltype_cors_f = function(ct.exp){
   ct_cors = sapply(names(ct.exp), function(x){
@@ -36,8 +66,8 @@ celltype_cors_f = function(ct.exp){
 ### calculate pairwise cell type correlations among tissues with all genes:
 ct_cors = celltype_cors_f(ct.exp)
 
-saveRDS(ct_cors$m3, './data/other_datasets/scRNA-seq/processed/celltype_3m_pairwise_cors_allgenes.rds')
-saveRDS(ct_cors, './data/other_datasets/scRNA-seq/processed/celltype_pairwise_cors_allgenes.rds')
+# saveRDS(ct_cors$m3, './data/other_datasets/scRNA-seq/processed/celltype_3m_pairwise_cors_allgenes.rds')
+# saveRDS(ct_cors, './data/other_datasets/scRNA-seq/processed/celltype_pairwise_cors_allgenes.rds')
 
 ##############
 ##############
@@ -76,13 +106,13 @@ maxcorchange %>% filter(fdr<0.1)
 
 table(sign(maxcorchange$`rho ch`))
 # -1  0  1 
-# 36  1 17 
-# maxcors_table_sx = maxcors_3m %>% 
-#   left_join(maxcorchange) %>%
-#   relocate(`1st tissue`, `1st cell type`,`rho ch`,
-#            `2nd tissue`, `2nd cell type`, rho) %>%
-#   set_names(c('TissueA','Cell-typeA', 'Similarity Change with Age',
-#               'TissueB','Cell-typeB', 'Similarity to B'))
+# 37  3 14 
+maxcors_table_sx = maxcors_3m %>% 
+  left_join(maxcorchange) %>%
+  relocate(`1st tissue`, `1st cell type`,`rho ch`,
+           `2nd tissue`, `2nd cell type`, rho) %>%
+  set_names(c('TissueA','Cell-typeA', 'Similarity Change with Age',
+              'TissueB','Cell-typeB', 'Similarity to B'))
 
 #################
 #################
@@ -109,16 +139,15 @@ mincorchange = allmincors %>%
 
 mincorchange %>% filter(fdr<0.5)
 table(sign(mincorchange$`rho ch`))
-# -1  0  1 
-# 8  1 45 
-
+# -1  1 
+# 3 51 
 #####
-# mincors_table_sx = mincors_3m %>% 
-#   left_join(mincorchange) %>%
-#   relocate(`1st tissue`, `1st cell type`, `rho ch`,
-#            `2nd tissue`, `2nd cell type`, rho) %>%
-#   set_names(c('TissueA','Cell-typeA', 'Similarity Change with Age',
-#               'TissueB','Cell-typeB', 'Similarity to B'))
+mincors_table_sx = mincors_3m %>% 
+  left_join(mincorchange) %>%
+  relocate(`1st tissue`, `1st cell type`, `rho ch`,
+           `2nd tissue`, `2nd cell type`, rho) %>%
+  set_names(c('TissueA','Cell-typeA', 'Similarity Change with Age',
+              'TissueB','Cell-typeB', 'Similarity to B'))
 
 ##############
 ############## 
@@ -147,7 +176,7 @@ for(x in names(ct.exp$m3) ){
 
 ct_cors_dc = celltype_cors_f(ct.exp.dc)
 
-saveRDS(ct_cors_dc, './data/other_datasets/scRNA-seq/processed/celltype_pairwise_cors_dcgenes.rds')
+# saveRDS(ct_cors_dc, './data/other_datasets/scRNA-seq/processed/celltype_pairwise_cors_dcgenes.rds')
 
 ### all cell type correlations within each age group
 cell_type_cors_dc = reshape2::melt(ct_cors_dc, c('name', 'rho')) %>%
@@ -179,14 +208,14 @@ maxcorchange_dc = allmaxcors_dc %>%
 maxcorchange_dc %>% filter(fdr<0.1)
 table(sign(maxcorchange_dc$`rho ch`))
 # -1  0  1 
-# 30  3 21 
+# 36  2 16 
 #####
-# maxcors_table_sx_dc = maxcors_3m_dc %>% 
-#   left_join(maxcorchange_dc) %>%
-#   relocate(`1st tissue`, `1st cell type`,`rho ch`,
-#            `2nd tissue`, `2nd cell type`, rho) %>%
-#   set_names(c('TissueA','Cell-typeA', 'Similarity Change with Age',
-#               'TissueB','Cell-typeB', 'Similarity to B'))
+maxcors_table_sx_dc = maxcors_3m_dc %>% 
+  left_join(maxcorchange_dc) %>%
+  relocate(`1st tissue`, `1st cell type`,`rho ch`,
+           `2nd tissue`, `2nd cell type`, rho) %>%
+  set_names(c('TissueA','Cell-typeA', 'Similarity Change with Age',
+              'TissueB','Cell-typeB', 'Similarity to B'))
 
 #################
 #################
@@ -216,15 +245,15 @@ mincorchange_dc = allmincors_dc %>%
 
 mincorchange_dc %>% filter(fdr<0.1)
 table(sign(mincorchange_dc$`rho ch`))
-# -1  1 
-# 7 47 
+# -1  0  1 
+# 2  1 51 
 #####
-# mincors_table_sx_dc = mincors_3m_dc %>% 
-#   left_join(mincorchange_dc) %>%
-#   relocate(`1st tissue`, `1st cell type`, `rho ch`,
-#            `2nd tissue`, `2nd cell type`, rho) %>%
-#   set_names(c('TissueA','Cell-typeA', 'Similarity Change with Age',
-#               'TissueB','Cell-typeB', 'Similarity to B'))
+mincors_table_sx_dc = mincors_3m_dc %>% 
+  left_join(mincorchange_dc) %>%
+  relocate(`1st tissue`, `1st cell type`, `rho ch`,
+           `2nd tissue`, `2nd cell type`, rho) %>%
+  set_names(c('TissueA','Cell-typeA', 'Similarity Change with Age',
+              'TissueB','Cell-typeB', 'Similarity to B'))
 
 ############## 
 ##############
@@ -249,7 +278,7 @@ for(x in names(ct.exp$m3) ){
 
 ct_cors_nondc = celltype_cors_f(ct.exp.nondc)
 
-saveRDS(ct_cors_nondc, './data/other_datasets/scRNA-seq/processed/celltype_pairwise_cors_nondcgenes.rds')
+# saveRDS(ct_cors_nondc, './data/other_datasets/scRNA-seq/processed/celltype_pairwise_cors_nondcgenes.rds')
 
 ### all cell type correlations within each age group
 cell_type_cors_nondc = reshape2::melt(ct_cors_nondc, c('name', 'rho')) %>%
@@ -281,14 +310,14 @@ maxcorchange_nondc = allmaxcors_nondc %>%
 maxcorchange_nondc %>% filter(fdr<0.1)
 table(sign(maxcorchange_nondc$`rho ch`))
 # -1  0  1 
-# 35  1 18 
+# 36  3 15 
 #####
-# maxcors_table_sx_nondc = maxcors_3m_nondc %>% 
-#   left_join(maxcorchange_nondc) %>%
-#   relocate(`1st tissue`, `1st cell type`,`rho ch`,
-#            `2nd tissue`, `2nd cell type`, rho) %>%
-#   set_names(c('TissueA','Cell-typeA', 'Similarity Change with Age',
-#               'TissueB','Cell-typeB', 'Similarity to B'))
+maxcors_table_sx_nondc = maxcors_3m_nondc %>% 
+  left_join(maxcorchange_nondc) %>%
+  relocate(`1st tissue`, `1st cell type`,`rho ch`,
+           `2nd tissue`, `2nd cell type`, rho) %>%
+  set_names(c('TissueA','Cell-typeA', 'Similarity Change with Age',
+              'TissueB','Cell-typeB', 'Similarity to B'))
 
 #################
 #################
@@ -319,14 +348,14 @@ mincorchange_nondc = allmincors_nondc %>%
 mincorchange_nondc %>% filter(fdr<0.1)
 table(sign(mincorchange_nondc$`rho ch`))
 # -1  0  1 
-# 9  1 44 
+# 2  1 51 
 #####
-# mincors_table_sx_nondc = mincors_3m_nondc %>% 
-#   left_join(mincorchange_nondc) %>%
-#   relocate(`1st tissue`, `1st cell type`, `rho ch`,
-#            `2nd tissue`, `2nd cell type`, rho) %>%
-#   set_names(c('TissueA','Cell-typeA', 'Similarity Change with Age',
-#               'TissueB','Cell-typeB', 'Similarity to B','Change in Similarity','fdr'))
+mincors_table_sx_nondc = mincors_3m_nondc %>% 
+  left_join(mincorchange_nondc) %>%
+  relocate(`1st tissue`, `1st cell type`, `rho ch`,
+           `2nd tissue`, `2nd cell type`, rho) %>%
+  set_names(c('TissueA','Cell-typeA', 'Similarity Change with Age',
+              'TissueB','Cell-typeB', 'Similarity to B','Change in Similarity','fdr'))
 
 saveRDS(list(allgenes = cell_type_cors, dcgenes=cell_type_cors_dc, nondcgenes = cell_type_cors_nondc),
         './data/other_datasets/scRNA-seq/processed/celltype_pairwise_cors.rds')
@@ -334,14 +363,14 @@ saveRDS(list(allgenes = cell_type_cors, dcgenes=cell_type_cors_dc, nondcgenes = 
 ##########################
 
 ######## write max cors to table Sx (all, dc, non-dc)
-# maxcors_table = list(allgenes = maxcors_table_sx, DiCo_genes = maxcors_table_sx_dc,
-#                      nonDiCo_genes  = maxcors_table_sx_nondc)
-# write.xlsx(maxcors_table, './results/SI_tables/TableS13.xlsx')
+maxcors_table = list(allgenes = maxcors_table_sx, DiCo_genes = maxcors_table_sx_dc,
+                     nonDiCo_genes  = maxcors_table_sx_nondc)
+write.xlsx(maxcors_table, './results/SI_tables/TableS13.xlsx')
 
 ######## write min cors to table S8 (all, dc, non-dc)
-# mincors_table = list(allgenes = mincors_table_sx, DiCo_genes = mincors_table_sx_dc,
-#                      nonDiCo_genes = mincors_table_sx_nondc)
-# write.xlsx(mincors_table, './data/TableS14.xlsx')
+mincors_table = list(allgenes = mincors_table_sx, DiCo_genes = mincors_table_sx_dc,
+                     nonDiCo_genes = mincors_table_sx_nondc)
+write.xlsx(mincors_table, './data/TableS14.xlsx')
 
 ##############
 ##############
@@ -379,7 +408,7 @@ for(perm in 1:1000){
     ct.exp.nondc.perm$m24[[x]] = ct.exp$m24[[x]][chooseg,]
   }
   names(ct.exp.nondc.perm) = names(ct.exp)
-
+  
   ct_cors_nondc_perm = celltype_cors_f(ct.exp.nondc.perm)
   
   ### all cell type correlations within each age group
@@ -441,21 +470,19 @@ table(sign(maxcorchange_nondc$`rho ch`))['-1'] #  35
 table(sign(maxcorchange$`rho ch`))['-1'] #  36
 table(sign(maxcorchange_dc$`rho ch`))['-1'] # 30 obs
 
-# for dc genes:
 mean(sapply(nondc_perms_max, function(x) table(sign(x$`rho ch`))['-1'] ) >= 30)
 # 0.895 -> 1
 hist(sapply(nondc_perms_max, function(x) table(sign(x$`rho ch`))['-1'] ))
-abline(v=30)
+abline(v=36)
 
-table(sign(mincorchange_nondc$`rho ch`))['1'] # 44 
+table(sign(mincorchange_nondc$`rho ch`))['1'] # 44
 table(sign(mincorchange_dc$`rho ch`))['1'] # 47 obs
 table(sign(mincorchange$`rho ch`))['1'] # 45 
 
-# for dc genes:
 mean(sapply(nondc_perms_min, function(x) table(sign(x$`rho ch`))['1'] )>= 47)
-# 0.794 -> 0.331
+# 0.794 -> 0.661
 hist(sapply(nondc_perms_min, function(x) table(sign(x$`rho ch`))['1'] ))
-abline(v=47)
+abline(v=45)
 
 ########
 ######## repeat permutation with all genes:
@@ -564,22 +591,21 @@ names(allg_perms_min) = paste0('perm',1:1000)
 saveRDS(allg_perms_max, './data/other_datasets/scRNA-seq/processed/celltype_pairwise_maxcors_allg_permds.rds')
 saveRDS(allg_perms_min, './data/other_datasets/scRNA-seq/processed/celltype_pairwise_mincors_allg_permds.rds')
 
-table(sign(maxcorchange$`rho ch`))['-1'] # 36 
-table(sign(maxcorchange_nondc$`rho ch`))['-1'] #  35 
-table(sign(maxcorchange_dc$`rho ch`))['-1'] # 30 
+table(sign(maxcorchange_nondc$`rho ch`))['-1'] #  35 dec
+table(sign(maxcorchange$`rho ch`))['-1'] # 36 dec
+table(sign(maxcorchange_dc$`rho ch`))['-1'] # 30 obs
 
-# for all genes:
-mean(sapply(allg_perms_max, function(x) table(sign(x$`rho ch`))['-1'] ) >= 36)
-# 0.559
+mean(sapply(allg_perms_max, function(x) table(sign(x$`rho ch`))['-1'] ) >= 30)
+# 0.895 -> 0.99
 hist(sapply(allg_perms_max, function(x) table(sign(x$`rho ch`))['-1'] ), xlim = c(29,43))
-abline(v=36)
+abline(v=30)
 
-table(sign(mincorchange$`rho ch`))['1'] # 45 
 table(sign(mincorchange_nondc$`rho ch`))['1'] # 44
+table(sign(mincorchange$`rho ch`))['1'] # 45 
 table(sign(mincorchange_dc$`rho ch`))['1'] # 47 obs
 
-mean(sapply(allg_perms_min, function(x) table(sign(x$`rho ch`))['1'] )>= 45)
-# 0.731
+mean(sapply(allg_perms_min, function(x) table(sign(x$`rho ch`))['1'] )>= 47)
+# 0.456
 hist(sapply(allg_perms_min, function(x) table(sign(x$`rho ch`))['1'] ))
 abline(v=45)
 

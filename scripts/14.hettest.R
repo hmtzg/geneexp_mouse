@@ -200,10 +200,10 @@ ggsave('./results/SI_figures/heteroscedasticity/hetplot.pdf', hetplot, units='cm
 ggsave('./results/SI_figures/heteroscedasticity/hetplot.png', hetplot, units='cm', height = 14,
        width = 16, bg='white')
 
-ggsave('./results/figure_supplements/fs2/FS15.pdf', hetplot, units='cm', height = 14,
-       width = 16, useDingbats=F)
-ggsave('./results/figure_supplements/fs2/FS15.png', hetplot, units='cm', height = 14,
-       width = 16, bg='white')
+ggsave('./results/figure_supplements/fs2/FS15.pdf', hetplot, units='cm', height = 12,
+       width = 15, useDingbats=F)
+ggsave('./results/figure_supplements/fs2/FS15.png', hetplot, units='cm', height = 12,
+       width = 15, bg='white')
 
 saveRDS(hetcorplot2dat,'results/source_data/f2/fs15_het.rds')
 saveRDS(hetcorplot3dat, 'results/source_data/f2/fs15_ncvtest.rds')

@@ -113,8 +113,8 @@ expdat$exc = sapply(expdat$max_exp_ch,length)>1
 expdat = filter(expdat,!exc)
 expdat$max_exp_ch = sapply(expdat$max_exp_ch, c)
 expdat = expdat %>%
-  mutate(sametis = c('Max Expression\nin Other Tissues',
-                     'Max Expression\nin the Native Tissue')[1+(max_exp_ch == `native_tissue`)]) %>%
+  mutate(sametis = c('Max Expr. Change\nin Other Tissues',
+                     'Max Expr. Change\nin the Native Tissue')[1+(max_exp_ch == `native_tissue`)]) %>%
   mutate(expchange = c('Down','Up')[1+(beta>0)])
 
 dc_fisher = expdat %>%
@@ -135,10 +135,12 @@ dccontplot = dc_fisher %>%
   geom_text(aes(label = paste('n=',n,sep='')), position = 'fill', 
             size = 7/pntnorm, vjust = 1.2, color = 'black') +
   scale_fill_manual(values = regcol,
-                    guide = guide_legend(title = 'Direction of Expression Change', title.vjust = 1)) +
+                    guide = guide_legend(
+                      title = 'Direction of Expression Change During Ageing',
+                      title.vjust = 1, title.hjust = 0.5)) +
   xlab(NULL) + ylab('') +
-  annotate(geom='text',x=c(1.1,1.1,2.1,2.1)-0.5,y=c(0.95,0.05,0.95,0.05),
-           label=paste('GR',c(1,3,2,4), sep=''), size = 6/pntnorm, fontface = 'bold') +
+  annotate(geom='text',x=c(1.1, 1.1, 2.1, 2.1)-0.5,y=c(0.95,0.05,0.95,0.05),
+           label=paste('GR',c(1,2,3,4), sep=''), size = 6/pntnorm, fontface = 'bold') +
   #theme_rvis(base_size = 6, legend.pos = 'bottom') +
   theme(axis.ticks.length.x = unit(0,'pt'),
         axis.text.x = element_text(vjust = 2),
@@ -147,11 +149,12 @@ dccontplot = dc_fisher %>%
         axis.line.x = element_blank(),
         plot.title = element_text(vjust = -0.5),
         legend.background = element_rect(color='black',size = 0.1),
-        legend.key.size = unit(3, 'pt')) +
+        legend.key.size = unit(2.5, 'pt'),
+        legend.spacing.x = unit(2.5, 'pt')) +
   ggtitle(fidctitle  )  
   #ggtitle(paste('DiCo Genes - OR=',round(1/fidc$estimate,2),scales::pvalue(fidc$p.value, add_p = T))) 
 
-saveRDS(dc_fisher,'results/source_data/f4/b.rds')
+saveRDS(dc_fisher, 'results/source_data/f4/b.rds')
 
 all_fisher = expdat %>%
   # filter(DC) %>%
@@ -171,7 +174,8 @@ allcontplot = all_fisher %>%
   geom_text(aes(label = paste('n=',n,sep='')), position = 'fill', size = 7/pntnorm, 
             vjust = 1.2, color = 'black') +
   scale_fill_manual(values = regcol, 
-                    guide = guide_legend(title = 'Direction of Expression Change')) +
+                    guide = guide_legend(title = 'Direction of Expression Change During Ageing',
+                    title.vjust = 1, title.hjust = 0.5)) +
   xlab(NULL) + ylab('Proportion') +
   theme(axis.ticks.length.x = unit(0,'pt'),
         axis.text.x = element_text(vjust = 2),
@@ -180,16 +184,69 @@ allcontplot = all_fisher %>%
         axis.line.x = element_blank(),
         plot.title = element_text(vjust = -0.5),
         legend.background = element_rect(color='black', size=0.1),
-        legend.key.size = unit(3, 'pt'),
+        legend.key.size = unit(2.5, 'pt'),
         legend.spacing.x = unit(2.5, 'pt')) +
   ggtitle(fiall.title)  
   #ggtitle(paste('All Genes - OR=',round(1/fiall$estimate,2),scales::pvalue(fiall$p.value, add_p = T)))
 
 saveRDS(all_fisher,'results/source_data/f4/a.rds')
 
-p1 = ggarrange(allcontplot, dccontplot, common.legend = T, legend = 'top', labels = c('a.','b.'), 
-               font.label = list(size = 8))
+# p1 = ggarrange(allcontplot, dccontplot, common.legend = T, legend = 'top', labels = c('a.','b.'), 
+#                font.label = list(size = 8))
 
+ourdat = readRDS('data/processed/specloss_wdico_fisher.rds')
+jonker = readRDS('data/other_datasets/jonker/processed/specloss_fisher_co.rds')
+schaum4 = readRDS('data/other_datasets/schaum/4tissue/specloss_fisher_co.rds')
+schaum8 = readRDS('data/other_datasets/schaum/8tis/specloss_fisher_co.rds')
+gtex4 = readRDS('data/other_datasets/GTEx/specloss_fisher_co.rds')
+gtex10 = readRDS('results/GTEx/alltissues/specloss_fisher_co.rds')
+
+dat = rbind(
+  Our_data = c(OR = unname(ourdat$fisher$est), p = ourdat$fisher$p.value),
+  Jonker = c(OR = unname(jonker$fisher$est), p = jonker$fisher$p.value),
+  Schaum4 = c(OR = unname(schaum4$fisher$est), p = schaum4$fisher$p.value),
+  Schaum8 = c(OR = unname(schaum8$fisher$est), p = schaum8$fisher$p.value),
+  GTEx4 = c(OR = unname(gtex4$fisher$est), p = gtex4$fisher$p.value),
+  GTEx10 = c(OR = unname(gtex10$fisher$est), p = gtex10$fisher$p.value) ) %>%
+  reshape2::melt() %>%
+  spread(key='Var2', value='value') %>%
+  set_names(c('dataset', 'OR', 'P value'))
+# dataset        OR       P value
+# 1 Our_data 74.808000 5.899456e-203
+# 2   Jonker  7.518605 6.464742e-109
+# 3  Schaum4 58.025610 1.505944e-197
+# 4  Schaum8 84.200686  9.733053e-96
+# 5    GTEx4  7.208754  7.040190e-87
+# 6   GTEx10 13.014020 5.680559e-114
+
+
+#annot = data.frame(dataset = dat$dataset, yval = log2(dat$OR), )
+p.adjust(dat$`P value`, method = 'BH')
+ORplot = ggplot(dat, aes(y= log2(OR), x=dataset)) +
+  geom_bar(stat='identity', fill = '#9B6A6C') +
+  xlab('') + ylab('Log2 (OR)') +
+  geom_text(x = 1:6, y = log2(dat$OR)+0.02, label='***') +
+  theme(axis.text.x  = element_text(size=4) )
+ORplot
+ggsave(filename = 'results/figure4/alldatasets.pdf',ORplot, units='cm', height = 8, width = 8, useDingbats=F)
+ggsave(filename = 'results/figure4/alldatasets.png',ORplot, units='cm', height = 8, width = 8)
+
+saveRDS(dat, 'results/source_data/f4/new_c.rds')
+# p1 = ggarrange(allcontplot, dccontplot, ORplot,  ncol=3, common.legend = T, legend = 'top', 
+#           labels = c('a.','b.','c.'),font.label = list(size = 8))
+
+p1 = ggarrange(
+  ggarrange(allcontplot, dccontplot, common.legend = T, legend = 'top', labels = c('a.','b.'),
+            font.label = list(size = 8) ), widths = c(2,1),
+               ORplot, labels=c(NA, 'c.'), font.label = list(size = 8)) 
+
+p1.1 = ggarrange(
+  ggarrange(allcontplot, dccontplot, common.legend = T, legend = 'top', labels = c('a.','b.'),
+            font.label = list(size = 8) ), widths = c(2,1),
+  ggarrange(NULL, ORplot, nrow=2, heights = c(0.1, 0.8)),
+  labels=c(NA, 'c.'), font.label = list(size = 8), vjust = 4) 
+
+##
 GR1 = unique((expdat %>% filter((max_exp_ch != native_tissue) & (beta<0) & DC) %>% 
                 filter(max_exp_ch == tissue) %>% 
                 select(beta, gene_id) %>% unique() %>%
@@ -212,7 +269,7 @@ martx = biomaRt::useMart('ensembl','mmusculus_gene_ensembl')
 genex = biomaRt::getBM(attributes = c('ensembl_gene_id', 'mgi_symbol', 'mgi_description'), 
                        filters = 'ensembl_gene_id', values = genelist, mart = martx)
 genex = setNames(genex$mgi_symbol,genex$ensembl_gene_id)
-
+saveRDS(genex, 'results/figure4/gene_names.rds')
 i=6
 gr1dat = expdat %>% filter(gene_id == GR1[i])
 gr1plot = ggplot(gr1dat, aes(x = age, y = expression, color = tissue)) +
@@ -288,8 +345,8 @@ gr4plot = expdat %>%
 saveRDS(gr4dat, 'results/source_data/f4/f.rds')
 
 p2 = ggarrange(gr1plot, gr2plot, gr3plot,gr4plot,font.label = list(size = 8), 
-               labels = c('c.','d.','e.','f.'), ncol = 4, nrow = 1, common.legend = T, legend = 'top')
-fig4af = ggarrange(p1, p2, ncol = 1 , nrow = 2, heights = c(1,1))
+               labels = c('d.','e.','f.','g.'), ncol = 4, nrow = 1, common.legend = T, legend = 'top')
+fig4af = ggarrange(p1.1, p2, ncol = 1 , nrow = 2, heights = c(1,1))
 
 ##### Fig 4g (Dico Enrichment plot)
 expch = readRDS('./data/processed/tidy/expression_change.rds') %>%
@@ -337,12 +394,12 @@ saveRDS(enricplotdat,'results/source_data/f4/g.rds')
 ggsave('./results/figure4/dicoGO.pdf',enricplot, units='cm', width = 16, height = 8, useDingbats=F)
 ggsave('./results/figure4/dicoGO.png',enricplot, units='cm', width = 16, height = 8)  
 
-fig4  = ggarrange(fig4af, enricplot, nrow =2, labels=c(NA, 'g.'), font.label = list(size = 8))
+fig4  = ggarrange(fig4af, enricplot, nrow =2, labels=c(NA, 'h.'), font.label = list(size = 8))
 fig4
 plotsave(fig4,'./results/figure4/figure4', fig4, units='cm', width = 16, height = 16)
 
-#### enriched GO with expr. changes, FDR<0.1
 
+#### enriched GO with expr. changes, FDR<0.1
 #########
 ######### Figure 4- figure supplement 1
 #########

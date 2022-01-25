@@ -112,6 +112,7 @@ biotype = biomaRt::getBM(attributes = c('ensembl_gene_id', 'gene_biotype'), filt
                          values = genelist, mart = martx)
 codinggenes = unique(filter(biotype,gene_biotype == 'protein_coding')$ensembl_gene_id)
 saveRDS(codinggenes, file='./results/GTEx/alltissues/codinggenes.rds')
+
 incids = setdiff(unique((sapply(expvals, colnames) %>% 
                            reshape2::melt() %>%
                            set_names(c('sample_id','Tissue')) %>%
@@ -245,6 +246,10 @@ meanEuc = reshape2::melt( as.data.frame(pcx$x) %>%
   mutate(Age = c(25,35,45,55,65,75)[age]) %>%
   mutate(sex = str_to_title(sex))
 
+meanEuc %>% count(sex)
+# female 8
+# male 27
+
 eucdist = meanEuc %>%
   ggplot(aes(x = Age, y= value)) +
   geom_point(aes(size = age)) +
@@ -283,6 +288,7 @@ agecor = expvals %>%
 
 agecor = ungroup(agecor) %>%
   mutate(adjusted_p = p.adjust(p, method = 'fdr'))
+saveRDS(agecor, 'results/GTEx/alltissues/agecor.rds')
 
 #### CoV analysis #### 
 
@@ -342,7 +348,6 @@ pairwisedat = reshape2::melt(cors) %>%
 pairwisedat2 = pairwisedat %>%
   mutate(Age = c(25,35,45,55,65,75)[age]) %>%
   group_by(tis1,tis2) %>%
-  # head()
   summarise(corx = list(cor.test(`Spearman Correlation Coefficient`, Age, method = 'spearman'))) %>%
   ungroup() 
 
@@ -350,13 +355,46 @@ meancordat = pairwisedat %>%
   mutate(Age = c(25,35,45,55,65,75)[age]) %>%
   group_by(tis1, tis2) %>% 
   summarise(meancor = mean(`Spearman Correlation Coefficient`)) %>%
-  ungroup() 
+  ungroup()
+
 
 pairwisedat2$rho = sapply(pairwisedat2$corx, function(x) x$est)
 pairwisedat2$p = sapply(pairwisedat2$corx,function(x)x$p.val)
 pairwisedat2$adjusted_p = p.adjust(pairwisedat2$p, method = 'BH')
 table(pairwisedat2$adjusted_p<0.1)
 # none significant
+
+pairwisecor_ch = pairwisedat %>%
+  mutate(Age = c(25,35,45,55,65,75)[age]) %>%
+  group_by(tis1,tis2) %>%
+  summarise(corx = list(cor.test(`Spearman Correlation Coefficient`, Age, method = 'spearman'))) %>%
+  ungroup() 
+
+pairwisecor_ch$rho = sapply(pairwisecor_ch$corx, function(x) x$est)
+pairwisecor_ch$p = sapply(pairwisecor_ch$corx,function(x)x$p.val)
+pairwisecor_ch$adjusted_p = p.adjust(pairwisecor_ch$p, method = 'BH')
+table(pairwisecor_ch$adjusted_p<0.1)
+# XX significant
+pairwisecor_ch %>% filter(adjusted_p<0.1) %>%
+  summarise(sign(rho)) %>% table() # XX significant increasing correlation
+
+pairwisecor_ch %>%
+  mutate(tis1= as.character(tis1),
+         tis2=as.character(tis2)) %>%
+  filter( !duplicated(paste0(pmax(tis1,tis2),pmin(tis1,tis2) ) ) ) %>%
+  pull(rho) %>% sign() %>% table() # 29 positive
+
+pairwisecor_ch %>%
+  mutate(tis1= as.character(tis1),
+         tis2=as.character(tis2)) %>%
+  filter( !duplicated(paste0(pmax(tis1,tis2),pmin(tis1,tis2) ) ) & adjusted_p<0.1 ) %>%
+  pull(rho) %>% sign() %>% table() # 0 significant
+
+pairwisecor_ch %>%
+  mutate(tis1= as.character(tis1),
+         tis2=as.character(tis2)) %>%
+  filter( !duplicated(paste0(pmax(tis1,tis2),pmin(tis1,tis2) ) ) & rho < 0 )
+#
 
 pairwiseplotdat = pairwisedat2 %>%
   unique() %>%
@@ -410,7 +448,7 @@ covcor = expvals %>%
 
 covcor = ungroup(covcor) %>%
   mutate(adjusted_p = p.adjust(p, method = 'fdr'))
-
+saveRDS(covcor, file = 'results/GTEx/alltissues/covch.rds')
 covcor %>%
   filter(adjusted_p<0.1)
 # GeneID             rho          p adjusted_p
@@ -435,4 +473,203 @@ mostsignifplot = expvals %>%
   
 plotsave(ggobj = mostsignifplot, prefix = './results/GTEx/alltissues/signif',width = 8, height = 8)
 
+
+### ES
+source("scripts/functions.R")
+
+unique(expvals$Age)
+expvals %>% 
+  filter(Age%in%c(45)) %>%
+  group_by(major_tissue) %>%
+  summarise(n=length(unique(id)) ) #  1 sample from each tissue
+
+expp = expvals %>%
+  filter(Age%in%c(45)) %>%
+  dplyr::select(GeneID, Expression, id, major_tissue) %>%
+  mutate(Grp = paste(id, major_tissue, sep='-')) %>%
+  dplyr::select(-id, -major_tissue) %>%
+  spread(key='Grp', value='Expression') %>%
+  column_to_rownames(var = 'GeneID') %>%
+  as.matrix
+
+ts.ord = sapply(strsplit(colnames(expp),'-'),`[[`,3)
+
+ES = sapply(unique(ts.ord), function(y){
+  sapply(rownames(expp), function(x){
+    cohens_d(expp[x, ts.ord == y], expp[x, ts.ord != y] )
+  })
+})
+saveRDS(ES, file='results/GTEx/alltissues/effectsize.rds')
+# get tissue with highest ES for each gene:
+ts.spec = colnames(ES)[apply(ES, 1, which.max)]
+names(ts.spec) = rownames(ES)
+
+# get tissue specific genes using >3Q of genes assigned to a tissue:
+ts.specQ3 = sapply(unique(ts.spec), function(x){
+  ts.genes = names(which(ts.spec==x))
+  cutoff = summary(ES[ts.genes,x])['3rd Qu.']
+  q3.genes = names(which(ES[ts.genes,x] > cutoff))
+  return(q3.genes)
+})
+
+saveRDS(ts.specQ3,'./results/GTEx/alltissues/ts.specQ3.genes.rds')
+
+# get ES values for tissue specific genes:
+ts.spec.ES = sapply(names(ts.specQ3),function(x) {
+  ES[ts.specQ3[[x]],]
+}, simplify = F)
+
+ts.spec.ES2 = reshape2::melt(ts.spec.ES) %>% 
+  set_names(c('gene id', 'tissue', 'ES','spec'))
+
+saveRDS(ts.spec.ES2,'./results/GTEx/alltissues/ts.spec.ES.rds')
+
+ts.specQ3.genes = unlist(ts.specQ3)
+names(ts.specQ3.genes) = gsub('[0-9]','', names(ts.specQ3.genes))
+
+##### in which tissue the highest expression change occurs for each gene:
+
+### use beta from linear regression:
+
+adipose = expvals %>%
+  filter(major_tissue=='Adipose Tissue') %>%
+  select(GeneID, Expression, id) %>%
+  spread(key='id', value = 'Expression') %>%
+  column_to_rownames(var = 'GeneID') %>% as.matrix()
+blood = expvals %>%
+  filter(major_tissue=='Blood') %>%
+  select(GeneID, Expression, id) %>%
+  spread(key='id', value = 'Expression') %>%
+  column_to_rownames(var = 'GeneID') %>% as.matrix()
+bvessel = expvals %>%
+  filter(major_tissue=='Blood Vessel') %>%
+  select(GeneID, Expression, id) %>%
+  spread(key='id', value = 'Expression') %>%
+  column_to_rownames(var = 'GeneID') %>% as.matrix()
+cortex = expvals %>%
+  filter(major_tissue=='Brain') %>%
+  select(GeneID, Expression, id) %>%
+  spread(key='id', value = 'Expression') %>%
+  column_to_rownames(var = 'GeneID') %>% as.matrix()
+lung = expvals %>%
+  filter(major_tissue=='Lung') %>%
+  select(GeneID, Expression, id) %>%
+  spread(key='id', value = 'Expression') %>%
+  column_to_rownames(var = 'GeneID') %>% as.matrix()
+muscle = expvals %>%
+  filter(major_tissue=='Muscle') %>%
+  select(GeneID, Expression, id) %>%
+  spread(key='id', value = 'Expression') %>%
+  column_to_rownames(var = 'GeneID') %>% as.matrix()
+nerve = expvals %>%
+  filter(major_tissue=='Nerve') %>%
+  select(GeneID, Expression, id) %>%
+  spread(key='id', value = 'Expression') %>%
+  column_to_rownames(var = 'GeneID') %>% as.matrix()
+pituitary = expvals %>%
+  filter(major_tissue=='Pituitary') %>%
+  select(GeneID, Expression, id) %>%
+  spread(key='id', value = 'Expression') %>%
+  column_to_rownames(var = 'GeneID') %>% as.matrix()
+skin = expvals %>%
+  filter(major_tissue=='Skin') %>%
+  select(GeneID, Expression, id) %>%
+  spread(key='id', value = 'Expression') %>%
+  column_to_rownames(var = 'GeneID') %>% as.matrix()
+thyroid = expvals %>%
+  filter(major_tissue=='Thyroid') %>%
+  select(GeneID, Expression, id) %>%
+  spread(key='id', value = 'Expression') %>%
+  column_to_rownames(var = 'GeneID') %>% as.matrix()
+
+cortage = attr %>% 
+  filter(id%in%colnames(cortex) & major_tissue=='Brain') %>% 
+  pull(age)
+cortage = log2(c(25,35,45,55,65,75)[cortage])
+
+adiposebeta = t(apply(adipose,1,function(x){
+  summary(lm(x~cortage))$coef[2,c(1,4)]
+}))
+bloodbeta = t(apply(blood,1,function(x){
+  summary(lm(x~cortage))$coef[2,c(1,4)]
+}))
+bvesselbeta = t(apply(bvessel,1,function(x){
+  summary(lm(x~cortage))$coef[2,c(1,4)]
+}))
+cortexbeta = t(apply(cortex,1,function(x){
+  summary(lm(x~cortage))$coef[2,c(1,4)]
+}))
+lungbeta = t(apply(lung,1,function(x){
+  summary(lm(x~cortage))$coef[2,c(1,4)]
+}))
+musclebeta = t(apply(muscle,1,function(x){
+  summary(lm(x~cortage))$coef[2,c(1,4)]
+}))
+nervebeta = t(apply(nerve,1,function(x){
+  summary(lm(x~cortage))$coef[2,c(1,4)]
+}))
+pituitarybeta = t(apply(pituitary,1,function(x){
+  summary(lm(x~cortage))$coef[2,c(1,4)]
+}))
+skinbeta = t(apply(skin,1,function(x){
+  summary(lm(x~cortage))$coef[2,c(1,4)]
+}))
+thyroidbeta = t(apply(thyroid,1,function(x){
+  summary(lm(x~cortage))$coef[2,c(1,4)]
+}))
+
+expbeta = cbind(adiposebeta[,1], bloodbeta[,1], bvesselbeta[,1], cortexbeta[,1], lungbeta[,1],
+                musclebeta[,1], nervebeta[,1], pituitarybeta[,1], skinbeta[,1], thyroidbeta[,1])
+colnames(expbeta) = c('Adipose', 'Blood', 'Blood Vessel', 'Cortex', 'Lung',
+                      'Muscle', 'Nerve', 'Pituitary', 'Skin', 'Thyroid')
+
+ts.expr.ch = colnames(expbeta)[apply(expbeta, 1, function(x) which.max(abs(x)))]
+names(ts.expr.ch) = rownames(expbeta)
+
+# direction of expression change for those genes :
+ts.expr.ch.dir = sapply(1:length(ts.expr.ch), function(x){ sign(expbeta[x, ts.expr.ch[x]]) } )
+names(ts.expr.ch.dir) = names(ts.expr.ch)
+
+########
+######## Expr change in native tissue :
+########
+# for tissue-specific genes (>Q3) :
+mat = data.frame(sameness = names(ts.specQ3.genes) == ts.expr.ch[ts.specQ3.genes],
+                 exp_dir = ts.expr.ch.dir[ts.specQ3.genes] )
+table(mat)[,c(2,1)]
+fisher.test(table(mat)[,c(2,1)])
+# OR: 0.6877, p = 6.4e-7 (old)
+# OR: 1.484, p = 5.45e-8
+saveRDS(list(tbl = table(mat)[,c(2,1)],
+             fisher = fisher.test(table(mat)[,c(2,1)])),
+        file = 'results/GTEx/alltissues/specloss_fisher.rds')
+
+### using only Co genes:
+## losing expr in native, gain in other tissues:
+cogenes = covcor %>% filter(rho<0) %>% pull(GeneID)
+
+specsub = ts.specQ3.genes[ts.specQ3.genes%in%cogenes]
+expchsub = ts.expr.ch[cogenes]
+expchdirsub = ts.expr.ch.dir[cogenes]
+matsub = data.frame(sameness = names(specsub) == expchsub[specsub],
+                    expdir = expchdirsub[specsub])
+table(matsub)[,c(2,1)]
+sum(table(matsub)[,c(2,1)]) # 2195
+fisher.test(table(matsub)[,c(2,1)])
+fisher.test(table(matsub)[,c(2,1)])$p.val
+# OR = 13.014, p = 5.680559e-114
+
+saveRDS(list(tbl = table(matsub)[,c(2,1)],
+             fisher = fisher.test(table(matsub)[,c(2,1)])),
+        file = 'results/GTEx/alltissues/specloss_fisher_co.rds')
+
+covcor %>% 
+  filter(adjusted_p<0.1) %>%
+  mutate(pattern = ifelse(rho<0, 'conv', 'div')) %>%
+  group_by(pattern) %>%
+  summarise(n=n())
+# 3 sig genes, all are convergent
+
+
 save(list=ls(),file = './results/GTEx/alltissues/data.RData')
+

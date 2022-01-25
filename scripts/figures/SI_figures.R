@@ -20,13 +20,12 @@ expr = readRDS('./data/processed/tidy/expression.rds')
 expr_ch = readRDS('./data/processed/tidy/expression_change.rds')
 pca_dat = readRDS('./data/processed/tidy/pca_data.rds')
 perm_overlaps=readRDS('./data/processed/raw/tissue_gene_overlaps_perm.rds')
-perm_overlaps_fdr=readRDS('./data/processed/raw/tissue_siggene_fdr01_overlaps_perm.rds')
+perm_overlaps_fdr = readRDS('./data/processed/raw/tissue_siggene_fdr01_overlaps_perm.rds')
 cov_dat = readRDS('./data/processed/tidy/CoV.rds')
 cov_ch = readRDS('./data/processed/tidy/CoV_change.rds')
 pexpcors  = readRDS('./data/processed/tidy/pairwise_tissue_expression_cors.rds')
 intra_ts_cov = readRDS('./data/other_datasets/scRNA-seq/processed/intra_tissue_mean_cov.rds')
 deconv = readRDS('./data/other_datasets/scRNA-seq/processed/deconvolutions_combined.rds')
-
 
 ######################## Figure 1 supplement figures ########################
 ######################## Figure 1 supplement figures ########################
@@ -349,21 +348,35 @@ dev_raw_pc1234 = ggarrange(
   ggarrange(dev_raw_pca12, dev_raw_pca34 + theme(legend.position = 'none'),nrow = 2, align = 'v',
             labels = c('a.', 'b.'), vjust = 2,font.label = list(size=8)),
   ggarrange(dev_raw_pc1age, dev_raw_pc2age,dev_raw_pc3age, dev_raw_pc4age, align = 'hv', nrow =4),
-  ncol=2, widths = c(1, 0.5), labels = c(NA,'c.'),font.label = list(size=8)
+  ncol=2, widths = c(1, 0.6), labels = c(NA,'c.'),font.label = list(size=8)
 )
 
 aging_raw_pc1234 = ggarrange(
   ggarrange(aging_raw_pca12, aging_raw_pca34 + theme(legend.position = 'none'), nrow = 2, align = 'v', 
             labels = c('d.', 'e.'), vjust = 2,font.label = list(size=8)),
   ggarrange(aging_raw_pc1age, aging_raw_pc2age, aging_raw_pc3age, aging_raw_pc4age, align = 'hv', nrow =4),
-  ncol=2, widths = c(1, 0.5), labels = c(NA,'f.'), font.label = list(size=8))
+  ncol=2, widths = c(1, 0.6), labels = c(NA,'f.'), font.label = list(size=8))
 
 figs3 = ggarrange(dev_raw_pc1234, aging_raw_pc1234, ncol = 2, common.legend = T)
 
-ggsave('./results/figure_supplements/f1s/FS3.pdf', figs3, units = 'cm', width = 16, height = 12,
+ggsave('./results/figure_supplements/f1s/FS3.pdf', figs3, units = 'cm', width = 16, height = 10,
        useDingbats = F)
-ggsave('./results/figure_supplements/f1s/FS3.png', figs3, units = 'cm', width = 16, height = 12, bg = 'white')
+ggsave('./results/figure_supplements/f1s/FS3.png', figs3, units = 'cm', width = 16, height = 10, bg = 'white')
 
+
+dev_raw_pc1234 = ggarrange(
+  ggarrange(dev_raw_pca12, dev_raw_pca34 + theme(legend.position = 'none'),ncol = 2, align = 'v',
+            labels = c('a.', 'b.'), vjust = 2,font.label = list(size=8)),
+  ggarrange(dev_raw_pc1age, dev_raw_pc2age,dev_raw_pc3age, dev_raw_pc4age, align = 'hv', nrow =2, ncol=2),
+  ncol=2, widths = c(1, 0.6), labels = c(NA,'c.'),font.label = list(size=8)
+)
+aging_raw_pc1234 = ggarrange(
+  ggarrange(aging_raw_pca12, aging_raw_pca34 + theme(legend.position = 'none'), ncol = 2, align = 'v', 
+            labels = c('d.', 'e.'), vjust = 2,font.label = list(size=8)),
+  ggarrange(aging_raw_pc1age, aging_raw_pc2age, aging_raw_pc3age, aging_raw_pc4age, align = 'hv', nrow =2,ncol=2),
+  ncol=2, widths = c(1, 0.6), labels = c(NA,'f.'), font.label = list(size=8))
+
+figs3 = ggarrange(dev_raw_pc1234, aging_raw_pc1234, nrow = 2, common.legend = T)
 ############ F1
 ############
 ############ Figure S4, permutation test for shared up/down genes across tissues w/o sig. cutoff -----------
@@ -398,7 +411,7 @@ plot_overlaps = perm_overlaps %>%
   ggplot(aes(x=`N Overlap`)) +
   facet_grid(period+direction ~  `N Tissue`, scales = 'free') +
   geom_histogram() +
-  xlab('Number of Overlap Genes') +
+  xlab('Number of Overlapping Genes') +
   ylab('Frequency')  +
   geom_vline(data = obs_overlap, mapping = aes(xintercept= Obs), linetype ='dashed', color = 'darkred' ) +
   geom_text(data= overlap_test, size=  sizex,
@@ -423,8 +436,17 @@ saveRDS(perm_overlaps %>% left_join(obs_overlap),
 ############
 
 # significant ones:
-perm_overlaps_fdr = readRDS('./data/processed/raw/tissue_siggene_fdr01_overlaps_perm_testresult.rds')
-
+perm_overlaps_fdr_test = readRDS('./data/processed/raw/tissue_siggene_fdr01_overlaps_perm_testresult.rds')
+# direction period      `N Tissue` Perm_p   eFPP   Obs
+# <chr>     <chr>       <chr>      <chr>   <dbl> <int>
+#   1 Down      Ageing      2 Tissues  0.011    0.47    33
+# 2 Down      Development 2 Tissues  0.85     1.05  1257
+# 3 Down      Development 3 Tissues  0.005    0.4    460
+# 4 Down      Development 4 Tissues  < 0.001  0.09   138
+# 5 Up        Ageing      2 Tissues  0.006    0.39    23
+# 6 Up        Development 2 Tissues  0.331    0.98  1206
+# 7 Up        Development 3 Tissues  0.037    0.53   284
+# 8 Up        Development 4 Tissues  0.027    0.2     45
 star = data.frame(direction = rep(c('down','up'),3),
                   y_pos = c(461, 285, 139, 46, 34, 24),
                   period= factor(rep(c('Development','Ageing'),c(4,2)),
@@ -482,6 +504,12 @@ expr_ch %>%
 label_b = data.frame(tissue = c('Cortex','Liver','Lung','Muscle'),
            diff = c(rep(1,4)))
 
+fs5b_dat = expr_ch %>%
+  dplyr::select(-p, -FDR) %>%
+  spread(key = period, value = `Expression Change`) %>%
+  group_by(tissue, gene_id) %>%
+  summarise(diff =  abs(development) - abs(aging))
+
 magnitude_comparison = expr_ch %>%
   dplyr::select(-p, -FDR) %>%
   spread(key = period, value = `Expression Change`) %>%
@@ -507,11 +535,15 @@ fig_s5 = ggarrange(siggenes_overlap, magnitude_comparison, ncol= 2, labels = c('
 ggsave('./results/figure_supplements/f1s/FS5.pdf', fig_s5, width = 15, height = 8, units='cm', useDingbats = F )
 ggsave('./results/figure_supplements/f1s/FS5.png', fig_s5, width = 15, height = 8, units='cm' )  
 
+saveRDS(siggenes_overlapdat, 'results/source_data/f1/fs5a.rds')
+saveRDS(fs5b_dat, 'results/source_data/f1/fs5b.rds')
+
 ############ F1
 ############
 ############ Figure S6, permutation test for sig. overlap genes across tissues -----------------------
 ############
 
+perm_overlaps_fdr_test
 obs_overlap_fdr = expr_ch %>%
   #filter(`Expression Change` !=0 ) %>% # drop expression - age rho = 0 values
   filter(FDR < 0.1) %>%
@@ -528,15 +560,16 @@ obs_overlap_fdr = expr_ch %>%
   slice(-c(1:4))  %>%
   mutate(`N Tissue` = paste(`N Tissue`, c('Tissues')) )
 
-overlap_fdr_test = perm_overlaps_fdr %>%
-  mutate(`N Tissue` = paste(`N Tissue`, c('Tissues')) ) %>% 
-  right_join(obs_overlap_fdr, by = c('N Tissue', 'period', 'direction')) %>% 
-  group_by(direction, period, `N Tissue`) %>%
-  summarise(p_val = mean(`N Overlap` >= unique(Obs)),
-            FPR =  round(median(`N Overlap`)/ unique(Obs),2)) %>%
-  ungroup() %>%
-  mutate(p_val = ifelse(p_val == 0, '< 0.001', p_val)) %>%
-  left_join(obs_overlap_fdr)
+overlap_fdr_test
+# overlap_fdr_test = perm_overlaps_fdr %>%
+#   mutate(`N Tissue` = paste(`N Tissue`, c('Tissues')) ) %>% 
+#   right_join(obs_overlap_fdr, by = c('N Tissue', 'period', 'direction')) %>% 
+#   group_by(direction, period, `N Tissue`) %>%
+#   summarise(p_val = mean(`N Overlap` >= unique(Obs)),
+#             FPR =  round(median(`N Overlap`)/ unique(Obs),2)) %>%
+#   ungroup() %>%
+#   mutate(p_val = ifelse(p_val == 0, '< 0.001', p_val)) %>%
+#   left_join(obs_overlap_fdr)
 
 sizex = 2
 fig_s6_a = perm_overlaps_fdr %>% 
@@ -546,16 +579,16 @@ fig_s6_a = perm_overlaps_fdr %>%
   ggplot(aes(x=`N Overlap`)) +
   facet_grid(direction ~  `N Tissue`, scales = 'free') +
   geom_histogram() +
-  xlab('Number of Overlap Genes') +
+  xlab('Number of Overlapping Genes') +
   ylab('Frequency')  +
   geom_vline(data = filter(overlap_fdr_test, period == 'Development'),
              mapping = aes(xintercept= Obs), linetype ='dashed', color = 'darkred' ) +
   geom_text(data= filter(overlap_fdr_test, period == 'Development'), size = sizex,
             mapping = aes(x = c(1350, 340, 90, 1320,390,80) , y=200, label = paste('Obs =', Obs) )) +
   geom_text(data= filter(overlap_fdr_test, period == 'Development'), size=  sizex,
-            mapping = aes(x = c(1350, 340, 90, 1320,390,80) , y=180, label = paste('eFPP =', FPR) )) +
+            mapping = aes(x = c(1350, 340, 90, 1320,390,80) , y=180, label = paste('eFPP =', eFPP) )) +
   geom_text(data= filter(overlap_fdr_test, period == 'Development'), size=  sizex,
-            mapping = aes(x = c(1350, 340, 90, 1320,390,80) , y=160, label = paste('p.val =', p_val) )) +
+            mapping = aes(x = c(1350, 340, 90, 1320,390,80) , y=160, label = paste('p.val =', Perm_p) )) +
   theme_bw() +
   theme(axis.text = element_text(size =6))
 
@@ -568,16 +601,16 @@ fig_s6_b = perm_overlaps_fdr %>%
   #facet_wrap(~direction, scales = 'free',nrow = 2, strip.position = 'right') +
   facet_grid(direction ~  `N Tissue`, scales = 'free') +
   geom_histogram() +
-  xlab('Number of Overlap Genes') +
+  xlab('Number of Overlapping Genes') +
   ylab('Frequency')  +
   geom_vline(data = filter(overlap_fdr_test, period == 'Ageing'),
              mapping = aes(xintercept= Obs), linetype ='dashed', color = 'darkred' ) +
   geom_text(data= filter(overlap_fdr_test, period == 'Ageing'), size = sizex,
             mapping = aes(x = c(41, 30), y=100, label = paste('Obs =', Obs) )) +
   geom_text(data= filter(overlap_fdr_test, period == 'Ageing'), size=  sizex,
-            mapping = aes(x = c(41, 31) , y=88, label = paste('eFPP =', FPR) )) +
+            mapping = aes(x = c(41, 31) , y=88, label = paste('eFPP =', eFPP) )) +
   geom_text(data= filter(overlap_fdr_test, period == 'Ageing'), size=  sizex,
-            mapping = aes(x = c(42, 32) , y=76, label = paste('p.val =', p_val) )) +
+            mapping = aes(x = c(42, 32) , y=76, label = paste('p.val =', Perm_p) )) +
   theme_bw() +
   theme(axis.text = element_text(size =6))
 
@@ -626,6 +659,8 @@ corrplot(cors.06, order="ori",tl.pos = "n", diag=F, tl.col = rep(periodcode, eac
          tl.cex = 1.2, method="shade", outline=T, addCoef.col = "black", add=T, type="lower",
          col = colorRampPalette(rev(brewer.pal(n=11, name='RdBu')[c(1:3,6,9:11)]))(100) )
 dev.off()
+
+saveRDS(cors.06, 'results/source_data/f1/fs7_cors.06.rds')
 
 ############ F1
 ############
@@ -715,9 +750,9 @@ cov_median = ggplot(cov_sum, aes(x = age, y= medianCoV)) +
   annotate('text', x=2, y=0.3475, hjust=0, size = szx/pntnorm,
            label = parse(text = paste0('p ==' ,(round(filter(cov_sumch, period=='Development')$cor.p,2)))))
 
-ggsave('./results/figure_supplements/fs2/FS1.pdf', cov_median, units = 'cm', width = 8, height = 8, 
+ggsave('./results/figure_supplements/fs2/FS1.pdf', cov_median, units = 'cm', width = 6, height = 6, 
        useDingbats = F)
-ggsave('./results/figure_supplements/fs2/FS1.png', cov_median, units = 'cm', width = 8, height = 8)
+ggsave('./results/figure_supplements/fs2/FS1.png', cov_median, units = 'cm', width = 6, height = 6)
 
 saveRDS(cov_sum,'results/source_data/f2/fs1.rds')
 
@@ -772,8 +807,22 @@ pexpcors %>%
   mutate(period = ifelse(uage<90,'dev','aging') )  %>%
   group_by(period, pair) %>%
   summarise(corrho = cor.test(uage, rho, m='s')$est,
-            corp = cor.test(uage, rho, m='s')$p.val)
-  
+            corp = cor.test(uage, rho, m='s')$p.val) %>%
+  mutate(fdr = p.adjust(corp, method = 'BH'))
+# period pair          corrho    corp    fdr
+# <chr>  <chr>          <dbl>   <dbl>  <dbl>
+# 1 aging  CORTEX-LIVER  -0.180 0.670   0.713 
+# 2 aging  CORTEX-LUNG   -0.299 0.471   0.713 
+# 3 aging  CORTEX-MUSCLE  0.156 0.713   0.713 
+# 4 aging  LIVER-MUSCLE   0.218 0.572   0.713 
+# 5 aging  LUNG-LIVER     0.420 0.260   0.713 
+# 6 aging  LUNG-MUSCLE    0.689 0.0400  0.240 
+# 7 dev    CORTEX-LIVER  -0.847 0.0162  0.0194
+# 8 dev    CORTEX-LUNG   -0.901 0.00562 0.0169
+# 9 dev    CORTEX-MUSCLE -0.883 0.00845 0.0169
+# 10 dev    LIVER-MUSCLE  -0.613 0.144   0.144 
+# 11 dev    LUNG-LIVER    -0.901 0.00562 0.0169
+# 12 dev    LUNG-MUSCLE   -0.847 0.0162  0.0194  
 
 annottext = pexpcors %>%
   mutate(period = ifelse(uage < 90,'development','aging')) %>%

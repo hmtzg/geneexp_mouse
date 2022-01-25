@@ -73,8 +73,18 @@ age_related_genes %>%
 ####################
 ####################
 ####################
-####################
+#################### expr change with pearson:
 
+expr = readRDS('data/processed/tidy/expression.rds')
+sinfo = readRDS('data/processed/tidy/sample_info.rds')
+agecor = expr %>%
+  left_join(sinfo) %>%
+  mutate(period = ifelse(age<90,'development','ageing')) %>%
+  group_by(tissue,gene_id, period) %>%
+  summarise(cor = cor.test(expression, age, m='pearson')$est,
+            p.val = cor.test(expression, age, m='pearson')$p.val)
+agecor
+saveRDS(agecor, 'data/processed/tidy/expression_change_pearson.rds')
 ####################
 #################### GORA for each tissue :
 #################### up (or down) significant genes against all genes in that period and tissue

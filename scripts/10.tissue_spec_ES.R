@@ -11,9 +11,9 @@ tissuecol = setNames(c('#233789', '#f49e92', '#801008','#dbb32e'),c('Cortex','Lu
 colnames(exp) = ind.id
 names(age) = ind.id
 # remove one individual that lack expression in cortex
-exp = exp[, !colnames(exp) == "465"]
-samp_tissue = samp_tissue[!names(age)=="465"]
-age = age[!names(age)=="465"]
+# exp = exp[, !colnames(exp) == "465"]
+# samp_tissue = samp_tissue[!names(age)=="465"]
+# age = age[!names(age)=="465"]
 
 eff.size.dev = sapply(unique(samp_tissue), function(y) {
   sapply(rownames(exp),function(x){
@@ -73,80 +73,86 @@ ts.spec.dev.agetest = ts.spec.expch2 %>%
   group_by(spec,tissue) %>%
   summarise( w.test = wilcox.test(`expage rho`~period, paired = T)$p.val)
 
-##### in which tissue the highest expression change occurs for each gene:
+##### in which tissue the highest expression change occurs for each gene: dont use rho
 ts.expr.ch = colnames(expch_ag)[apply(expch_ag, 1, function(x) which.max(abs(x)))]
 names(ts.expr.ch) = rownames(expch_ag)
 
+### use beta from linear regressin:
+cortex = exp[, age>90 & samp_tissue=='Cortex']
+lung = exp[, age>90 & samp_tissue=='Lung']
+liver = exp[, age>90 & samp_tissue=='Liver']
+muscle = exp[, age>90 & samp_tissue=='Muscle']
+
+cortage = log2(age[age>90 & samp_tissue=='Cortex'])
+lungage = log2(age[age>90 & samp_tissue=='Lung'])
+liverage = log2(age[age>90 & samp_tissue=='Liver'])
+muscleage = log2(age[age>90 & samp_tissue=='Muscle'])
+
+cortbeta = t(apply(cortex,1,function(x){
+  summary(lm(x~cortage))$coef[2,c(1,4)]
+}))
+lungbeta = t(apply(lung,1,function(x){
+  summary(lm(x~lungage))$coef[2,c(1,4)]
+}))
+liverbeta = t(apply(liver,1,function(x){
+  summary(lm(x~liverage))$coef[2,c(1,4)]
+}))
+musclebeta = t(apply(muscle,1,function(x){
+  summary(lm(x~muscleage))$coef[2,c(1,4)]
+}))
+
+expbeta = cbind(cortbeta[,1], lungbeta[,1], liverbeta[,1], musclebeta[,1])
+colnames(expbeta) = c('Cortex', 'Lung', 'Liver', 'Muscle')
+saveRDS(expbeta, 'data/processed/tidy/expbeta.rds')
+
+ts.beta.ch = colnames(expbeta)[apply(expbeta, 1, function(x) which.max(abs(x)))]
+names(ts.beta.ch) = rownames(expbeta)
+
 # direction of expression change for those genes :
-ts.expr.ch.dir = sapply(1:length(ts.expr.ch), function(x){ sign(expch_ag[x, ts.expr.ch[x]]) } )
-names(ts.expr.ch.dir) = names(ts.expr.ch)
+# ts.expr.ch.dir = sapply(1:length(ts.expr.ch), function(x){ sign(expch_ag[x, ts.expr.ch[x]]) } )
+# names(ts.expr.ch.dir) = names(ts.expr.ch)
 
-### for all genes:
-# ts.spec: specificity of genes; genes having max ES assigned to tissue
-# ts.specQ3: tissue specific genes; genes having ES >Q3 assigned to a tissue
-# ts.expr.ch: maximum abs. expression change occur in which tissue
-
-mat = data.frame(sameness = ts.spec == ts.expr.ch, exp_dir = ts.expr.ch.dir)
-table(mat) # FALSE: highest expression change occur in not specific tissue
-# TRUE: highest expression change occur in specific tissue
-# -1 : expression change direction is negative (decrease with age in ageing period)
-# 1 : expression change direction is positive (increase with age in ageing period)
-# -1_FALSE: highest expression decrease occur in not specific tissue (not inrestested in this: )
-# -1_TRUE: highest expression decrease occur in specific tissue (interesting: identity lose?)
-# 1_FALSE: highest expression increase occur in not specific tissue (interesting: tissue resembl each other?)
-# 1_TRUE: highest expression increase occur in specific tissue (not interested in this:)
-
-fisher.test(table(mat)[,c(2,1)])
-# OR: 2.564, pval < 1e10-16
-
+ts.beta.ch.dir = sapply(1:length(ts.beta.ch), function(x){ sign(expbeta[x, ts.beta.ch[x]]) } )
+names(ts.beta.ch.dir) = names(ts.beta.ch)
 
 ########
-########
-######## actual result:
+######## Expr change in native tissue :
 ########
 # for tissue-specific genes (>Q3) :
 ts.specQ3.genes = unlist(ts.specQ3)
 names(ts.specQ3.genes) = gsub('[0-9]','', names(ts.specQ3.genes))
 
-mat = data.frame(sameness = names(ts.specQ3.genes) == ts.expr.ch[ts.specQ3.genes],
-                 exp_dir = ts.expr.ch.dir[ts.specQ3.genes] )
+mat = data.frame(sameness = names(ts.specQ3.genes) == ts.beta.ch[ts.specQ3.genes],
+                 exp_dir = ts.beta.ch.dir[ts.specQ3.genes] )
 table(mat)[,c(2,1)]
 fisher.test(table(mat)[,c(2,1)])
-# OR: 4.298, pval < 1e10-16
+# OR: 5.50, p = 2.2e-16
 
-# exprch_tisspec = table(mat)[c(2,1),c(2,1)]
-# colnames(exprch_tisspec) = c('Increase w/ age (+)', 'Decrease w/ age (-)' )
-# rownames(exprch_tisspec) = c('Same tissue', 'Other tissue')
-# exprch_tisspec
-# fisher.test(exprch_tisspec[,c(2,1)])
+### using only DiCo genes:
+# losing expr in native, gain in other tiss:
+specsub = ts.specQ3.genes[ts.specQ3.genes%in%dcgenes]
+expchsub = ts.beta.ch[dcgenes]
+expchdirsub = ts.beta.ch.dir[dcgenes]
+matsub = data.frame(sameness = names(specsub) == expchsub[specsub],
+           expdir = expchdirsub[specsub])
+table(matsub)[,c(2,1)]
+sum(table(matsub)[,c(2,1)]) # 1287 genes
+fisher.test(table(matsub)[,c(2,1)])
+fisher.test(table(matsub)[,c(2,1)])$p.val
+# OR = 74.81, p=5.9e-203
+saveRDS(list(tbl=table(matsub)[,c(2,1)],
+        fisher=fisher.test(table(matsub)[,c(2,1)])),
+        file ='data/processed/specloss_wdico_fisher.rds')
 
-#### among div-conv genes:
-# mat.dc = mat[rownames(mat)%in%dcgenes,] # 1287 genes in total
-# table(mat.dc)[,c(2,1)]
-# fisher.test(table(mat.dc)[,c(2,1)])
-# OR: 38.52, pval < 1e10-16
-
-
-########
-### tis.spec genes enrichment among div-conv genes:
-spec.dc.mat = data.frame(spec = rownames(exp)%in%ts.specQ3.genes ,
-                         divconv = rownames(exp)%in%dcgenes )
-# spec 1: not ts specific, 2: ts specific
-# divconv 1: not dc gene, 2: dc gene
-
-fisher.test(table(spec.dc.mat)) # 
-# OR: 1.149, pval = 0.00051
-saveRDS(spec.dc.mat, file='./data/processed/raw/ts_spec_dc_enrichment.rds')
-spec.dc.mat.table = table(spec.dc.mat)
-spec.dc.mat.fisher = fisher.test(table(spec.dc.mat))
-saveRDS(list(table = spec.dc.mat, test=spec.dc.mat.table),
-        file='./results/source_data/f3/tsspec_dc_enrichment.rds')
-
-dc_vs_tisspec = table(spec.dc.mat)[c(2,1),c(2,1)]
-colnames(dc_vs_tisspec) = c('DC', ' Non-DC')
-rownames(dc_vs_tisspec) = c('Specific to a tissue', 'Not tissue-specific')
-dc_vs_tisspec
-#write.xlsx(dc_vs_tisspec, file='results/SI_tables/TableS10.xlsx')
+## DiCo vs DiDi and tis spec vs non-tis spec
+spec.pat.mat = data.frame(pat = names(dgenes)%in%dcgenes,
+           ts.spec = names(dgenes)%in%ts.specQ3.genes)
+table(spec.pat.mat )
+fisher.test(table(spec.pat.mat ))
+fisher.test(table(spec.pat.mat ))$p.val
+# OR = 1.56, p=1.349306e-18
+saveRDS(table(spec.pat.mat ), 
+        'results/source_data/f3/tsspec_dico_enrichment.rds')
 
 ##################
 ##################
@@ -163,6 +169,7 @@ dc_vs_tisspec
 # table(ts.spec[divconvg]) # tissue specific gene proportion of div-conv genes
 
 # ########## development (confirmation):
+
 # check expression change direction and in development with tissue specific genes:
 # maximum expression change in which tissue:
 ts.expr.ch.dev = colnames(expch_dev)[apply(expch_dev, 1, function(x)which.max(abs(x)))]
@@ -239,45 +246,115 @@ fisher.test(table(mat.dev[rownames(mat.dev2)%in%dcgenes,]))
 
 revg = readRDS('./data/processed/raw/revgenes.tissues.rds')
 
+## old result, wrong:
+# eachtissue_OR = list()
+# eacttissue_table = list()
+# for(i in names(revg)){
+#   bg = intersect(ts.specQ3.genes, c(revg[[i]]$UpDown,revg[[i]]$DownUp) )
+#   mat = data.frame(xspec  = ts.specQ3.genes%in%ts.specQ3.genes[names(ts.specQ3.genes)==i],
+#                    rev =  ts.specQ3.genes%in%revg[[i]]$UpDown )
+#   tst = fisher.test(table(mat))
+#   eachtissue_OR[[i]]= c('OR' = tst$est, 'pval' = tst$p.val)
+#   eacttissue_table[[i]] =  table(mat)
+# }
+# eachtissue_OR
+# eacttissue_table
+# saveRDS(list(OR= eachtissue_OR, table= eacttissue_table),
+#         file='./data/processed/raw/tis_spec_rev_enrichment.rds')
+# saveRDS(list(OR= eachtissue_OR, table= eacttissue_table),
+#         file='./results/source_data/f3/tsspec_UD_enrichment.rds')
+#table_s9 = lapply(eacttissue_table, function(x) data.frame(rbind(x)))
+#write.xlsx(eacttissue_table, 'results/SI_tables/TableS9.xlsx')
+
+# ORs = sapply(eachtissue_OR,function(x) x) %>% reshape2::melt() %>%
+#   set_names(c('stat', 'tissue', 'value')) %>%
+#   spread(stat, value) %>%
+#   set_names(c('tissue', 'OR', 'pval'))
+# 
+# ts.specrevfisher = ORs %>%
+#   mutate(LgOR = log2(OR)) %>%
+#   ggplot(aes(x=tissue, y=LgOR)) +
+#   geom_bar(stat='identity', fill='aquamarine4') +
+#   ylab('Log2(OR)') + xlab('') +
+#   geom_text(aes(x=tissue), label = '*', size=4)
+# 
+# ggsave('./results/figure3/OR_tsspec_rev.pdf', units='cm', height = 10, width = 8, useDingbats=F)
+# ggsave('./results/figure3/OR_tsspec_rev.png', units='cm', height = 10, width = 8)
+#####   
+
+## Enrichment of UD (vs UU) and tissue specific genes:
+##### choose background as up-up:
 eachtissue_OR = list()
 eacttissue_table = list()
 for(i in names(revg)){
-  bg = intersect(ts.specQ3.genes, c(revg[[i]]$UpDown,revg[[i]]$DownUp) )
-  mat = data.frame(xspec  = ts.specQ3.genes%in%ts.specQ3.genes[names(ts.specQ3.genes)==i],
-                   rev =  ts.specQ3.genes%in%revg[[i]]$UpDown )
+  bg = c(revg[[i]]$UpDown, revg[[i]]$UpUp) # background up-up genes
+  spectis = ts.specQ3[[i]] # spec to tissue
+  mat = data.frame(xspec = bg%in%spectis,
+             rev = bg%in%revg[[i]]$UpDown)
   tst = fisher.test(table(mat))
   eachtissue_OR[[i]]= c('OR' = tst$est, 'pval' = tst$p.val)
   eacttissue_table[[i]] =  table(mat)
 }
 eachtissue_OR
 eacttissue_table
+
 saveRDS(list(OR= eachtissue_OR, table= eacttissue_table),
         file='./data/processed/raw/tis_spec_rev_enrichment.rds')
-saveRDS(list(OR= eachtissue_OR, table= eacttissue_table),
-        file='./results/source_data/f3/tsspec_UD_enrichment.rds')
-#table_s9 = lapply(eacttissue_table, function(x) data.frame(rbind(x)))
-#write.xlsx(eacttissue_table, 'results/SI_tables/TableS9.xlsx')
-
-
 ORs = sapply(eachtissue_OR,function(x) x) %>% reshape2::melt() %>%
   set_names(c('stat', 'tissue', 'value')) %>%
   spread(stat, value) %>%
   set_names(c('tissue', 'OR', 'pval'))
+# tissue       OR         pval
+# 1 Cortex 1.649600 1.882387e-09
+# 2   Lung 6.518892 1.371290e-60
+# 3  Liver 0.871200 9.586655e-02
+# 4 Muscle 1.255894 1.482466e-02
 
-ts.specrevfisher = ORs %>%
-  mutate(LgOR = log2(OR)) %>%
-  ggplot(aes(x=tissue, y=LgOR)) +
-  geom_bar(stat='identity', fill='aquamarine4') +
-  ylab('Log2(OR)') + xlab('') +
-  geom_text(aes(x=tissue), label = '*', size=4)
+saveRDS(list(OR= ORs, table= eacttissue_table),'results/source_data/f3/tsspec_UD_enrichment.rds')
 
-ggsave('./results/figure3/OR_tsspec_rev.pdf', units='cm', height = 10, width = 8, useDingbats=F)
-ggsave('./results/figure3/OR_tsspec_rev.png', units='cm', height = 10, width = 8)
-#####   
+# ts.specrevfisher = ORs %>%
+#   mutate(LgOR = log2(OR)) %>%
+#   ggplot(aes(x=tissue, y=LgOR)) +
+#   geom_bar(stat='identity', fill='aquamarine4') +
+#   ylab('Log2(OR)') + xlab('') +
+#   geom_text(aes(x=tissue), label = '*', size=4)
 
-# bg = ts.specQ3.genes
-# cort_tst = data.frame(cort_sp = bg%in%ts.specQ3$Cortex,
-#            cort_rev = bg%in%c(revg$Cortex$UpDown))
-# table(cort_tst)
-# fisher.test(table(cort_tst))
+# ggsave('./results/figure3/OR_tsspec_rev.pdf', units='cm', height = 10, width = 8, useDingbats=F)
+# ggsave('./results/figure3/OR_tsspec_rev.png', units='cm', height = 10, width = 8)
 
+sapply(revg$Liver, length)
+5157/(5157+3164)
+
+sapply(sapply(revg$Liver, function(x) x[!x%in%ts.specQ3[['Liver']] ] ), length)
+4765/(4765+2891)
+
+## UD proportion of non-tissue specific genes:
+sapply(names(revg), function(y){
+  xx = sapply(revg[[y]], function(x) x[!x%in%ts.specQ3[[y]] ] )
+  ud = length(xx$UpDown)
+  uu = length(xx$UpUp)
+  return( ud / sum(ud+uu) )
+})
+
+## UD proportion of tissue specific genes:
+sapply(names(revg), function(y){
+  xx = sapply(revg[[y]], function(x) x[x%in%ts.specQ3[[y]] ] )
+  ud = length(xx$UpDown)
+  uu = length(xx$UpUp)
+  return( ud / sum(ud+uu) )
+})
+
+# eachtissue_OR2 = list()
+# eacttissue_table2 = list()
+# for(i in names(revg)){
+#   #bg = c(revg[[i]]$UpDown,revg[[i]]$UpUp) # background up-up genes
+#   spectis = ts.specQ3[[i]] # spec to tissue
+#   revg = c(revg[[i]]$UpDown,revg[[i]]$UpUp)
+#   mat = data.frame(xspec = spectis%in%revg[[i]]$UpDown,
+#                    rev = spectis%in%revg[[i]]$UpDown)
+#   tst = fisher.test(table(mat))
+#   eachtissue_OR2[[i]]= c('OR' = tst$est, 'pval' = tst$p.val)
+#   eacttissue_table2[[i]] =  table(mat)
+# }
+# eachtissue_OR2
+# eacttissue_table2
